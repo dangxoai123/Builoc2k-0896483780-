@@ -56,6 +56,10 @@ function updateCurrencyUI() {
       ? '<i class="fas fa-dong-sign"></i> VND'
       : '<i class="fas fa-dollar-sign"></i> USD';
   }
+  // Ẩn icon $ khi dùng VND (vì số tiền đã kèm ₫ rồi)
+  const balIcon = document.getElementById('balanceCurrencyIcon');
+  if (balIcon) balIcon.style.display = cur === 'VND' ? 'none' : 'inline';
+
   // Update dropdown options
   const optUSD = document.getElementById('currencyOptUSD');
   const optVND = document.getElementById('currencyOptVND');
@@ -144,15 +148,13 @@ async function initDashboard() {
 }
 
 // ==========================================
-// BALANCE
+// BALANCE - Quản lý số dư web con (độc lập với DenyPanel)
 // ==========================================
 async function refreshBalance() {
-  const result = await DenyPanelAPI.getBalance();
-  const bal = parseFloat(result.balance || '0').toFixed(4);
-
+  // Số dư được quản lý cục bộ trên web con
+  // Admin nạp tiền cho user qua hệ thống riêng
   const user = getUserData();
-  user.balance = bal;
-  saveUserData(user);
+  const bal = parseFloat(user.balance || '0');
 
   safeSet('balanceDisplay', formatMoney(bal));
   safeSet('balanceStat', formatMoney(bal));
