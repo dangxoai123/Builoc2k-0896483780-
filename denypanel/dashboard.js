@@ -426,11 +426,18 @@ async function _placeOrder(prefix) {
   }
 
   const cost = (qty / 1000) * parseFloat(opt.dataset.rate);
-  const user = getUserData();
-  const balance = parseFloat(user.balance || 0);
+
+  // Lấy số dư mới nhất từ Firestore (tránh dùng cache cũ)
+  if (_firebaseUser) {
+    const fresh = await getUserProfile(_firebaseUser.uid);
+    if (fresh) _userProfile = fresh;
+  }
+  const balance = parseFloat(_userProfile?.balance || 0);
 
   if (cost > balance) {
-    showMsg(msgBox, `⚠️ Số dư không đủ! Cần ${formatMoney(cost)}, bạn có ${formatMoney(balance)}`, 'err');
+    showMsg(msgBox,
+      `⚠️ Số dư không đủ!<br>💰 Cần: <strong>${formatMoney(cost)}</strong><br>💳 Số dư hiện tại: <strong>${formatMoney(balance)}</strong><br>→ Còn thiếu: <strong>${formatMoney(cost - balance)}</strong>`,
+      'err');
     return;
   }
 
