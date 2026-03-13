@@ -16,18 +16,15 @@ const DenyPanelAPI = {
   // API endpoint thực của DenyPanel (KHÔNG gọi trực tiếp - sẽ bị CORS)
   API_URL: 'https://denypanel.com/api/v2',
 
-  // ==========================================
-  // CẦN CẬP NHẬT SAU KHI DEPLOY FIREBASE FUNCTIONS
-  // ==========================================
-  // Sau khi chạy: firebase deploy --only functions
-  // Lấy URL từ Firebase Console → Functions → denyProxy
-  // Ví dụ: 'https://us-central1-my-project-id.cloudfunctions.net/denyProxy'
-  // Hoặc Gen2: 'https://denyproxy-xxxxxxxx-uc.a.run.app'
-  PROXY_URL: 'https://us-central1-FIREBASE_PROJECT_ID.cloudfunctions.net/denyProxy',
+  // Vercel Serverless Function endpoint
+  // Khi deploy lên Vercel → /api/proxy tự route đến api/proxy.js
+  // Khi chạy local file:// → tự động dùng demo mode
+  PROXY_URL: '/api/proxy',
 
   // Cache trạng thái proxy
   _useProxy: null,
   _proxyChecked: false,
+
 
 
   /**
