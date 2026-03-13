@@ -10,7 +10,8 @@
  * CURRENCY SWITCHER - USD ↔ VND
  * ==========================================
  */
-const VND_RATE = 26293.5; // 1 USD = 26,293.5 VND (đúng với tỷ giá DenyPanel hiện tại)
+// Tỷ giá USD → VND (sẽ được cập nhật thực từ DenyPanel khi load trang)
+let VND_RATE = 26294.5; // Giá trị mặc định, sẽ được thay bằng tỷ giá thực
 
 /** Lấy đơn vị tiền hiện tại từ localStorage */
 function getCurrency() {
@@ -120,6 +121,9 @@ async function initDashboard() {
   showPage('home', document.getElementById('sb-home'));
 
   // Load data in order
+  // Lấy tỷ giá VND thực từ DenyPanel trước khi load giá dịch vụ
+  VND_RATE = await DenyPanelAPI.getExchangeRate();
+
   await refreshBalance();
   await loadAllServices();
   updateStats();

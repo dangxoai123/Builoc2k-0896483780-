@@ -108,6 +108,47 @@ const DenyPanelAPI = {
   },
 
   // ==========================================
+  // EXCHANGE RATE - TỶ GIÁ THỰC TỪ DENYPANEL
+  // ==========================================
+
+  /**
+   * Lấy tỷ giá VND/USD thực từ DenyPanel (qua /api/rate)
+   * Cache 5 phút trong sessionStorage
+   */
+  async getExchangeRate() {
+    const CACHE_KEY = 'dp_exchange_rate';
+    const CACHE_TIME_KEY = 'dp_exchange_rate_time';
+    const CACHE_TTL = 5 * 60 * 1000; // 5 phút
+
+    try {
+      // Kiểm tra cache
+      const cachedRate = sessionStorage.getItem(CACHE_KEY);
+      const cachedTime = parseInt(sessionStorage.getItem(CACHE_TIME_KEY) || '0');
+
+      if (cachedRate && Date.now() - cachedTime < CACHE_TTL) {
+        return parseFloat(cachedRate);
+      }
+
+      // Fetch tỷ giá thực từ proxy
+      const response = await fetch('/api/rate');
+      if (!response.ok) throw new Error('Rate fetch failed');
+      const data = await response.json();
+
+      if (data.rate && data.rate > 20000) {
+        sessionStorage.setItem(CACHE_KEY, data.rate);
+        sessionStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
+        console.log(`[DenyPanel API] Tỷ giá VND: 1 USD = ${data.rate.toFixed(2)} ₫ (nguồn: ${data.source})`);
+        return data.rate;
+      }
+
+      throw new Error('Invalid rate');
+    } catch (err) {
+      console.warn('[DenyPanel API] Không lấy được tỷ giá, dùng fallback:', err.message);
+      return 26294.5; // Fallback
+    }
+  },
+
+  // ==========================================
   // SERVICES
   // ==========================================
 
