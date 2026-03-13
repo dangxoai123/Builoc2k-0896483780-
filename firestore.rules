@@ -24,10 +24,18 @@ service cloud.firestore {
       allow update: if true;
     }
 
-    // Transactions — server ghi log
+    // Transactions — server ghi log, admin/owner xem
     match /transactions/{txId} {
-      allow read:   if request.auth != null && isAdmin();
+      allow read:   if request.auth != null; // Any logged-in user can view own transactions
       allow create: if true;
+    }
+
+    // Orders subcollection — user tự đọc/ghi orders của mình, admin đọc tất cả
+    match /users/{uid}/orders/{orderId} {
+      allow read:   if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow create: if request.auth != null && request.auth.uid == uid;
+      allow update: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow delete: if request.auth != null && isAdmin();
     }
 
     // Settings

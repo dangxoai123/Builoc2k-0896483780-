@@ -449,51 +449,71 @@ async function _placeOrder(prefix) {
 
   if (msgBox) msgBox.style.display = 'none';
 
-  const result = await DenyPanelAPI.addOrder(opt.value, link, qty);
+  let result;
+  try {
+    result = await DenyPanelAPI.addOrder(opt.value, link, qty);
+  } catch(apiErr) {
+    console.error('[PlaceOrder] API error:', apiErr);
+    showMsg(msgBox, `❌ Lỗi kết nối API: ${apiErr.message}`, 'err');
+    showToastV2('❌ Lỗi kết nối API!', 'err');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-shopping-bag"></i> Đặt hàng'; }
+    return;
+  }
 
   if (result.success) {
-    // Trừ số dư trong Firestore (không dùng localStorage)
-    const newBalance = (balance - cost);
-    if (_firebaseUser) {
-      await updateBalance(_firebaseUser.uid, newBalance);
-      _userProfile.balance = newBalance;
+    try {
+      // Trừ số dư trong Firestore
+      const newBalance = (balance - cost);
+      if (_firebaseUser) {
+        await updateBalance(_firebaseUser.uid, newBalance);
+        _userProfile.balance = newBalance;
+      }
+
+      const serviceName = opt.dataset.name || opt.textContent.split(' - ')[0];
+      // Dịch vụ "Bắt đầu sau" → trạng thái "Đang đợi" ngay khi đặt hàng
+      const isDelayed = serviceName.toLowerCase().includes('bắt đầu sau') || serviceName.toLowerCase().includes('bat dau sau');
+      const order = {
+        orderId: result.orderId,
+        serviceId: parseInt(opt.value),
+        serviceName,
+        link,
+        quantity: qty,
+        charge: parseFloat(cost.toFixed(4)),
+        status: isDelayed ? 'waiting' : 'pending',
+        remains: qty,
+        refill: false,
+        demo: result.demo || false
+      };
+
+      // Lưu đơn vào Firestore theo từng user (cô lập hoàn toàn)
+      if (_firebaseUser) {
+        await saveOrder(_firebaseUser.uid, order);
+      }
+
+      showMsg(msgBox, `✅ Đặt hàng thành công! Order ID: #${result.orderId}${result.demo ? ' (Demo)' : ''}`, 'ok');
+      showToastV2(`✅ Đặt hàng thành công! #${result.orderId}`, 'ok');
+
+      // Reset form
+      sel.value = '';
+      document.getElementById(`${prefix}OrderLink`).value = '';
+      document.getElementById(`${prefix}OrderQty`).value = '';
+      safeSet(`${prefix}CostDisplay`, '0 ₫');
+
+      await refreshBalance();
+      updateStats();
+      loadOrdersPage();
+
+    } catch(saveErr) {
+      console.error('[PlaceOrder] Firestore save error:', saveErr);
+      // Đơn đã được đặt thành công trên DenyPanel nhưng lỗi khi lưu nội bộ
+      showMsg(msgBox,
+        `⚠️ Đặt hàng OK trên hệ thống (ID: #${result.orderId}) nhưng lỗi lưu cục bộ: ${saveErr.message}<br>Vui lòng chụp màn hình và liên hệ admin.`,
+        'err'
+      );
+      showToastV2(`⚠️ Đơn #${result.orderId} đã gửi nhưng lỗi lưu!`, 'err');
+      // Vẫn reset form và reload balance
+      try { await refreshBalance(); } catch(_) {}
     }
-
-    const serviceName = opt.dataset.name || opt.textContent.split(' - ')[0];
-    // Dịch vụ "Bắt đầu sau" → trạng thái "Đang đợi" ngay khi đặt hàng
-    const isDelayed = serviceName.toLowerCase().includes('bắt đầu sau') || serviceName.toLowerCase().includes('bat dau sau');
-    const order = {
-      orderId: result.orderId,
-      serviceId: parseInt(opt.value),
-      serviceName,
-      link,
-      quantity: qty,
-      charge: parseFloat(cost.toFixed(4)),
-      status: isDelayed ? 'waiting' : 'pending',
-      remains: qty,
-      refill: false,
-      demo: result.demo || false
-    };
-
-    // Lưu đơn vào Firestore theo từng user (cô lập hoàn toàn)
-    if (_firebaseUser) {
-      await saveOrder(_firebaseUser.uid, order);
-    }
-
-    showMsg(msgBox, `✅ Đặt hàng thành công! Order ID: #${result.orderId}${result.demo ? ' (Demo)' : ''}`, 'ok');
-    showToastV2(`✅ Đặt hàng thành công! #${result.orderId}`, 'ok');
-
-    // Reset form
-    sel.value = '';
-    document.getElementById(`${prefix}OrderLink`).value = '';
-    document.getElementById(`${prefix}OrderQty`).value = '';
-    safeSet(`${prefix}CostDisplay`, '0 ₫');
-
-    await refreshBalance();
-    updateStats();
-    loadOrdersPage();
-
-    simulateProgress(result.orderId);
   } else {
     showMsg(msgBox, `❌ Lỗi: ${result.error || 'Không thể đặt hàng'}`, 'err');
     showToastV2('❌ Đặt hàng thất bại!', 'err');
