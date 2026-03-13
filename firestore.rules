@@ -2,7 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper: kiểm tra user là admin
     function isAdmin() {
       return request.auth != null &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
@@ -10,36 +9,30 @@ service cloud.firestore {
 
     // Users collection
     match /users/{uid} {
-      // User đọc tài khoản của mình, admin đọc tất cả
-      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
-      // User tự tạo tài khoản khi đăng ký
+      // Cho phép đọc luôn (server payment cần đọc balance)
+      allow read: if true;
       allow create: if request.auth != null && request.auth.uid == uid;
-      // Admin sửa bất kỳ, user sửa thông tin của mình
-      // Server (payment API) được cộng tiền: chỉ update field 'balance'
+      // Admin/user tự sửa, HOẶC server chỉ update field balance
       allow update: if request.auth != null && (isAdmin() || request.auth.uid == uid)
                     || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['balance']);
     }
 
     // Pending deposits — server cần đọc/ghi để xử lý nạp tiền
     match /pending_deposits/{ref} {
-      // User tạo lệnh nạp tiền của mình
       allow create: if request.auth != null;
-      // Server cần đọc để kiểm tra ref code
-      allow read: if true;
-      // Server/user cập nhật trạng thái (pending → completed)
+      allow read:   if true;
       allow update: if true;
     }
 
-    // Transactions (lịch sử nạp tiền)
+    // Transactions — server ghi log
     match /transactions/{txId} {
-      allow read: if request.auth != null && isAdmin();
-      // Server ghi log giao dịch
+      allow read:   if request.auth != null && isAdmin();
       allow create: if true;
     }
 
-    // Settings (pricing, markup)
+    // Settings
     match /settings/{doc} {
-      allow read: if request.auth != null;
+      allow read:  if request.auth != null;
       allow write: if isAdmin();
     }
   }
