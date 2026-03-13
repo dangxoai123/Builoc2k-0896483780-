@@ -89,11 +89,35 @@ function refreshPrices() {
 
 
 // ==========================================
-// INIT
+// INIT - Firebase Auth
 // ==========================================
+
+// Biến global lưu thông tin user từ Firebase
+let _firebaseUser = null;
+let _userProfile = null;
+
 document.addEventListener('DOMContentLoaded', () => {
-  if (!isLoggedIn()) { window.location.href = 'login.html'; return; }
-  initDashboard();
+  // Dùng Firebase Auth thay vì localStorage
+  auth.onAuthStateChanged(async (user) => {
+    if (!user) {
+      window.location.href = 'login.html';
+      return;
+    }
+    _firebaseUser = user;
+    // Load profile từ Firestore
+    _userProfile = await getUserProfile(user.uid);
+    if (!_userProfile) {
+      // Tạo profile mặc định nếu chưa có (fallback)
+      _userProfile = {
+        username: user.email.split('@')[0],
+        email: user.email,
+        balance: 0,
+        role: 'user',
+        totalOrders: 0
+      };
+    }
+    initDashboard();
+  });
 });
 
 /** Toggle dropdown tiền tệ */
@@ -105,15 +129,15 @@ function toggleCurrencyDropdown(e) {
 }
 
 async function initDashboard() {
-  const user = getUserData();
+  const profile = _userProfile;
+  const name = profile.username || 'User';
 
   // Set welcome name
-  const name = user.username || 'dangxoai';
   safeSet('welcomeName', name);
   safeSet('profileNameDisplay', name);
-  safeSet('profileEmailDisplay', user.email || '');
+  safeSet('profileEmailDisplay', profile.email || '');
   safeSet('settUsernameV2', name, 'value');
-  safeSet('settEmailV2', user.email || '', 'value');
+  safeSet('settEmailV2', profile.email || '', 'value');
   safeSet('emptyOrdersUser', name);
 
   // Update top bar avatar initial
@@ -127,7 +151,6 @@ async function initDashboard() {
   showPage('home', document.getElementById('sb-home'));
 
   // Load data in order
-  // Lấy tỷ giá VND thực từ DenyPanel trước khi load giá dịch vụ
   VND_RATE = await DenyPanelAPI.getExchangeRate();
 
   await refreshBalance();
@@ -151,11 +174,12 @@ async function initDashboard() {
 // BALANCE - Quản lý số dư web con (độc lập với DenyPanel)
 // ==========================================
 async function refreshBalance() {
-  // Số dư được quản lý cục bộ trên web con
-  // Admin nạp tiền cho user qua hệ thống riêng
-  const user = getUserData();
-  const bal = parseFloat(user.balance || '0');
-
+  // Lấy số dư từ Firestore (do admin quản lý)
+  if (_firebaseUser) {
+    const fresh = await getUserProfile(_firebaseUser.uid);
+    if (fresh) _userProfile = fresh;
+  }
+  const bal = parseFloat(_userProfile?.balance || 0);
   safeSet('balanceDisplay', formatMoney(bal));
   safeSet('balanceStat', formatMoney(bal));
 }
@@ -166,9 +190,8 @@ async function refreshBalance() {
 function updateStats() {
   const orders = getLocalOrders();
   safeSet('totalOrdersStat', orders.length);
-  safeSet('profileOrders', orders.length);
-  const user = getUserData();
-  safeSet('profileBalance', formatMoney(user.balance || 0));
+  safeSet('profileOrders', _userProfile?.totalOrders || orders.length);
+  safeSet('profileBalance', formatMoney(_userProfile?.balance || 0));
 }
 
 // ==========================================
