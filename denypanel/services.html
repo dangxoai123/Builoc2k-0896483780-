@@ -34,9 +34,16 @@
 .search-services:focus { border-color: var(--green); }
 .support-tag { background: rgba(255,255,255,0.08); border-radius: 50px; padding: 8px 16px; font-size: 12px; color: var(--gray); cursor: pointer; white-space: nowrap; }
 .support-tag:hover { background: rgba(46,204,113,0.1); color: var(--green); }
+
+/* Currency toggle */
+.currency-toggle-wrap { display:flex; align-items:center; gap:4px; background:rgba(255,255,255,.05); border:1px solid var(--border); border-radius:50px; padding:4px; flex-shrink:0; }
+.cur-btn { border:none; border-radius:50px; padding:5px 14px; font-size:12px; font-weight:700; cursor:pointer; transition:.2s; }
+.cur-btn.active { background:var(--green); color:#000; }
+.cur-btn:not(.active) { background:transparent; color:var(--gray); }
+
 .table-col-header {
   display: grid;
-  grid-template-columns: 100px 1fr 140px 100px 120px 160px;
+  grid-template-columns: 100px 1fr 160px 100px 120px 160px;
   gap: 12px; padding: 12px 20px;
   background: var(--bg-card); border: 1px solid var(--border);
   border-radius: var(--radius) var(--radius) 0 0;
@@ -49,7 +56,7 @@
   display: flex; align-items: center; gap: 10px;
 }
 .service-item {
-  display: grid; grid-template-columns: 100px 1fr 140px 100px 120px 160px;
+  display: grid; grid-template-columns: 100px 1fr 160px 100px 120px 160px;
   gap: 12px; padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.03);
   transition: var(--transition); align-items: start; font-size: 13px;
 }
@@ -57,7 +64,8 @@
 .svc-id { background: rgba(46,204,113,0.15); color: var(--green); padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; text-align: center; display: inline-block; }
 .svc-name { font-weight: 700; margin-bottom: 4px; }
 .svc-type { font-size: 11px; color: var(--gray); }
-.svc-rate { font-weight: 800; color: var(--green); font-size: 15px; }
+.svc-rate { font-weight: 800; color: var(--green); font-size: 14px; }
+.svc-rate-sub { font-size: 11px; color: var(--gray); margin-top: 3px; }
 .svc-num { color: var(--gray-light); }
 .loading-svc { text-align: center; padding: 60px; color: var(--gray); }
 </style>
@@ -99,6 +107,13 @@
       <button class="platform-icon-btn" style="background:#fffc00;color:#000" onclick="filterSvc('Snapchat',this)" title="Snapchat">👻</button>
     </div>
     <input type="text" class="search-services" placeholder="🔍 Tìm kiếm dịch vụ..." id="svcSearch" oninput="renderServices()">
+
+    <!-- Currency toggle USD / VND -->
+    <div class="currency-toggle-wrap">
+      <button class="cur-btn active" id="curUSD" onclick="setCur('USD')"><i class="fas fa-dollar-sign"></i> USD</button>
+      <button class="cur-btn" id="curVND" onclick="setCur('VND')"><i class="fas fa-dong-sign"></i> VND</button>
+    </div>
+
     <div class="support-tag">Giờ hỗ trợ: 8:00 - 22:00</div>
   </div>
 
@@ -131,11 +146,43 @@
 
 <script src="api.js"></script>
 <script>
+/**
+ * services.html - Public services listing
+ * Prices are fetched LIVE from DenyPanel API via api.js
+ * VND_RATE = 27,000 (official DenyPanel exchange rate)
+ */
+const VND_RATE = 27000;
 let currentFilter = 'all';
 let svcData = [];
+let currentCur = localStorage.getItem('svc_currency') || 'USD';
+
+/** Format price in current currency with sub-price in the other */
+function fmtRate(usdRate) {
+  const r = parseFloat(usdRate || 0);
+  if (currentCur === 'VND') {
+    const vnd = r * VND_RATE;
+    const vndStr = vnd.toLocaleString('vi-VN', { maximumFractionDigits: 0 }) + ' ₫';
+    return { main: vndStr, sub: '$' + r.toFixed(2) + ' USD' };
+  }
+  // USD mode
+  const vnd = r * VND_RATE;
+  const vndStr = vnd.toLocaleString('vi-VN', { maximumFractionDigits: 0 }) + ' ₫';
+  return { main: '$' + r.toFixed(2), sub: '≈ ' + vndStr };
+}
+
+function setCur(c) {
+  currentCur = c;
+  localStorage.setItem('svc_currency', c);
+  document.getElementById('curUSD').classList.toggle('active', c === 'USD');
+  document.getElementById('curVND').classList.toggle('active', c === 'VND');
+  renderServices();
+}
 
 async function init() {
   svcData = await DenyPanelAPI.getServices();
+  // Apply stored preference
+  document.getElementById('curUSD').classList.toggle('active', currentCur === 'USD');
+  document.getElementById('curVND').classList.toggle('active', currentCur === 'VND');
   renderServices();
 }
 init();
@@ -151,10 +198,13 @@ function renderServices() {
   const container = document.getElementById('svcContainer');
   const search = document.getElementById('svcSearch').value.toLowerCase();
   let filtered = svcData;
-  if (currentFilter !== 'all') filtered = filtered.filter(s => s.category.startsWith(currentFilter));
+  if (currentFilter !== 'all') filtered = filtered.filter(s => s.category.toLowerCase().includes(currentFilter.toLowerCase()));
   if (search) filtered = filtered.filter(s => s.name.toLowerCase().includes(search) || String(s.service).includes(search));
 
-  if (!filtered.length) { container.innerHTML = '<div class="loading-svc">Không tìm thấy dịch vụ phù hợp</div>'; return; }
+  if (!filtered.length) {
+    container.innerHTML = '<div class="loading-svc">Không tìm thấy dịch vụ phù hợp</div>';
+    return;
+  }
 
   const cats = {};
   filtered.forEach(s => { if (!cats[s.category]) cats[s.category] = []; cats[s.category].push(s); });
@@ -163,11 +213,18 @@ function renderServices() {
   for (const [cat, services] of Object.entries(cats)) {
     html += `<div class="cat-header"><i class="fas fa-tag"></i> ${cat}</div>`;
     services.forEach(s => {
+      const { main, sub } = fmtRate(s.rate);
       html += `
         <div class="service-item">
           <div><span class="svc-id">${s.service}</span></div>
-          <div><div class="svc-name">${s.name}</div>${s.type !== 'Default' ? `<div class="svc-type">${s.type}</div>` : ''}</div>
-          <div class="svc-rate">$${s.rate}</div>
+          <div>
+            <div class="svc-name">${s.name}</div>
+            ${s.type && s.type !== 'Default' ? `<div class="svc-type">${s.type}</div>` : ''}
+          </div>
+          <div>
+            <div class="svc-rate">${main}</div>
+            <div class="svc-rate-sub">${sub}</div>
+          </div>
           <div class="svc-num">${Number(s.min).toLocaleString()}</div>
           <div class="svc-num">${Number(s.max).toLocaleString()}</div>
           <div><a href="signup.html" class="btn-green" style="font-size:12px;padding:8px 16px"><i class="fas fa-cart-plus"></i> Đặt hàng</a></div>
