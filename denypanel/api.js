@@ -261,21 +261,31 @@ const DenyPanelAPI = {
   async order(params) {
     const result = await this.call({ action: 'add', ...params });
 
+    // Proxy hoạt động, DenyPanel trả về kết quả
     if (result.success && result.data) {
       if (result.data.order) {
+        // Thành công - có order ID
         return { success: true, orderId: result.data.order };
       } else if (result.data.error) {
+        // DenyPanel trả về lỗi (vd: "Service not found", "Insufficient balance")
         return { success: false, error: result.data.error };
       }
+      // Phản hồi không có order ID và không có error - coi như lỗi
+      return { success: false, error: 'Phản hồi không hợp lệ từ DenyPanel' };
     }
 
-    // Demo mode
+    // Proxy có lỗi nhưng không phải demo mode - hiện lỗi thật
+    if (!result.success && !result.demo && result.error) {
+      return { success: false, error: `Lỗi API: ${result.error}` };
+    }
+
+    // Demo mode - tạo order giả
     if (result.demo) {
       const fakeId = Math.floor(Math.random() * 90000) + 10000;
       return { success: true, orderId: fakeId, demo: true };
     }
 
-    return { success: false, error: 'Không thể kết nối API' };
+    return { success: false, error: 'Không thể kết nối API. Vui lòng thử lại.' };
   },
 
   // ==========================================
