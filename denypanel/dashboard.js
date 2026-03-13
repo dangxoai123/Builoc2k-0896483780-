@@ -25,22 +25,24 @@ function setCurrency(currency) {
   updateCurrencyUI();
 }
 
-/** Format tiền theo đơn vị hiện tại */
+/** Format tiền theo đơn vị hiện tại (số dư, chi phí) */
 function formatMoney(usdAmount) {
   const amount = parseFloat(usdAmount || 0);
   if (getCurrency() === 'VND') {
-    const vnd = Math.round(amount * VND_RATE);
-    return vnd.toLocaleString('vi-VN') + ' ₫';
+    const vnd = amount * VND_RATE;
+    // Dùng dấu phẩy ngăn cách nghìn (kiểu quốc tế): 1,314,725 ₫
+    return vnd.toLocaleString('en-US', { maximumFractionDigits: 0 }) + ' ₫';
   }
   return '$' + amount.toFixed(2);
 }
 
-/** Format giá dịch vụ /1000 đơn vị */
+/** Format giá dịch vụ /1000 đơn vị (giống DenyPanel: 73617.60 ₫) */
 function formatRate(usdRate) {
   const rate = parseFloat(usdRate || 0);
   if (getCurrency() === 'VND') {
-    const vnd = Math.round(rate * VND_RATE);
-    return vnd.toLocaleString('vi-VN') + ' ₫';
+    const vnd = rate * VND_RATE;
+    // Giống DenyPanel: không dùng dấu phân cách nghìn, 2 chữ số thập phân
+    return vnd.toFixed(2) + ' ₫';
   }
   return '$' + rate;
 }
