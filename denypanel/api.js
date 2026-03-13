@@ -152,12 +152,33 @@ const DenyPanelAPI = {
   // SERVICES
   // ==========================================
 
-  /** Lấy danh sách tất cả dịch vụ */
+  /** Lấy danh sách tất cả dịch vụ - dùng /api/services (key reseller - giá đúng) */
   async getServices() {
-    const result = await this.call({ action: 'services' });
-    if (result.success && result.data && !result.data.error) {
-      return result.data;
+    try {
+      // Gọi endpoint riêng /api/services - luôn dùng key reseller 58788d...
+      // Không qua proxy chung để tránh nhầm key
+      const resp = await fetch('/api/services', { signal: AbortSignal.timeout(15000) });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (Array.isArray(data) && data.length > 0) {
+          console.log(`[DenyPanel API] ✅ Loaded ${data.length} services from /api/services`);
+          return data;
+        }
+      }
+    } catch (err) {
+      console.warn('[DenyPanel API] /api/services failed, trying proxy:', err.message);
     }
+
+    // Fallback: thử qua proxy chung
+    try {
+      const result = await this.call({ action: 'services' });
+      if (result.success && result.data && !result.data.error) {
+        return result.data;
+      }
+    } catch (err) {
+      console.warn('[DenyPanel API] proxy fallback failed:', err.message);
+    }
+
     return this.getDemoServices();
   },
 
