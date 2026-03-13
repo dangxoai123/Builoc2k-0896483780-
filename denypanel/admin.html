@@ -453,8 +453,13 @@ let _currentEditUid = null;
 let _currentEditEmail = null;
 let _balMode = 'add'; // add | sub | set
 let _servicesData = [];
-let _markupData = {}; // serviceId -> markup%
-
+let _markupData = {};
+// Tỷ giá VND/USD — khớp với api/rate.js FALLBACK_RATE
+const ADMIN_VND_RATE = 26294.5;
+// Helper hiển thị balance USD → VND
+function fmtBal(usd) {
+  return Math.round(parseFloat(usd || 0) * ADMIN_VND_RATE).toLocaleString('vi-VN') + ' ₫';
+}
 // ==========================================
 // AUTH CHECK - Chỉ admin mới vào được
 // ==========================================
@@ -501,7 +506,8 @@ async function loadDashboard() {
     const totalOrders = users.reduce((sum, u) => sum + (parseInt(u.totalOrders)||0), 0);
 
     document.getElementById('statTotalUsers').textContent = users.length;
-    document.getElementById('statTotalBalance').textContent = totalBalance.toLocaleString('en-US', {maximumFractionDigits:0}) + ' ₫';
+    document.getElementById('statTotalBalance').textContent = fmtBal(totalBalance);
+
     document.getElementById('statTotalOrders').textContent = totalOrders;
     document.getElementById('statServices').textContent = '—';
 
@@ -513,7 +519,8 @@ async function loadDashboard() {
           <div style="font-weight:600">${u.username || '—'}</div>
           <div style="font-size:11px;color:var(--gray)">${u.email}</div>
         </div>
-        <div class="balance-positive">${parseFloat(u.balance||0).toLocaleString('en-US',{maximumFractionDigits:0})} ₫</div>
+        <div class="balance-positive">${fmtBal(u.balance)}</div>
+
       </div>`).join('') || '<p>Chưa có user nào.</p>';
   } catch(e) { console.error(e); }
 }
@@ -545,7 +552,8 @@ function renderUsersTable(users) {
     return `<tr>
       <td><strong>${u.username || '—'}</strong></td>
       <td style="font-size:12px;color:var(--gray2)">${u.email || '—'}</td>
-      <td><span class="balance-positive">${bal.toLocaleString('en-US',{maximumFractionDigits:0})} ₫</span></td>
+      <td><span class="balance-positive">${fmtBal(u.balance)}</span></td>
+
       <td>${u.totalOrders || 0}</td>
       <td><span class="badge ${u.role==='admin'?'admin':'user'}">${u.role==='admin'?'👑 Admin':'👤 User'}</span></td>
       <td style="font-size:11px;color:var(--gray)">${createdAt}</td>
@@ -575,7 +583,8 @@ function openBalanceModal(uid, email, currentBal, username) {
   _currentEditUid = uid;
   _currentEditEmail = email;
   document.getElementById('modalBalanceSub').textContent = `${username || email}`;
-  document.getElementById('currentBalanceDisplay').textContent = parseFloat(currentBal).toLocaleString('en-US',{maximumFractionDigits:0}) + ' ₫';
+  document.getElementById('currentBalanceDisplay').textContent = fmtBal(currentBal);
+
   document.getElementById('balAmount').value = '';
   document.getElementById('balNote').value = '';
   document.getElementById('balAlert').style.display = 'none';

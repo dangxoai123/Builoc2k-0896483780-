@@ -8,8 +8,9 @@ const https = require('https');
 
 const SEPAY_TOKEN         = 'WW6NPUYVK0DSVDH5N2C8T9OAOAUMLIK4GVCJ5AE2SYMTTJIPFLCW4BKED3UEZBMR';
 const REAL_ACCOUNT        = '8837755253';
-// Tỷ giá nạp tiền: 1 USD = 27,000 VND (tiền nạp từ Sepay là VND, balance lưu USD)
-const VND_DEPOSIT_RATE    = 27000;
+// Tỷ giá nạp tiền (phải khớp với tỷ giá hiển thị trong dashboard để không bị mất tiền)
+// Xem api/rate.js FALLBACK_RATE = 26294.5
+const VND_DEPOSIT_RATE    = 26294.5; // 1 USD = 26,294.5 VND
 
 const FIREBASE_PROJECT    = 'builoc2k-denypanel';
 const FIREBASE_WEB_API_KEY = 'AIzaSyDA6SIIeT8jlzLMyp1r6WnefnsGQxMgygA';
