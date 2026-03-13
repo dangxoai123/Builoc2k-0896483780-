@@ -642,17 +642,200 @@ async function startAutoRefreshOrders() {
 function toggleOrderFilter() { showToastV2('Bộ lọc nâng cao sắp ra mắt!', 'info'); }
 
 // ==========================================
-// ADD FUNDS
+// ADD FUNDS - VCB QR Auto Deposit
 // ==========================================
-function submitFundRequest() {
-  const amount = parseFloat(document.getElementById('fundAmountInput')?.value);
+// ⚠️ Cập nhật số TK VCB thực của bạn vào đây:
+const VCB_ACCOUNT = '9345678901'; // SỐ TK VCB (cần cập nhật)
+const VCB_OWNER   = 'BUI NGUYEN LOC';
+const VCB_BANK_CODE = 'VCB';
+const DEPOSIT_TIMEOUT_MS = 15 * 60 * 1000; // 15 phút
+const POLL_INTERVAL_MS   = 20 * 1000;       // Poll mỗi 20 giây
+
+let _depositTimer    = null; // countdown interval
+let _depositPoll     = null; // polling interval
+let _depositExpiry   = null; // expiry timestamp
+let _depositRef      = null; // mã giao dịch
+let _depositAmount   = 0;
+
+// Sinh mã ngẫu nhiên 8 ký tự in hoa
+function genRef() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let r = 'BUILOC';
+  for (let i = 0; i < 6; i++) r += chars[Math.floor(Math.random() * chars.length)];
+  return r;
+}
+
+function previewFundUsd() {
+  const vnd = parseFloat(document.getElementById('fundAmountInput')?.value) || 0;
+  const el = document.getElementById('fundUsdPreview');
+  if (el) el.textContent = vnd > 0 ? `≈ $${(vnd / 25000).toFixed(2)} USD` : '';
+}
+
+async function startDeposit() {
   const msgBox = document.getElementById('fundErrorMsg');
-  const method = document.getElementById('paymentMethod')?.value;
+  const amount = parseFloat(document.getElementById('fundAmountInput')?.value);
 
-  if (!amount || amount < 2) { showMsg(msgBox, '⚠️ Số tiền tối thiểu là $2 cho người dùng mới!', 'err'); return; }
+  if (!amount || amount < 10000) {
+    showMsg(msgBox, '⚠️ Số tiền tối thiểu là 10,000 ₫', 'err');
+    return;
+  }
+  if (!_firebaseUser) {
+    showMsg(msgBox, '⚠️ Bạn chưa đăng nhập!', 'err');
+    return;
+  }
+  if (msgBox) msgBox.style.display = 'none';
 
-  showMsg(msgBox, '✅ Yêu cầu nạp tiền đã được gửi! Vui lòng liên hệ Admin để xác nhận.', 'ok');
-  showToastV2('Yêu cầu nạp tiền đã gửi!', 'ok');
+  _depositAmount = amount;
+  _depositRef    = genRef();
+  _depositExpiry = Date.now() + DEPOSIT_TIMEOUT_MS;
+
+  // Lưu lệnh nạp tiền vào Firestore (để server có thể match)
+  try {
+    await db.collection('pending_deposits').doc(_depositRef).set({
+      uid: _firebaseUser.uid,
+      email: _userProfile?.email || _firebaseUser.email,
+      amount: _depositAmount,
+      ref: _depositRef,
+      status: 'pending',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      expiresAt: new Date(_depositExpiry)
+    });
+  } catch(e) { console.warn('Deposit Firestore save:', e.message); }
+
+  // Hiển thị modal
+  const modal = document.getElementById('qrPayModal');
+  document.getElementById('qrAmountDisplay').textContent = amount.toLocaleString('vi-VN') + ' ₫';
+  document.getElementById('qrRefCode').textContent = _depositRef;
+
+  // QR dùng VietQR.io: tự điền sẵn số tiền + nội dung
+  const qrUrl = `https://img.vietqr.io/image/${VCB_BANK_CODE}-${VCB_ACCOUNT}-qr_only.jpg?amount=${amount}&addInfo=${encodeURIComponent(_depositRef)}&accountName=${encodeURIComponent(VCB_OWNER)}`;
+  document.getElementById('qrCodeImg').src = qrUrl;
+
+  modal.style.display = 'flex';
+  document.getElementById('qrStatus').textContent = 'Hệ thống đang tự động kiểm tra giao dịch...';
+
+  // Countdown timer
+  _depositTimer = setInterval(() => {
+    const remaining = _depositExpiry - Date.now();
+    if (remaining <= 0) {
+      expireDeposit();
+      return;
+    }
+    const min = Math.floor(remaining / 60000);
+    const sec = Math.floor((remaining % 60000) / 1000);
+    const el = document.getElementById('qrCountdown');
+    if (el) el.textContent = `${min}:${sec.toString().padStart(2,'0')}`;
+  }, 1000);
+
+  // Polling mỗi 20 giây
+  _depositPoll = setInterval(pollDeposit, POLL_INTERVAL_MS);
+}
+
+async function pollDeposit() {
+  if (!_depositRef || !_firebaseUser) return;
+
+  try {
+    // Kiểm tra Firestore xem admin/webhook đã duyệt chưa
+    const doc = await db.collection('pending_deposits').doc(_depositRef).get();
+    if (!doc.exists) return;
+    const data = doc.data();
+
+    if (data.status === 'completed') {
+      clearDeposit();
+      // Reload balance
+      const fresh = await getUserProfile(_firebaseUser.uid);
+      if (fresh) _userProfile = fresh;
+      refreshBalance();
+      document.getElementById('qrPayModal').style.display = 'none';
+      showToastV2(`✅ Nạp tiền thành công! +${_depositAmount.toLocaleString('vi-VN')} ₫`, 'ok');
+      return;
+    }
+
+    // Cũng gọi API kiểm tra trực tiếp
+    const resp = await fetch(`/api/payment?ref=${_depositRef}&account=${VCB_ACCOUNT}`);
+    const result = await resp.json();
+
+    if (result.found) {
+      clearDeposit();
+      const fresh = await getUserProfile(_firebaseUser.uid);
+      if (fresh) _userProfile = fresh;
+      refreshBalance();
+      document.getElementById('qrPayModal').style.display = 'none';
+      showToastV2(`✅ Nạp tiền thành công! +${_depositAmount.toLocaleString('vi-VN')} ₫`, 'ok');
+    }
+  } catch(e) {
+    console.warn('Poll deposit:', e.message);
+  }
+}
+
+function expireDeposit() {
+  clearDeposit();
+  const el = document.getElementById('qrStatus');
+  const countdown = document.getElementById('qrCountdown');
+  if (el) el.innerHTML = '❌ <span style="color:#ff4444">Hết thời gian! Lệnh nạp đã hủy.</span>';
+  if (countdown) { countdown.textContent = '00:00'; countdown.style.color = '#ff4444'; }
+
+  // Đánh dấu expired trong Firestore
+  if (_depositRef) {
+    db.collection('pending_deposits').doc(_depositRef).update({ status: 'expired' }).catch(()=>{});
+  }
+
+  setTimeout(() => {
+    document.getElementById('qrPayModal').style.display = 'none';
+  }, 4000);
+}
+
+function cancelDeposit() {
+  clearDeposit();
+  if (_depositRef) {
+    db.collection('pending_deposits').doc(_depositRef).update({ status: 'cancelled' }).catch(()=>{});
+  }
+  document.getElementById('qrPayModal').style.display = 'none';
+}
+
+function clearDeposit() {
+  clearInterval(_depositTimer);
+  clearInterval(_depositPoll);
+  _depositTimer = null;
+  _depositPoll  = null;
+  _depositRef   = null;
+}
+
+function copyRefCode() {
+  const code = document.getElementById('qrRefCode')?.textContent;
+  if (!code) return;
+  navigator.clipboard.writeText(code).then(() => showToastV2('✅ Đã copy mã!', 'ok'))
+    .catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = code;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      showToastV2('✅ Đã copy mã!', 'ok');
+    });
+}
+
+function copyText(elId) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  navigator.clipboard.writeText(el.textContent.trim()).then(() => {
+    showToastV2('✅ Đã copy!', 'ok');
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = el.textContent.trim();
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToastV2('✅ Đã copy!', 'ok');
+  });
+}
+
+function submitFundRequest() {
+  // Legacy - không dùng nữa
+  showToastV2('Vui lòng dùng chuyển khoản VCB tự động!', 'info');
 }
 
 // ==========================================
@@ -884,6 +1067,7 @@ function showPage(name, btn) {
   }
 
   if (name === 'orders') loadOrdersPage();
+  if (name === 'funds') initFundsPage();
   if (name === 'profile') {
     const user = getUserData();
     safeSet('profileNameDisplay', user.username || 'dangxoai');

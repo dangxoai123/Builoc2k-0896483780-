@@ -400,50 +400,95 @@
       ============================ -->
       <div class="page" id="page-funds">
         <div class="funds-layout">
-          <!-- Left: Payment form -->
+          <!-- Left: Amount input -->
           <div class="funds-main-card">
             <div class="funds-header">
               <div class="funds-header-left">
-                <div class="funds-header-icon"><i class="fas fa-wallet"></i></div>
-                Nạp tiền
+                <div class="funds-header-icon"><i class="fas fa-university"></i></div>
+                Nạp tiền VCB
               </div>
-              <button class="btn-history"><i class="fas fa-history"></i> Lịch sử</button>
+              <span style="background:rgba(0,230,118,.12);color:#00e676;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700">⚡ Tự động</span>
             </div>
 
-            <div class="form-group-v2">
-              <label class="form-label-v2">Phương thức thanh toán</label>
-              <select class="form-select-v2" id="paymentMethod">
-                <option value="cryptomus">Cryptomus | Cổng tự động nạp tiền tự động Crypto USDT - BTC - BNB</option>
-                <option value="usdt">USDT TRC20</option>
-                <option value="coinbase">Coinbase</option>
-                <option value="acb">ACB</option>
-                <option value="vcb">Vietcombank (Auto)</option>
-                <option value="paypal">PayPal Invoice</option>
-              </select>
+            <div class="form-group-v2" style="margin-bottom:10px">
+              <label class="form-label-v2">Số tiền muốn nạp (VND)</label>
+              <input type="number" class="form-input-v2" id="fundAmountInput"
+                placeholder="Nhập số tiền VND..." min="10000" step="1000"
+                oninput="previewFundUsd()">
+              <div style="font-size:11px;color:#888;margin-top:5px">
+                Tối thiểu: <strong>10,000 ₫</strong> &nbsp;|&nbsp; <span id="fundUsdPreview" style="color:#00e676;font-weight:600"></span>
+              </div>
             </div>
-            <div class="form-group-v2">
-              <label class="form-label-v2">Số tiền nạp</label>
-              <input type="number" class="form-input-v2" id="fundAmountInput" placeholder="Min $10" min="2">
-            </div>
+
             <div id="fundErrorMsg"></div>
-            <button class="btn-dat-hang" style="margin-top:8px" onclick="submitFundRequest()">
-              <i class="fas fa-credit-card"></i> Thanh toán
+
+            <button class="btn-dat-hang" style="margin-top:12px;width:100%" onclick="startDeposit()" id="startDepBtn">
+              <i class="fas fa-qrcode"></i> Lấy mã QR thanh toán
             </button>
           </div>
 
-          <!-- Right: Notes -->
+          <!-- Right: Instructions -->
           <div class="funds-note-card">
             <div class="funds-note-icon"><i class="fas fa-info-circle"></i></div>
-            <h3>Chú ý</h3>
-            <p>Giá trị quy đổi <strong>27.000 vnd/1$</strong><br>Min 10$/lần nạp (Min 2$ cho user mới nạp lần đầu)</p>
-            <p>Chúng tôi có hầu hết các phương thức thanh toán hiện phổ biến hiện tại. Nếu bạn cần thêm bất kỳ phương thức thanh toán nào vui lòng liên hệ với Admin để nhận hỗ trợ.</p>
-            <p>Đôi khi thông báo của ngân hàng có sự chậm chễ, vui lòng liên hệ bộ phận support để kiểm tra cộng tiền.</p>
-            <p><strong>Thông tin liên hệ hỗ trợ:</strong></p>
-            <div class="contact-item"><i class="fab fa-facebook"></i> Facebook</div>
-            <div class="contact-item"><i class="fab fa-whatsapp"></i> Whatsapp</div>
+            <h3>Hướng dẫn nạp tiền</h3>
+            <div style="display:grid;gap:10px;margin-top:12px">
+              <div style="display:flex;gap:10px;align-items:flex-start">
+                <span style="background:#00e676;color:#000;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex-shrink:0">1</span>
+                <p style="font-size:13px">Nhập số tiền muốn nạp và nhấn <strong>"Lấy mã QR"</strong></p>
+              </div>
+              <div style="display:flex;gap:10px;align-items:flex-start">
+                <span style="background:#00e676;color:#000;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex-shrink:0">2</span>
+                <p style="font-size:13px">Quét QR hoặc chuyển khoản thủ công với <strong style="color:#ff4">đúng nội dung</strong> hệ thống cung cấp</p>
+              </div>
+              <div style="display:flex;gap:10px;align-items:flex-start">
+                <span style="background:#00e676;color:#000;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex-shrink:0">3</span>
+                <p style="font-size:13px">Hệ thống tự động kiểm tra trong <strong>15 phút</strong> và cộng tiền ngay khi nhận được</p>
+              </div>
+            </div>
+            <hr style="border-color:var(--border);margin:16px 0">
+            <p style="color:var(--gray2);font-size:13px"><strong>Chủ TK:</strong> BUI NGUYEN LOC</p>
+            <p style="color:var(--gray2);font-size:13px;margin-top:6px"><strong>Ngân hàng:</strong> Vietcombank (VCB)</p>
+            <p style="color:var(--gray2);font-size:13px;margin-top:6px"><strong>Tỷ giá:</strong> 1 USD ≈ 25,000 ₫</p>
+            <hr style="border-color:var(--border);margin:16px 0">
             <div class="contact-item"><i class="fab fa-telegram"></i> Telegram: t.me/Denypanel</div>
             <div class="contact-item"><i class="fas fa-phone"></i> Zalo: 0979431641</div>
           </div>
+        </div>
+      </div>
+
+      <!-- ===========================
+           QR PAYMENT MODAL
+      ============================ -->
+      <div id="qrPayModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9000;align-items:center;justify-content:center">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:20px;padding:28px;width:420px;max-width:95vw;text-align:center;position:relative">
+          <button onclick="cancelDeposit()" style="position:absolute;top:14px;right:14px;background:rgba(255,68,68,.15);border:1px solid rgba(255,68,68,.3);color:#ff4444;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:12px">✕ Hủy</button>
+
+          <div style="font-size:13px;color:var(--gray);margin-bottom:6px">Chuyển khoản VCB</div>
+          <div style="font-size:22px;font-weight:800;color:#00e676;margin-bottom:16px" id="qrAmountDisplay">0 ₫</div>
+
+          <!-- QR Code -->
+          <div style="background:#fff;border-radius:14px;padding:14px;margin:0 auto 16px;display:inline-block">
+            <img id="qrCodeImg" src="" alt="QR Code" style="width:200px;height:200px;display:block">
+          </div>
+
+          <!-- Countdown -->
+          <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px">
+            <div style="width:10px;height:10px;border-radius:50%;background:#00e676;animation:pulse 1s infinite"></div>
+            <span style="font-size:13px;color:var(--gray2)">Đang chờ thanh toán...</span>
+            <span id="qrCountdown" style="font-size:14px;font-weight:700;color:#ffd600">15:00</span>
+          </div>
+
+          <!-- Transfer content -->
+          <div style="background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.2);border-radius:12px;padding:14px;text-align:left">
+            <div style="font-size:11px;color:#888;margin-bottom:6px">📝 Nội dung chuyển khoản <span style="color:#ff4">(BẮT BUỘC đúng)</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <code id="qrRefCode" style="font-size:15px;font-weight:800;color:#00e676;letter-spacing:2px"></code>
+              <button onclick="copyRefCode()" style="background:rgba(0,230,118,.15);border:none;color:#00e676;padding:5px 12px;border-radius:6px;cursor:pointer;font-size:11px;flex-shrink:0">Copy</button>
+            </div>
+          </div>
+
+          <!-- Status -->
+          <div id="qrStatus" style="margin-top:12px;font-size:12px;color:var(--gray)">Hệ thống đang tự động kiểm tra giao dịch...</div>
         </div>
       </div>
 
