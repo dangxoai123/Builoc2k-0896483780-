@@ -11,7 +11,7 @@
 
 const DenyPanelAPI = {
   // API Key của tài khoản trên DenyPanel
-  API_KEY: '5c89dc0a79cbb981b6444ca9cdc106dc',
+  API_KEY: '2a6149e2e8ff0be95ded16a8e408e2d6',
 
   // API endpoint thực của DenyPanel (KHÔNG gọi trực tiếp - sẽ bị CORS)
   API_URL: 'https://denypanel.com/api/v2',

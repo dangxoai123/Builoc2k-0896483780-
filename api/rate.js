@@ -15,7 +15,7 @@
 const https = require('https');
 const querystring = require('querystring');
 
-const API_KEY = '5c89dc0a79cbb981b6444ca9cdc106dc';
+const API_KEY = '2a6149e2e8ff0be95ded16a8e408e2d6';
 // Service tham chiếu để tính tỷ giá (ID ổn định, có trên DenyPanel)
 const REF_SERVICE_ID = '1536';
 // Fallback nếu không lấy được tỷ giá từ DenyPanel
