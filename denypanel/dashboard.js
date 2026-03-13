@@ -82,11 +82,17 @@ function refreshPrices() {
   pageCalcCost();
 
   // Balance
-  const user = getUserData();
-  const bal = parseFloat(user.balance || 0);
+  const bal = parseFloat(_userProfile?.balance || 0);
   safeSet('balanceDisplay', formatMoney(bal));
   safeSet('balanceStat', formatMoney(bal));
   safeSet('profileBalance', formatMoney(bal));
+
+  // Đã tiêu - dùng cached value nếu có
+  const spent = _userProfile?._totalSpent;
+  if (spent !== undefined) {
+    const spentEl = document.getElementById('totalSpentStat');
+    if (spentEl) spentEl.textContent = formatMoney(spent);
+  }
 }
 
 
@@ -192,11 +198,38 @@ async function refreshBalance() {
 // ==========================================
 // STATS
 // ==========================================
-function updateStats() {
-  const orders = getLocalOrders();
-  safeSet('totalOrdersStat', orders.length);
-  safeSet('profileOrders', _userProfile?.totalOrders || orders.length);
+async function updateStats() {
+  let orderCount = 0;
+  let totalSpent = 0;
+
+  try {
+    if (_firebaseUser) {
+      // Đọc orders từ Firestore
+      const snap = await db.collection('users').doc(_firebaseUser.uid)
+        .collection('orders').get();
+      orderCount = snap.size;
+      snap.forEach(doc => {
+        const d = doc.data();
+        // Field có thể là 'charge', 'cost', 'amount'
+        const amount = parseFloat(d.charge || d.cost || d.amount || 0);
+        totalSpent += amount;
+      });
+    }
+  } catch(e) {
+    console.warn('updateStats error:', e);
+  }
+
+  safeSet('totalOrdersStat', orderCount);
+  safeSet('profileOrders', orderCount);
   safeSet('profileBalance', formatMoney(_userProfile?.balance || 0));
+
+  // Cập nhật Đã tiêu
+  const spentEl = document.getElementById('totalSpentStat');
+  if (spentEl) spentEl.textContent = formatMoney(totalSpent);
+
+  // Ghi các hằng số totalSpent vào _userProfile để refresh dùng lại
+  if (_userProfile) _userProfile._totalSpent = totalSpent;
+  if (_userProfile) _userProfile._orderCount = orderCount;
 }
 
 // ==========================================
