@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel - Denypanel</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  :root {
+    --bg1:#0a0a0f; --bg2:#111118; --bg3:#1a1a24;
+    --border:#2a2a38; --green:#00e676; --blue:#4f8cff;
+    --red:#ff4444; --yellow:#ffd600; --white:#fff;
+    --gray:#888; --gray2:#ccc;
+    --sidebar-w:240px;
+  }
+  body { background:var(--bg1); color:var(--white); font-family:'Segoe UI',sans-serif; min-height:100vh; display:flex; }
+
+  /* SIDEBAR */
+  .sidebar { width:var(--sidebar-w); background:var(--bg2); border-right:1px solid var(--border); min-height:100vh; display:flex; flex-direction:column; position:fixed; left:0; top:0; z-index:100; }
+  .sb-logo { padding:20px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; font-size:16px; font-weight:800; }
+  .sb-logo .ic { width:36px; height:36px; background:linear-gradient(135deg,#00e676,#00b0ff); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .sb-badge { background:#ff4444; color:#fff; font-size:10px; padding:2px 7px; border-radius:99px; margin-left:auto; }
+  .sb-menu { padding:12px 0; flex:1; overflow-y:auto; }
+  .sb-item { display:flex; align-items:center; gap:12px; padding:11px 18px; cursor:pointer; font-size:13px; color:var(--gray2); transition:.2s; border-left:3px solid transparent; }
+  .sb-item:hover { background:var(--bg3); color:var(--white); }
+  .sb-item.active { background:var(--bg3); color:var(--green); border-left-color:var(--green); }
+  .sb-item i { width:18px; text-align:center; }
+  .sb-section { font-size:10px; color:var(--gray); padding:14px 18px 6px; text-transform:uppercase; letter-spacing:1px; }
+  .sb-bottom { padding:14px 18px; border-top:1px solid var(--border); }
+  .sb-admin-info { display:flex; align-items:center; gap:10px; font-size:13px; }
+  .sb-avatar { width:32px; height:32px; background:var(--blue); border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; }
+
+  /* MAIN */
+  .main { margin-left:var(--sidebar-w); flex:1; padding:28px; min-height:100vh; }
+  .page-header { margin-bottom:24px; }
+  .page-header h1 { font-size:22px; font-weight:800; }
+  .page-header p { color:var(--gray); font-size:13px; margin-top:4px; }
+
+  /* STATS ROW */
+  .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:28px; }
+  .stat-card { background:var(--bg2); border:1px solid var(--border); border-radius:14px; padding:18px 20px; }
+  .stat-label { font-size:12px; color:var(--gray); margin-bottom:8px; }
+  .stat-value { font-size:26px; font-weight:800; }
+  .stat-value.green { color:var(--green); }
+  .stat-value.blue { color:var(--blue); }
+  .stat-value.yellow { color:var(--yellow); }
+  .stat-value.red { color:var(--red); }
+
+  /* CARD */
+  .card { background:var(--bg2); border:1px solid var(--border); border-radius:16px; padding:22px; margin-bottom:24px; }
+  .card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+  .card-title { font-size:15px; font-weight:700; }
+  .card p { color:var(--gray); font-size:13px; }
+
+  /* SEARCH BAR */
+  .search-bar { display:flex; gap:10px; margin-bottom:16px; }
+  .search-input { flex:1; background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:10px 14px; color:var(--white); font-size:13px; outline:none; }
+  .search-input:focus { border-color:var(--green); }
+
+  /* TABLE */
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { text-align:left; padding:10px 14px; color:var(--gray); font-weight:600; border-bottom:1px solid var(--border); font-size:11px; text-transform:uppercase; }
+  td { padding:12px 14px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(255,255,255,.02); }
+  .badge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:99px; font-size:11px; font-weight:600; }
+  .badge.admin { background:rgba(79,140,255,.2); color:var(--blue); }
+  .badge.user { background:rgba(255,255,255,.08); color:var(--gray2); }
+  .badge.active { background:rgba(0,230,118,.15); color:var(--green); }
+
+  /* BUTTONS */
+  .btn { padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:6px; transition:.2s; }
+  .btn-sm { padding:5px 12px; font-size:11px; border-radius:6px; }
+  .btn-green { background:var(--green); color:#000; }
+  .btn-green:hover { background:#00c060; }
+  .btn-blue { background:var(--blue); color:#fff; }
+  .btn-blue:hover { background:#3a70dd; }
+  .btn-red { background:rgba(255,68,68,.15); color:var(--red); border:1px solid rgba(255,68,68,.3); }
+  .btn-red:hover { background:rgba(255,68,68,.3); }
+  .btn-ghost { background:var(--bg3); color:var(--gray2); border:1px solid var(--border); }
+  .btn-ghost:hover { background:var(--border); color:var(--white); }
+  .btn-yellow { background:rgba(255,214,0,.15); color:var(--yellow); border:1px solid rgba(255,214,0,.3); }
+
+  /* MODAL */
+  .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:1000; display:none; align-items:center; justify-content:center; }
+  .modal-bg.show { display:flex; }
+  .modal { background:var(--bg2); border:1px solid var(--border); border-radius:18px; padding:28px; width:440px; max-width:95vw; }
+  .modal h2 { font-size:17px; font-weight:800; margin-bottom:5px; }
+  .modal .sub { color:var(--gray); font-size:12px; margin-bottom:20px; }
+  .form-group { margin-bottom:16px; }
+  .form-label { font-size:12px; color:var(--gray2); margin-bottom:6px; display:block; }
+  .form-input { width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:10px; padding:10px 14px; color:var(--white); font-size:13px; outline:none; }
+  .form-input:focus { border-color:var(--green); }
+  .form-row { display:flex; gap:10px; }
+  .form-row .form-group { flex:1; }
+  .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:22px; }
+
+  /* ALERT */
+  .alert { padding:10px 14px; border-radius:10px; font-size:13px; margin-bottom:14px; display:none; }
+  .alert.ok { background:rgba(0,230,118,.1); border:1px solid rgba(0,230,118,.3); color:var(--green); }
+  .alert.err { background:rgba(255,68,68,.1); border:1px solid rgba(255,68,68,.3); color:var(--red); }
+
+  /* TABS */
+  .tabs { display:flex; gap:6px; margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:0; }
+  .tab { padding:10px 18px; font-size:13px; font-weight:600; cursor:pointer; color:var(--gray); border-bottom:2px solid transparent; margin-bottom:-1px; }
+  .tab.active { color:var(--green); border-bottom-color:var(--green); }
+
+  /* PRICING TABLE  */
+  .price-input { background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:6px 10px; color:var(--white); width:100px; font-size:12px; outline:none; text-align:right; }
+  .price-input:focus { border-color:var(--green); }
+
+  /* PAGE */
+  .admin-page { display:none; }
+  .admin-page.active { display:block; }
+
+  /* Loader */
+  .spinner { display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--green); border-radius:50%; animation:spin .7s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* Balance display */
+  .balance-positive { color:var(--green); font-weight:700; }
+
+  /* Access denied */
+  .access-denied { text-align:center; padding:80px 20px; }
+  .access-denied .icon { font-size:60px; margin-bottom:16px; }
+  .access-denied h2 { font-size:24px; font-weight:800; color:var(--red); margin-bottom:10px; }
+
+  @media(max-width:768px) {
+    .sidebar { width:60px; }
+    .sb-item span, .sb-logo span, .sb-admin-info span, .sb-section { display:none; }
+    .main { margin-left:60px; padding:16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="ic">🔐</div>
+    <span>Admin Panel</span>
+  </div>
+  <div class="sb-menu">
+    <div class="sb-section">Tổng quan</div>
+    <div class="sb-item active" onclick="showAdminPage('dashboard', this)">
+      <i class="fas fa-chart-pie"></i><span>Dashboard</span>
+    </div>
+    <div class="sb-section">Quản lý</div>
+    <div class="sb-item" onclick="showAdminPage('users', this)">
+      <i class="fas fa-users"></i><span>Tài khoản</span>
+    </div>
+    <div class="sb-item" onclick="showAdminPage('pricing', this)">
+      <i class="fas fa-tag"></i><span>Giá dịch vụ</span>
+    </div>
+    <div class="sb-item" onclick="showAdminPage('transactions', this)">
+      <i class="fas fa-exchange-alt"></i><span>Giao dịch</span>
+    </div>
+  </div>
+  <div class="sb-bottom">
+    <div class="sb-admin-info">
+      <div class="sb-avatar" id="adminInitial">A</div>
+      <span id="adminEmail" style="font-size:11px;color:var(--gray)">Loading...</span>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="logoutUser()" style="margin-top:10px;width:100%">
+      <i class="fas fa-sign-out-alt"></i><span>Đăng xuất</span>
+    </button>
+  </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+  <!-- Access denied screen -->
+  <div id="accessDenied" style="display:none">
+    <div class="access-denied">
+      <div class="icon">🔒</div>
+      <h2>Không có quyền truy cập</h2>
+      <p style="color:var(--gray)">Bạn cần quyền Admin để vào trang này.</p>
+      <a href="dashboard.html" style="display:inline-flex;margin-top:20px" class="btn btn-blue">Về Dashboard</a>
+    </div>
+  </div>
+
+  <!-- DASHBOARD PAGE -->
+  <div class="admin-page active" id="pg-dashboard">
+    <div class="page-header">
+      <h1>📊 Tổng quan</h1>
+      <p>Thống kê hệ thống reseller panel</p>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">👥 Tổng Users</div>
+        <div class="stat-value blue" id="statTotalUsers">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">💰 Tổng số dư</div>
+        <div class="stat-value green" id="statTotalBalance">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">📦 Tổng đơn hàng</div>
+        <div class="stat-value yellow" id="statTotalOrders">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">🔧 Dịch vụ</div>
+        <div class="stat-value" id="statServices">—</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">📋 Users mới nhất</div></div>
+      <div id="recentUsers">Đang tải...</div>
+    </div>
+  </div>
+
+  <!-- USERS PAGE -->
+  <div class="admin-page" id="pg-users">
+    <div class="page-header">
+      <h1>👥 Quản lý Tài khoản</h1>
+      <p>Xem và quản lý tất cả người dùng</p>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Danh sách Users (<span id="userCount">0</span>)</div>
+        <button class="btn btn-green btn-sm" onclick="loadUsers()"><i class="fas fa-sync"></i> Tải lại</button>
+      </div>
+      <div class="search-bar">
+        <input class="search-input" id="searchUser" placeholder="🔍 Tìm theo email, username..." oninput="filterUsers()">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Số dư</th>
+              <th>Đơn hàng</th>
+              <th>Quyền</th>
+              <th>Ngày tạo</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr><td colspan="7" style="text-align:center;color:var(--gray);padding:30px">Đang tải...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRICING PAGE -->
+  <div class="admin-page" id="pg-pricing">
+    <div class="page-header">
+      <h1>💲 Quản lý Giá dịch vụ</h1>
+      <p>Điều chỉnh markup giá bán cho từng dịch vụ</p>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Cài đặt markup toàn cục</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div>
+          <div class="form-label">Markup mặc định (%)</div>
+          <input type="number" id="globalMarkup" class="price-input" style="width:120px" value="0" min="0" max="500" step="1">
+        </div>
+        <div>
+          <div class="form-label">Giá mới = Giá gốc × (1 + markup%)</div>
+          <code style="color:var(--gray2);font-size:12px">Ví dụ: 30% markup → $2.80 × 1.3 = $3.64</code>
+        </div>
+        <button class="btn btn-green" onclick="saveGlobalMarkup()"><i class="fas fa-save"></i> Lưu markup</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Markup theo từng dịch vụ</div>
+        <div style="display:flex;gap:8px">
+          <input class="search-input" id="searchSvc" style="width:220px" placeholder="🔍 Tìm dịch vụ..." oninput="filterPricing()">
+          <button class="btn btn-blue btn-sm" onclick="loadPricingTable()"><i class="fas fa-sync"></i></button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Tên dịch vụ</th>
+              <th>Giá gốc</th>
+              <th>Markup (%)</th>
+              <th>Giá bán</th>
+              <th>Lưu</th>
+            </tr>
+          </thead>
+          <tbody id="pricingTableBody">
+            <tr><td colspan="6" style="text-align:center;color:var(--gray);padding:30px">Đang tải dịch vụ...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <button class="btn btn-green" onclick="saveAllMarkups()" style="margin-top:14px">
+        <i class="fas fa-save"></i> Lưu tất cả markup
+      </button>
+    </div>
+  </div>
+
+  <!-- TRANSACTIONS PAGE -->
+  <div class="admin-page" id="pg-transactions">
+    <div class="page-header">
+      <h1>💳 Giao dịch</h1>
+      <p>Lịch sử nạp/trừ tiền</p>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Thời gian</th><th>User</th><th>Loại</th><th>Số tiền</th><th>Ghi chú</th><th>Admin</th></tr>
+          </thead>
+          <tbody id="txTableBody">
+            <tr><td colspan="6" style="text-align:center;color:var(--gray);padding:30px">Đang tải...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- MODAL: EDIT USER BALANCE -->
+<div class="modal-bg" id="modalBalance">
+  <div class="modal">
+    <h2>💰 Quản lý số dư</h2>
+    <p class="sub" id="modalBalanceSub">User: ...</p>
+    <div class="alert ok" id="balAlert"></div>
+    <div class="alert err" id="balAlertErr"></div>
+    <div style="background:var(--bg3);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div style="font-size:11px;color:var(--gray)">Số dư hiện tại</div>
+      <div style="font-size:24px;font-weight:800;color:var(--green)" id="currentBalanceDisplay">0 ₫</div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" id="tabAdd" onclick="switchBalTab('add')">➕ Cộng tiền</div>
+      <div class="tab" id="tabSub" onclick="switchBalTab('sub')">➖ Trừ tiền</div>
+      <div class="tab" id="tabSet" onclick="switchBalTab('set')">✏️ Đặt số dư</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" id="balAmountLabel">Số tiền cộng (VND)</label>
+      <input type="number" id="balAmount" class="form-input" placeholder="Nhập số tiền..." min="0">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Ghi chú</label>
+      <input type="text" id="balNote" class="form-input" placeholder="Lý do nạp/trừ...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modalBalance')">Hủy</button>
+      <button class="btn btn-green" onclick="applyBalance()" id="applyBalBtn">Xác nhận</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: EDIT USER ROLE/PASSWORD -->
+<div class="modal-bg" id="modalUser">
+  <div class="modal">
+    <h2>⚙️ Chỉnh sửa User</h2>
+    <p class="sub" id="modalUserSub">...</p>
+    <div class="alert ok" id="userAlert"></div>
+    <div class="alert err" id="userAlertErr"></div>
+    <div class="form-group">
+      <label class="form-label">Username</label>
+      <input type="text" id="editUsername" class="form-input">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Quyền</label>
+      <select id="editRole" class="form-input">
+        <option value="user">User</option>
+        <option value="admin">Admin</option>
+      </select>
+    </div>
+    <hr style="border-color:var(--border);margin:16px 0">
+    <div class="form-group">
+      <label class="form-label">Gửi email đặt lại mật khẩu</label>
+      <button class="btn btn-yellow" onclick="sendResetEmail()" style="width:100%">
+        <i class="fas fa-envelope"></i> Gửi email đặt lại mật khẩu
+      </button>
+      <p style="color:var(--gray);font-size:11px;margin-top:6px">User sẽ nhận email để tự đặt lại mật khẩu mới.</p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modalUser')">Hủy</button>
+      <button class="btn btn-blue" onclick="saveUserEdit()">Lưu thay đổi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==========================================
+// GLOBAL STATE
+// ==========================================
+let _adminUid = null;
+let _allUsers = [];
+let _currentEditUid = null;
+let _currentEditEmail = null;
+let _balMode = 'add'; // add | sub | set
+let _servicesData = [];
+let _markupData = {}; // serviceId -> markup%
+
+// ==========================================
+// AUTH CHECK - Chỉ admin mới vào được
+// ==========================================
+auth.onAuthStateChanged(async (user) => {
+  if (!user) { window.location.href = 'login.html'; return; }
+  _adminUid = user.uid;
+
+  const profile = await getUserProfile(user.uid);
+  if (!profile || profile.role !== 'admin') {
+    document.getElementById('accessDenied').style.display = 'block';
+    document.querySelector('.sidebar').style.display = 'none';
+    document.querySelector('.main').innerHTML = document.getElementById('accessDenied').outerHTML;
+    return;
+  }
+
+  // Setup admin info
+  document.getElementById('adminInitial').textContent = (profile.username||user.email)[0].toUpperCase();
+  document.getElementById('adminEmail').textContent = profile.email || user.email;
+
+  // Load initial data
+  await loadDashboard();
+  loadUsers();
+  loadMarkupData();
+  loadPricingTable();
+  loadTransactions();
+});
+
+// ==========================================
+// NAVIGATION
+// ==========================================
+function showAdminPage(page, el) {
+  document.querySelectorAll('.admin-page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(i => i.classList.remove('active'));
+  document.getElementById('pg-' + page)?.classList.add('active');
+  el?.classList.add('active');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+// ==========================================
+// DASHBOARD
+// ==========================================
+async function loadDashboard() {
+  try {
+    const snap = await db.collection('users').get();
+    const users = snap.docs.map(d => d.data());
+    const totalBalance = users.reduce((sum, u) => sum + parseFloat(u.balance||0), 0);
+    const totalOrders = users.reduce((sum, u) => sum + (parseInt(u.totalOrders)||0), 0);
+
+    document.getElementById('statTotalUsers').textContent = users.length;
+    document.getElementById('statTotalBalance').textContent = totalBalance.toLocaleString('en-US', {maximumFractionDigits:0}) + ' ₫';
+    document.getElementById('statTotalOrders').textContent = totalOrders;
+    document.getElementById('statServices').textContent = '—';
+
+    // Recent users
+    const recent = snap.docs.slice(0,5).map(d=>({id:d.id,...d.data()}));
+    document.getElementById('recentUsers').innerHTML = recent.map(u => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div>
+          <div style="font-weight:600">${u.username || '—'}</div>
+          <div style="font-size:11px;color:var(--gray)">${u.email}</div>
+        </div>
+        <div class="balance-positive">${parseFloat(u.balance||0).toLocaleString('en-US',{maximumFractionDigits:0})} ₫</div>
+      </div>`).join('') || '<p>Chưa có user nào.</p>';
+  } catch(e) { console.error(e); }
+}
+
+// ==========================================
+// USER MANAGEMENT
+// ==========================================
+async function loadUsers() {
+  document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray);padding:30px"><div class="spinner"></div> Đang tải...</td></tr>';
+  try {
+    const snap = await db.collection('users').orderBy('createdAt','desc').get();
+    _allUsers = snap.docs.map(d => ({uid: d.id, ...d.data()}));
+    document.getElementById('userCount').textContent = _allUsers.length;
+    renderUsersTable(_allUsers);
+  } catch(e) {
+    document.getElementById('usersTableBody').innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--red);padding:30px">Lỗi: ${e.message}</td></tr>`;
+  }
+}
+
+function renderUsersTable(users) {
+  const tbody = document.getElementById('usersTableBody');
+  if (!users.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray);padding:30px">Chưa có user nào.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = users.map(u => {
+    const bal = parseFloat(u.balance || 0);
+    const createdAt = u.createdAt?.toDate ? u.createdAt.toDate().toLocaleDateString('vi-VN') : '—';
+    return `<tr>
+      <td><strong>${u.username || '—'}</strong></td>
+      <td style="font-size:12px;color:var(--gray2)">${u.email || '—'}</td>
+      <td><span class="balance-positive">${bal.toLocaleString('en-US',{maximumFractionDigits:0})} ₫</span></td>
+      <td>${u.totalOrders || 0}</td>
+      <td><span class="badge ${u.role==='admin'?'admin':'user'}">${u.role==='admin'?'👑 Admin':'👤 User'}</span></td>
+      <td style="font-size:11px;color:var(--gray)">${createdAt}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-green btn-sm" onclick="openBalanceModal('${u.uid}','${u.email}',${bal},'${u.username||''}')">💰</button>
+          <button class="btn btn-ghost btn-sm" onclick="openUserModal('${u.uid}','${u.email}','${u.username||''}','${u.role||'user'}')">⚙️</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filterUsers() {
+  const q = document.getElementById('searchUser').value.toLowerCase();
+  const filtered = _allUsers.filter(u =>
+    (u.email||'').toLowerCase().includes(q) ||
+    (u.username||'').toLowerCase().includes(q)
+  );
+  renderUsersTable(filtered);
+}
+
+// ==========================================
+// BALANCE MODAL
+// ==========================================
+function openBalanceModal(uid, email, currentBal, username) {
+  _currentEditUid = uid;
+  _currentEditEmail = email;
+  document.getElementById('modalBalanceSub').textContent = `${username || email}`;
+  document.getElementById('currentBalanceDisplay').textContent = parseFloat(currentBal).toLocaleString('en-US',{maximumFractionDigits:0}) + ' ₫';
+  document.getElementById('balAmount').value = '';
+  document.getElementById('balNote').value = '';
+  document.getElementById('balAlert').style.display = 'none';
+  document.getElementById('balAlertErr').style.display = 'none';
+  switchBalTab('add');
+  document.getElementById('modalBalance').classList.add('show');
+}
+
+function switchBalTab(mode) {
+  _balMode = mode;
+  ['add','sub','set'].forEach(m => {
+    document.getElementById('tab'+m.charAt(0).toUpperCase()+m.slice(1)).classList.toggle('active', m===mode);
+  });
+  const labels = { add: 'Số tiền cộng (VND)', sub: 'Số tiền trừ (VND)', set: 'Số dư mới (VND)' };
+  document.getElementById('balAmountLabel').textContent = labels[mode];
+}
+
+async function applyBalance() {
+  const amount = parseFloat(document.getElementById('balAmount').value);
+  const note = document.getElementById('balNote').value.trim();
+  const btn = document.getElementById('applyBalBtn');
+  const alertOk = document.getElementById('balAlert');
+  const alertErr = document.getElementById('balAlertErr');
+  alertOk.style.display = 'none';
+  alertErr.style.display = 'none';
+
+  if (!amount || amount <= 0) { showAlert(alertErr, 'Vui lòng nhập số tiền!'); return; }
+
+  btn.innerHTML = '<div class="spinner"></div>';
+  btn.disabled = true;
+
+  try {
+    const userRef = db.collection('users').doc(_currentEditUid);
+    const userDoc = await userRef.get();
+    const currentBal = parseFloat(userDoc.data().balance || 0);
+
+    let newBal;
+    if (_balMode === 'add') newBal = currentBal + amount;
+    else if (_balMode === 'sub') newBal = Math.max(0, currentBal - amount);
+    else newBal = amount; // set
+
+    await userRef.update({ balance: newBal });
+
+    // Ghi lịch sử giao dịch
+    await db.collection('transactions').add({
+      uid: _currentEditUid,
+      email: _currentEditEmail,
+      type: _balMode,
+      amount: amount,
+      balanceBefore: currentBal,
+      balanceAfter: newBal,
+      note: note || '',
+      adminUid: _adminUid,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    document.getElementById('currentBalanceDisplay').textContent = newBal.toLocaleString('en-US',{maximumFractionDigits:0}) + ' ₫';
+    showAlert(alertOk, `✅ Thành công! Số dư mới: ${newBal.toLocaleString('en-US',{maximumFractionDigits:0})} ₫`);
+
+    // Cập nhật bảng
+    const u = _allUsers.find(x => x.uid === _currentEditUid);
+    if (u) u.balance = newBal;
+    renderUsersTable(_allUsers);
+    loadDashboard();
+  } catch(e) {
+    showAlert(alertErr, 'Lỗi: ' + e.message);
+  }
+  btn.innerHTML = 'Xác nhận';
+  btn.disabled = false;
+}
+
+// ==========================================
+// USER EDIT MODAL
+// ==========================================
+function openUserModal(uid, email, username, role) {
+  _currentEditUid = uid;
+  _currentEditEmail = email;
+  document.getElementById('modalUserSub').textContent = email;
+  document.getElementById('editUsername').value = username;
+  document.getElementById('editRole').value = role;
+  document.getElementById('userAlert').style.display = 'none';
+  document.getElementById('userAlertErr').style.display = 'none';
+  document.getElementById('modalUser').classList.add('show');
+}
+
+async function saveUserEdit() {
+  const username = document.getElementById('editUsername').value.trim();
+  const role = document.getElementById('editRole').value;
+  const alertOk = document.getElementById('userAlert');
+  const alertErr = document.getElementById('userAlertErr');
+  alertOk.style.display = 'none'; alertErr.style.display = 'none';
+
+  try {
+    await db.collection('users').doc(_currentEditUid).update({ username, role });
+    const u = _allUsers.find(x => x.uid === _currentEditUid);
+    if (u) { u.username = username; u.role = role; }
+    renderUsersTable(_allUsers);
+    showAlert(alertOk, '✅ Đã lưu thay đổi!');
+  } catch(e) { showAlert(alertErr, 'Lỗi: ' + e.message); }
+}
+
+async function sendResetEmail() {
+  try {
+    await auth.sendPasswordResetEmail(_currentEditEmail);
+    showAlert(document.getElementById('userAlert'), `✅ Đã gửi email đặt lại mật khẩu đến ${_currentEditEmail}`);
+  } catch(e) {
+    showAlert(document.getElementById('userAlertErr'), 'Lỗi: ' + e.message);
+  }
+}
+
+// ==========================================
+// PRICING / MARKUP
+// ==========================================
+async function loadMarkupData() {
+  try {
+    const doc = await db.collection('settings').doc('pricing').get();
+    if (doc.exists) {
+      const data = doc.data();
+      _markupData = data.services || {};
+      document.getElementById('globalMarkup').value = data.globalMarkup || 0;
+    }
+  } catch(e) { console.error(e); }
+}
+
+async function loadPricingTable() {
+  const tbody = document.getElementById('pricingTableBody');
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:30px"><div class="spinner"></div> Đang tải...</td></tr>';
+  try {
+    // Lấy dịch vụ từ proxy
+    const resp = await fetch('/api/proxy', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'action=services' });
+    _servicesData = await resp.json();
+    if (!Array.isArray(_servicesData)) throw new Error('Dữ liệu không hợp lệ');
+    document.getElementById('statServices').textContent = _servicesData.length;
+    renderPricingTable(_servicesData);
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--red);padding:30px">Không load được dịch vụ: ${e.message}</td></tr>`;
+  }
+}
+
+function renderPricingTable(services) {
+  const tbody = document.getElementById('pricingTableBody');
+  const globalMark = parseFloat(document.getElementById('globalMarkup').value) || 0;
+  tbody.innerHTML = services.map(s => {
+    const markup = _markupData[s.service] !== undefined ? _markupData[s.service] : globalMark;
+    const baseRate = parseFloat(s.rate);
+    const sellRate = (baseRate * (1 + markup/100)).toFixed(4);
+    return `<tr>
+      <td style="font-size:11px;color:var(--gray)">#${s.service}</td>
+      <td style="font-size:12px;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name}</td>
+      <td style="color:var(--gray2);font-size:12px">$${baseRate}</td>
+      <td><input type="number" class="price-input" id="mk_${s.service}" value="${markup}" min="0" max="1000" step="1" onchange="updateSellRate(${s.service},${baseRate},this.value)"></td>
+      <td style="color:var(--green);font-size:12px;font-weight:700" id="sell_${s.service}">$${sellRate}</td>
+      <td><button class="btn btn-sm btn-blue" onclick="saveSingleMarkup(${s.service},${baseRate})"><i class="fas fa-save"></i></button></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterPricing() {
+  const q = document.getElementById('searchSvc').value.toLowerCase();
+  const filtered = _servicesData.filter(s => s.name.toLowerCase().includes(q) || String(s.service).includes(q));
+  renderPricingTable(filtered);
+}
+
+function updateSellRate(svcId, baseRate, markup) {
+  const sell = (parseFloat(baseRate) * (1 + parseFloat(markup)/100)).toFixed(4);
+  const el = document.getElementById('sell_' + svcId);
+  if (el) el.textContent = '$' + sell;
+}
+
+async function saveGlobalMarkup() {
+  const markup = parseFloat(document.getElementById('globalMarkup').value) || 0;
+  await db.collection('settings').doc('pricing').set({ globalMarkup: markup, services: _markupData }, { merge: true });
+  renderPricingTable(_servicesData);
+  showToast('Đã lưu markup ' + markup + '%');
+}
+
+async function saveSingleMarkup(svcId, baseRate) {
+  const markup = parseFloat(document.getElementById('mk_' + svcId).value) || 0;
+  _markupData[svcId] = markup;
+  await db.collection('settings').doc('pricing').set({ services: _markupData }, { merge: true });
+  showToast('Đã lưu markup #' + svcId);
+}
+
+async function saveAllMarkups() {
+  _servicesData.forEach(s => {
+    const el = document.getElementById('mk_' + s.service);
+    if (el) _markupData[s.service] = parseFloat(el.value) || 0;
+  });
+  await db.collection('settings').doc('pricing').set({ services: _markupData }, { merge: true });
+  showToast('Đã lưu tất cả markup!');
+}
+
+// ==========================================
+// TRANSACTIONS
+// ==========================================
+async function loadTransactions() {
+  try {
+    const snap = await db.collection('transactions').orderBy('createdAt','desc').limit(50).get();
+    const tbody = document.getElementById('txTableBody');
+    if (!snap.docs.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:30px">Chưa có giao dịch nào.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = snap.docs.map(d => {
+      const tx = d.data();
+      const time = tx.createdAt?.toDate ? tx.createdAt.toDate().toLocaleString('vi-VN') : '—';
+      const typeLabel = { add:'<span style="color:var(--green)">➕ Cộng</span>', sub:'<span style="color:var(--red)">➖ Trừ</span>', set:'<span style="color:var(--blue)">✏️ Đặt</span>' }[tx.type] || tx.type;
+      return `<tr>
+        <td style="font-size:11px;color:var(--gray)">${time}</td>
+        <td style="font-size:12px">${tx.email||'—'}</td>
+        <td>${typeLabel}</td>
+        <td style="font-weight:700">${parseFloat(tx.amount||0).toLocaleString('en-US',{maximumFractionDigits:0})} ₫</td>
+        <td style="font-size:12px;color:var(--gray)">${tx.note||'—'}</td>
+        <td style="font-size:11px;color:var(--gray)">${tx.adminUid?.slice(0,8)||'—'}</td>
+      </tr>`;
+    }).join('');
+  } catch(e) { console.error(e); }
+}
+
+// ==========================================
+// HELPERS
+// ==========================================
+function showAlert(el, msg) { el.textContent = msg; el.style.display = 'block'; }
+
+let _toastTimer;
+function showToast(msg) {
+  let t = document.getElementById('adminToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'adminToast';
+    t.style = 'position:fixed;bottom:24px;right:24px;background:#00e676;color:#000;padding:12px 20px;border-radius:10px;font-weight:700;z-index:9999;font-size:13px';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.style.display = 'none', 3000);
+}
+
+// Click outside modal to close
+document.querySelectorAll('.modal-bg').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
+});
+</script>
+</body>
+</html>
