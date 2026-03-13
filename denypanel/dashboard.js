@@ -11,7 +11,7 @@
  * ==========================================
  */
 // Tỷ giá USD → VND (sẽ được cập nhật thực từ DenyPanel khi load trang)
-let VND_RATE = 27000; // Tỷ giá DenyPanel: 27,000 VND = 1 USD
+let VND_RATE = 26294.5; // Tỷ giá DenyPanel thực (cập nhật động từ /api/rate)
 
 /** Lấy đơn vị tiền hiện tại từ localStorage */
 function getCurrency() {
@@ -670,7 +670,7 @@ function genRef() {
 function previewFundUsd() {
   const vnd = parseFloat(document.getElementById('fundAmountInput')?.value) || 0;
   const el = document.getElementById('fundUsdPreview');
-  if (el) el.textContent = vnd > 0 ? `≈ $${(vnd / 27000).toFixed(2)} USD` : '';
+  if (el) el.textContent = vnd > 0 ? `≈ $${(vnd / 26294.5).toFixed(2)} USD` : '';
 }
 
 async function startDeposit() {

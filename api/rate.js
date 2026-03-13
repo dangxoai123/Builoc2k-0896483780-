@@ -20,7 +20,7 @@ const SERVICES_API_KEY = '58788d220d60bd1d1110e7871f5871d3'; // Key đồng bộ
 // Service tham chiếu để tính tỷ giá (ID ổn định, có trên DenyPanel)
 const REF_SERVICE_ID = '1536';
 // Fallback nếu không lấy được tỷ giá từ DenyPanel
-const FALLBACK_RATE = 27000; // Tỷ giá chính thức DenyPanel: 1 USD = 27,000 VND
+const FALLBACK_RATE = 26294.5; // Tỷ giá thực DenyPanel hiển thị (~26,294 VND/USD)
 
 // Cache trong memory (tối đa 5 phút)
 let cachedRate = null;
