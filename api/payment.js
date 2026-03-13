@@ -138,7 +138,8 @@ async function handleWebhook(req, res) {
 // ==========================================
 async function fetchSepayTransactions(limit = 20) {
   return new Promise((resolve, reject) => {
-    const path = `/userapi/transactions/list?limit=${limit}&account_number=${BANK_ACCOUNT}`;
+    // Dùng REAL_ACCOUNT (8837755253) vì Sepay lọc theo account_number thực
+    const path = `/userapi/transactions/list?limit=${limit}&account_number=${REAL_ACCOUNT}`;
     const options = {
       hostname: 'my.sepay.vn',
       port: 443,
@@ -156,12 +157,14 @@ async function fetchSepayTransactions(limit = 20) {
       resp.on('end', () => {
         try {
           const json = JSON.parse(data);
-          // Sepay trả về: { messages:{success:"1"}, transaction_list:[...] }
-          const list = json.transaction_list || [];
-          // Chỉ lấy giao dịch tiền vào (amount_in > 0)
+          // ⚠️ Sepay API trả về field 'transactions' (KHÔNG phải 'transaction_list'!)
+          const list = json.transactions || json.transaction_list || [];
+          // Chỉ lấy giao dịch tiền VÀO (amount_in > 0)
           const incoming = list.filter(tx => parseFloat(tx.amount_in || 0) > 0);
+          console.log(`[Sepay] Found ${incoming.length} incoming transactions`);
           resolve(incoming);
         } catch (err) {
+          console.error('[Sepay] Parse error:', err.message);
           resolve([]);
         }
       });
