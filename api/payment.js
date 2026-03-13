@@ -104,7 +104,9 @@ async function creditByRef(ref, amount, txId, description) {
 
     const uid   = pDoc.fields?.uid?.stringValue;
     const email = pDoc.fields?.email?.stringValue;
-    const pPath = pDoc.name.replace('https://firestore.googleapis.com/v1', '');
+    // ⚠️ Firestore runQuery trả về name BÊN TRONG (không có /v1/)
+    // Đúng: /v1/ + pDoc.name
+    const pDocFullPath = `/v1/${pDoc.name}`;
     if (!uid) return { error: 'No uid in pending deposit' };
 
     // 2. Read current balance (use uid path directly — no email query needed)
@@ -114,9 +116,9 @@ async function creditByRef(ref, amount, txId, description) {
     const oldBal   = parseFloat(uDoc.fields?.balance?.doubleValue || uDoc.fields?.balance?.integerValue || 0);
     const newBal   = oldBal + parseFloat(amount);
 
-    // 3. Mark pending deposit completed (rules: update=true)
+    // 3. Mark pending deposit completed
     await httpPatch('firestore.googleapis.com',
-      `/v1${pPath}?updateMask.fieldPaths=status&updateMask.fieldPaths=txId&updateMask.fieldPaths=completedAt${k}`,
+      `${pDocFullPath}?updateMask.fieldPaths=status&updateMask.fieldPaths=txId&updateMask.fieldPaths=completedAt${k}`,
       JSON.stringify({ fields: { status: { stringValue: 'completed' }, txId: { stringValue: String(txId) }, completedAt: { stringValue: new Date().toISOString() } } })
     );
 

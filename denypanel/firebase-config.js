@@ -62,7 +62,8 @@ async function logoutUser() {
 
 /** Lấy data user hiện tại từ Firestore */
 async function getUserProfile(uid) {
-  const doc = await db.collection('users').doc(uid).get();
+  // source:'server' để bypass cache, luôn lấy data mới nhất từ Firestore
+  const doc = await db.collection('users').doc(uid).get({ source: 'server' });
   return doc.exists ? doc.data() : null;
 }
 
