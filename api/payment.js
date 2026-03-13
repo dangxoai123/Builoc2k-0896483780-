@@ -8,6 +8,9 @@ const https = require('https');
 
 const SEPAY_TOKEN         = 'WW6NPUYVK0DSVDH5N2C8T9OAOAUMLIK4GVCJ5AE2SYMTTJIPFLCW4BKED3UEZBMR';
 const REAL_ACCOUNT        = '8837755253';
+// Tỷ giá nạp tiền: 1 USD = 27,000 VND (tiền nạp từ Sepay là VND, balance lưu USD)
+const VND_DEPOSIT_RATE    = 27000;
+
 const FIREBASE_PROJECT    = 'builoc2k-denypanel';
 const FIREBASE_WEB_API_KEY = 'AIzaSyDA6SIIeT8jlzLMyp1r6WnefnsGQxMgygA';
 
@@ -114,7 +117,10 @@ async function creditByRef(ref, amount, txId, description) {
     const uResp    = await httpGet('firestore.googleapis.com', `/v1/${uPath}${k}`);
     const uDoc     = JSON.parse(uResp);
     const oldBal   = parseFloat(uDoc.fields?.balance?.doubleValue || uDoc.fields?.balance?.integerValue || 0);
-    const newBal   = oldBal + parseFloat(amount);
+    // ⚠️ Sepay trả về amount bằng VND, balance lưu bằng USD
+    // Ví dụ: nạp 10,000 VND → 10000 / 27000 ≈ $0.37 USD
+    const amountUSD = parseFloat(amount) / VND_DEPOSIT_RATE;
+    const newBal   = parseFloat((oldBal + amountUSD).toFixed(6));
 
     // 3. Mark pending deposit completed
     await httpPatch('firestore.googleapis.com',
