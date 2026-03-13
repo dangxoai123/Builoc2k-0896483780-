@@ -132,6 +132,18 @@
   .access-denied .icon { font-size:60px; margin-bottom:16px; }
   .access-denied h2 { font-size:24px; font-weight:800; color:var(--red); margin-bottom:10px; }
 
+  /* ADMIN LOGIN SCREEN */
+  .admin-gate { position:fixed;inset:0;background:#0a0a0f;z-index:99999;display:flex;align-items:center;justify-content:center; }
+  .admin-gate-box { background:#111118;border:1px solid #2a2a38;border-radius:20px;padding:40px;width:380px;max-width:95vw;text-align:center; }
+  .admin-gate-box .lock-icon { font-size:48px;margin-bottom:16px; }
+  .admin-gate-box h2 { font-size:20px;font-weight:800;margin-bottom:6px; }
+  .admin-gate-box p { color:#888;font-size:13px;margin-bottom:24px; }
+  .admin-gate-box input { width:100%;background:#1a1a24;border:1px solid #2a2a38;border-radius:10px;padding:12px 16px;color:#fff;font-size:14px;outline:none;text-align:center;letter-spacing:3px;margin-bottom:14px; }
+  .admin-gate-box input:focus { border-color:#00e676; }
+  .admin-gate-box .err-msg { color:#ff4444;font-size:12px;margin-bottom:12px;display:none; }
+  .admin-gate-box button { width:100%;background:#00e676;color:#000;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;transition:.2s; }
+  .admin-gate-box button:hover { background:#00c060; }
+
   @media(max-width:768px) {
     .sidebar { width:60px; }
     .sb-item span, .sb-logo span, .sb-admin-info span, .sb-section { display:none; }
@@ -140,6 +152,18 @@
 </style>
 </head>
 <body>
+
+<!-- ADMIN GATE - Màn hình đăng nhập riêng -->
+<div class="admin-gate" id="adminGate">
+  <div class="admin-gate-box">
+    <div class="lock-icon">🔐</div>
+    <h2>Admin Panel</h2>
+    <p>Nhập mật khẩu để tiếp tục</p>
+    <input type="password" id="adminGatePass" placeholder="Nhập mật khẩu..." onkeydown="if(event.key==='Enter')checkAdminPass()" autofocus>
+    <div class="err-msg" id="adminGateErr">❌ Sai mật khẩu! Vui lòng thử lại.</div>
+    <button onclick="checkAdminPass()">🔓 Đăng nhập Admin</button>
+  </div>
+</div>
 
 <!-- SIDEBAR -->
 <aside class="sidebar">
@@ -392,6 +416,34 @@
 </div>
 
 <script>
+// ==========================================
+// ADMIN GATE - Kiểm tra mật khẩu riêng
+// ==========================================
+const ADMIN_PASS = 'builoc1906';
+
+function checkAdminPass() {
+  const input = document.getElementById('adminGatePass').value;
+  const errMsg = document.getElementById('adminGateErr');
+  if (input === ADMIN_PASS) {
+    sessionStorage.setItem('admin_gate_ok', '1');
+    document.getElementById('adminGate').style.display = 'none';
+  } else {
+    errMsg.style.display = 'block';
+    document.getElementById('adminGatePass').value = '';
+    document.getElementById('adminGatePass').focus();
+    // Shake animation
+    const box = document.querySelector('.admin-gate-box');
+    box.style.transform = 'translateX(-8px)';
+    setTimeout(() => box.style.transform = 'translateX(8px)', 100);
+    setTimeout(() => box.style.transform = '', 200);
+  }
+}
+
+// Kiểm tra session khi load lại trang
+if (sessionStorage.getItem('admin_gate_ok') === '1') {
+  document.getElementById('adminGate').style.display = 'none';
+}
+
 // ==========================================
 // GLOBAL STATE
 // ==========================================

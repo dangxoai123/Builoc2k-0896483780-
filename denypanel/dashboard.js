@@ -168,6 +168,9 @@ async function initDashboard() {
       if (dd) dd.style.display = 'none';
     }
   });
+
+  // Bắt đầu auto-refresh trạng thái đơn hàng mỗi 60s
+  startAutoRefreshOrders();
 }
 
 // ==========================================
@@ -440,28 +443,35 @@ async function _placeOrder(prefix) {
   const result = await DenyPanelAPI.addOrder(opt.value, link, qty);
 
   if (result.success) {
-    user.balance = (balance - cost).toFixed(4);
-    saveUserData(user);
+    // Trừ số dư trong Firestore (không dùng localStorage)
+    const newBalance = (balance - cost);
+    if (_firebaseUser) {
+      await updateBalance(_firebaseUser.uid, newBalance);
+      _userProfile.balance = newBalance;
+    }
 
     const order = {
-      id: result.orderId,
+      orderId: result.orderId,
       serviceId: parseInt(opt.value),
-      serviceName: opt.dataset.name || opt.textContent,
-      link, quantity: qty,
-      charge: cost.toFixed(4),
+      serviceName: opt.dataset.name || opt.textContent.split(' - ')[0],
+      link,
+      quantity: qty,
+      charge: parseFloat(cost.toFixed(4)),
       status: 'pending',
       remains: qty,
       refill: false,
-      createdAt: new Date().toISOString()
+      demo: result.demo || false
     };
-    const orders = getLocalOrders();
-    orders.push(order);
-    saveLocalOrders(orders);
+
+    // Lưu đơn vào Firestore theo từng user (cô lập hoàn toàn)
+    if (_firebaseUser) {
+      await saveOrder(_firebaseUser.uid, order);
+    }
 
     showMsg(msgBox, `✅ Đặt hàng thành công! Order ID: #${result.orderId}${result.demo ? ' (Demo)' : ''}`, 'ok');
     showToastV2(`✅ Đặt hàng thành công! #${result.orderId}`, 'ok');
 
-    // Reset
+    // Reset form
     sel.value = '';
     document.getElementById(`${prefix}OrderLink`).value = '';
     document.getElementById(`${prefix}OrderQty`).value = '';
@@ -471,7 +481,6 @@ async function _placeOrder(prefix) {
     updateStats();
     loadOrdersPage();
 
-    // Simulate progress
     simulateProgress(result.orderId);
   } else {
     showMsg(msgBox, `❌ Lỗi: ${result.error || 'Không thể đặt hàng'}`, 'err');
@@ -501,32 +510,37 @@ function simulateProgress(orderId) {
 // ==========================================
 // ORDERS PAGE
 // ==========================================
-function getLocalOrders() { try { return JSON.parse(localStorage.getItem('dp_orders') || '[]'); } catch { return []; } }
-function saveLocalOrders(orders) { localStorage.setItem('dp_orders', JSON.stringify(orders)); }
-
-function loadOrdersPage() {
-  const orders = getLocalOrders().reverse();
+// Firestore orders (per-user, cô lập hoàn toàn)
+async function loadOrdersPage() {
+  let orders = [];
+  if (_firebaseUser) {
+    orders = await getUserOrders(_firebaseUser.uid);
+  }
   renderOrdersPage(orders);
   updateStats();
 }
+
+// Legacy localStorage (chỉ dùng cho simulateProgress)
+function getLocalOrders() { try { return JSON.parse(localStorage.getItem('dp_orders_' + (_firebaseUser?.uid||'')) || '[]'); } catch { return []; } }
+function saveLocalOrders(orders) { localStorage.setItem('dp_orders_' + (_firebaseUser?.uid||''), JSON.stringify(orders)); }
 
 function renderOrdersPage(ordersIn) {
   const container = document.getElementById('ordersPageContainer');
   if (!container) return;
 
-  const orders = ordersIn || getLocalOrders().reverse();
+  const orders = ordersIn || [];
   const search = (document.getElementById('orderSearchInput')?.value || '').toLowerCase();
   const statusFilter = document.getElementById('statusFilterSel')?.value || '';
 
   let filtered = orders;
-  if (search) filtered = filtered.filter(o => o.serviceName?.toLowerCase().includes(search) || String(o.id).includes(search));
+  if (search) filtered = filtered.filter(o => o.serviceName?.toLowerCase().includes(search) || String(o.orderId||o.id).includes(search));
   if (statusFilter) filtered = filtered.filter(o => o.status === statusFilter);
 
   if (!filtered.length) {
     container.innerHTML = `
       <div class="empty-orders-box">
         <p style="font-size:50px;margin-bottom:16px">📭</p>
-        <p>Xin chào <strong>${getUserData().username || 'dangxoai'}</strong>, ${search || statusFilter ? 'không tìm thấy đơn hàng phù hợp.' : 'bạn chưa từng đặt hàng trước đây.'}<br>
+        <p>Xin chào <strong>${_userProfile?.username || 'bạn'}</strong>, ${search || statusFilter ? 'không tìm thấy đơn hàng phù hợp.' : 'bạn chưa từng đặt hàng trước đây.'}<br>
         ${!search && !statusFilter ? 'Bạn có thể thêm số dư và đặt bất kỳ dịch vụ nào trên trang <strong>Đơn đặt hàng mới.</strong>' : ''}</p>
         ${!search && !statusFilter ? '<br><button class="btn-dat-hang" style="display:inline-flex;padding:12px 28px" onclick="showPage(\'funds\',null)"><i class="fas fa-wallet"></i> Nạp tiền</button>' : ''}
       </div>`;
@@ -544,14 +558,14 @@ function renderOrdersPage(ordersIn) {
         <tbody>
           ${filtered.map(o => `
             <tr>
-              <td><span style="background:var(--green3);color:var(--green);padding:3px 8px;border-radius:6px;font-weight:700;font-size:12px">#${o.id}</span></td>
+              <td><span style="background:var(--green3);color:var(--green);padding:3px 8px;border-radius:6px;font-weight:700;font-size:12px">#${o.orderId||o.id}</span></td>
               <td style="max-width:200px;font-size:12px">${o.serviceName}</td>
               <td style="max-width:150px"><a href="${o.link}" target="_blank" style="color:var(--indigo);font-size:12px;white-space:nowrap;overflow:hidden;display:block;text-overflow:ellipsis;max-width:150px">${o.link}</a></td>
               <td>${Number(o.quantity).toLocaleString()}</td>
               <td style="color:var(--gray2)">${o.remains !== undefined ? Number(o.remains).toLocaleString() : '--'}</td>
-              <td style="color:var(--green);font-weight:700">$${parseFloat(o.charge||0).toFixed(4)}</td>
+              <td style="color:var(--green);font-weight:700">${formatMoney(o.charge||0)}</td>
               <td><span class="status-pill ${o.status}">${getStatusLabel(o.status)}</span></td>
-              <td><button onclick="checkOrderById(${o.id})" style="background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--gray2);cursor:pointer;font-size:11px"><i class="fas fa-sync-alt"></i></button></td>
+              <td><button onclick="checkOrderById(${o.orderId||o.id})" style="background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--gray2);cursor:pointer;font-size:11px"><i class="fas fa-sync-alt"></i></button></td>
             </tr>
           `).join('')}
         </tbody>
@@ -559,20 +573,63 @@ function renderOrdersPage(ordersIn) {
     </div>`;
 }
 
-async function checkOrderById(id) {
-  showToastV2('Đang kiểm tra...', 'info');
-  const result = await DenyPanelAPI.getOrderStatus(id);
-  if (result.success) {
-    const orders = getLocalOrders();
-    const o = orders.find(x => x.id == id);
-    if (o) {
-      o.status = (result.status || o.status).toLowerCase().replace(/ /g,'_');
-      o.remains = result.remains || 0;
-      saveLocalOrders(orders);
-      loadOrdersPage();
+// Map trạng thái DenyPanel → code nội bộ
+function mapDenyPanelStatus(raw) {
+  const s = (raw || '').toLowerCase().trim();
+  if (s === 'completed') return 'completed';
+  if (s === 'canceled' || s === 'cancelled') return 'canceled';
+  if (s === 'partial') return 'partial';
+  if (s === 'in progress') return 'in_progress';
+  if (s === 'processing') return 'in_progress';
+  return 'pending';
+}
+
+async function checkOrderById(orderId) {
+  if (!orderId) return;
+  showToastV2('🔄 Đang đồng bộ trạng thái...', 'info');
+
+  try {
+    const result = await DenyPanelAPI.getOrderStatus(orderId);
+    if (!result.success) { showToastV2('❌ Không lấy được trạng thái', 'err'); return; }
+
+    const newStatus = mapDenyPanelStatus(result.status);
+    const remains = parseInt(result.remains) || 0;
+
+    // Cập nhật Firestore
+    if (_firebaseUser) {
+      const ordersSnap = await db.collection('users').doc(_firebaseUser.uid)
+        .collection('orders').where('orderId', '==', parseInt(orderId)).get();
+
+      if (!ordersSnap.empty) {
+        await ordersSnap.docs[0].ref.update({ status: newStatus, remains });
+      }
     }
-    showToastV2(`Trạng thái: ${result.status || 'Unknown'}`, 'ok');
+
+    // Reload UI
+    await loadOrdersPage();
+
+    const statusVi = { completed:'Hoàn thành ✅', in_progress:'Đang chạy ⚡', canceled:'Đã hủy ❌', partial:'Hoàn thành một phần ⚠️', pending:'Chờ xử lý 🕐' };
+    showToastV2(`Đơn #${orderId}: ${statusVi[newStatus] || newStatus}`, newStatus === 'completed' ? 'ok' : 'info');
+  } catch(e) {
+    showToastV2('Lỗi: ' + e.message, 'err');
   }
+}
+
+// Auto-refresh trạng thái đơn đang chờ/đang chạy (mỗi 60 giây)
+let _autoRefreshTimer = null;
+async function startAutoRefreshOrders() {
+  clearInterval(_autoRefreshTimer);
+  _autoRefreshTimer = setInterval(async () => {
+    if (!_firebaseUser) return;
+    const orders = await getUserOrders(_firebaseUser.uid);
+    const activeOrders = orders.filter(o => o.status === 'pending' || o.status === 'in_progress');
+    if (!activeOrders.length) return;
+
+    for (const o of activeOrders) {
+      await checkOrderById(o.orderId);
+      await new Promise(r => setTimeout(r, 500)); // Delay giữa các request
+    }
+  }, 60000); // 60 giây
 }
 
 function toggleOrderFilter() { showToastV2('Bộ lọc nâng cao sắp ra mắt!', 'info'); }

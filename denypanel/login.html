@@ -81,10 +81,16 @@
 </div>
 
 <script>
-// Nếu đã đăng nhập → vào dashboard luôn
-auth.onAuthStateChanged(user => {
-  if (user) window.location.href = 'dashboard.html';
-});
+// Nếu đã đăng nhập → vào dashboard (trừ khi vừa logout)
+const justLoggedOut = new URLSearchParams(window.location.search).get('logout') === '1';
+if (!justLoggedOut) {
+  auth.onAuthStateChanged(user => {
+    if (user) window.location.href = 'dashboard.html';
+  });
+} else {
+  // Vừa logout: đảm bảo đăng xuất hoàn toàn
+  auth.signOut().catch(() => {});
+}
 
 function togglePass(id, btn) {
   const input = document.getElementById(id);

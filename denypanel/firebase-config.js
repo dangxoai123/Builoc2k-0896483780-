@@ -51,8 +51,13 @@ async function registerUser(email, password, username) {
 
 /** Đăng xuất */
 async function logoutUser() {
-  await auth.signOut();
-  window.location.href = 'login.html';
+  try { await auth.signOut(); } catch(e) {}
+  // Xóa localStorage auth cũ
+  localStorage.removeItem('dp_user');
+  localStorage.removeItem('dp_logged_in');
+  sessionStorage.clear();
+  // Redirect với flag để login.html không auto-redirect lại
+  window.location.href = 'login.html?logout=1';
 }
 
 /** Lấy data user hiện tại từ Firestore */
