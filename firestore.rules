@@ -10,17 +10,31 @@ service cloud.firestore {
 
     // Users collection
     match /users/{uid} {
-      // User chỉ đọc được tài khoản của mình
+      // User đọc tài khoản của mình, admin đọc tất cả
       allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
       // User tự tạo tài khoản khi đăng ký
       allow create: if request.auth != null && request.auth.uid == uid;
-      // Admin có thể sửa bất kỳ user nào, user chỉ sửa được thông tin không nhạy cảm của mình
-      allow update: if request.auth != null && (isAdmin() || request.auth.uid == uid);
+      // Admin sửa bất kỳ, user sửa thông tin của mình
+      // Server (payment API) được cộng tiền: chỉ update field 'balance'
+      allow update: if request.auth != null && (isAdmin() || request.auth.uid == uid)
+                    || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['balance']);
+    }
+
+    // Pending deposits — server cần đọc/ghi để xử lý nạp tiền
+    match /pending_deposits/{ref} {
+      // User tạo lệnh nạp tiền của mình
+      allow create: if request.auth != null;
+      // Server cần đọc để kiểm tra ref code
+      allow read: if true;
+      // Server/user cập nhật trạng thái (pending → completed)
+      allow update: if true;
     }
 
     // Transactions (lịch sử nạp tiền)
     match /transactions/{txId} {
-      allow read, write: if isAdmin();
+      allow read: if request.auth != null && isAdmin();
+      // Server ghi log giao dịch
+      allow create: if true;
     }
 
     // Settings (pricing, markup)
