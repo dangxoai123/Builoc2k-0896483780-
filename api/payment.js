@@ -89,8 +89,9 @@ async function fetchSepay(limit = 20) {
 // Credit user via Firestore REST API
 // Flow: pending_deposits/{ref} → get uid → users/{uid} PATCH balance
 async function creditByRef(ref, amount, txId, description) {
-  const rq  = `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents:runQuery?key=${FIREBASE_WEB_API_KEY}`;
-  const k   = `?key=${FIREBASE_WEB_API_KEY}`;
+  const rq   = `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents:runQuery?key=${FIREBASE_WEB_API_KEY}`;
+  const qKey  = `?key=${FIREBASE_WEB_API_KEY}`;  // for paths with NO other params
+  const aKey  = `&key=${FIREBASE_WEB_API_KEY}`;  // ⚠️ for paths that ALREADY have ?param=value
   try {
     // 1. Find pending deposit by ref (rules: read=true)
     const qResp = await httpPost('firestore.googleapis.com', rq, JSON.stringify({
@@ -115,7 +116,7 @@ async function creditByRef(ref, amount, txId, description) {
 
     // 2. Read current balance (use uid path directly — no email query needed)
     const uPath    = `projects/${FIREBASE_PROJECT}/databases/(default)/documents/users/${uid}`;
-    const uResp    = await httpGet('firestore.googleapis.com', `/v1/${uPath}${k}`);
+    const uResp    = await httpGet('firestore.googleapis.com', `/v1/${uPath}${qKey}`);
     const uDoc     = JSON.parse(uResp);
     const oldBal   = parseFloat(uDoc.fields?.balance?.doubleValue || uDoc.fields?.balance?.integerValue || 0);
     // ⚠️ Sepay trả về amount bằng VND, balance lưu bằng USD
@@ -125,19 +126,19 @@ async function creditByRef(ref, amount, txId, description) {
 
     // 3. Mark pending deposit completed
     await httpPatch('firestore.googleapis.com',
-      `${pDocFullPath}?updateMask.fieldPaths=status&updateMask.fieldPaths=txId&updateMask.fieldPaths=completedAt${k}`,
+      `${pDocFullPath}?updateMask.fieldPaths=status&updateMask.fieldPaths=txId&updateMask.fieldPaths=completedAt${aKey}`,
       JSON.stringify({ fields: { status: { stringValue: 'completed' }, txId: { stringValue: String(txId) }, completedAt: { stringValue: new Date().toISOString() } } })
     );
 
     // 4. Update balance (rules: balance-only update without auth is allowed)
     await httpPatch('firestore.googleapis.com',
-      `/v1/${uPath}?updateMask.fieldPaths=balance${k}`,
+      `/v1/${uPath}?updateMask.fieldPaths=balance${aKey}`,
       JSON.stringify({ fields: { balance: { doubleValue: newBal } } })
     );
 
     // 5. Log transaction (rules: create=true)
     await httpPost('firestore.googleapis.com',
-      `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/transactions${k}`,
+      `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/transactions${qKey}`,
       JSON.stringify({ fields: {
         email:         { stringValue: email || '' },
         uid:           { stringValue: uid },
