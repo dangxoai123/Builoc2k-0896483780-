@@ -1,8 +1,9 @@
 /* ==========================================
    DENYPANEL CLONE - MAIN STYLESHEET
+   Match 100% denypanel.com
    ========================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Dancing+Script:wght@700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Dancing+Script:wght@700&display=swap');
 
 * {
   margin: 0;
@@ -11,30 +12,31 @@
 }
 
 :root {
-  --bg-primary: #0b0e11;
-  --bg-secondary: #111519;
+  /* EXACT denypanel.com colors */
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
   --bg-card: #161b22;
   --bg-card-hover: #1c2330;
-  --green: #2ecc71;
-  --green-dark: #27ae60;
-  --green-light: #39d97a;
+  --green: #28cb69;
+  --green-dark: #0fac4e;
+  --green-light: #33d970;
   --indigo: #6366f1;
   --white: #ffffff;
-  --gray: #8b949e;
-  --gray-light: #c9d1d9;
-  --border: rgba(255,255,255,0.07);
-  --glow-green: rgba(46,204,113,0.15);
+  --gray: #7d8590;
+  --gray-light: #bfd5fd;
+  --border: #111620;
+  --glow-green: rgba(40,203,105,0.15);
   --glow-blue: rgba(99,102,241,0.15);
   --transition: all 0.3s ease;
-  --radius: 12px;
+  --radius: 15px;
   --radius-lg: 20px;
-  --radius-xl: 30px;
+  --radius-xl: 50px;
 }
 
 html { scroll-behavior: smooth; }
 
 body {
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background-color: var(--bg-primary);
   color: var(--white);
   overflow-x: hidden;
@@ -61,7 +63,7 @@ img { max-width: 100%; }
   left: 0;
   width: 100%;
   z-index: 1000;
-  background: rgba(11,14,17, 0.92);
+  background: rgba(13,17,23,0.95);
   backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
   padding: 0 40px;
@@ -202,27 +204,30 @@ img { max-width: 100%; }
   align-items: center;
   position: relative;
   overflow: hidden;
+  /* DenyPanel hero: dark bg with top-right green glow */
+  background: radial-gradient(ellipse 70% 80% at 70% 40%, rgba(40,203,105,0.18) 0%, transparent 65%), var(--bg-primary);
 }
 
 .hero::before {
   content: '';
   position: absolute;
-  top: -100px;
-  right: -100px;
-  width: 600px;
-  height: 600px;
-  background: radial-gradient(circle, rgba(46,204,113,0.12) 0%, transparent 70%);
+  top: -60px;
+  right: 80px;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(40,203,105,0.22) 0%, transparent 70%);
   pointer-events: none;
+  border-radius: 50%;
 }
 
 .hero::after {
   content: '';
   position: absolute;
-  bottom: -100px;
-  left: -100px;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%);
+  bottom: -80px;
+  left: -80px;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(40,203,105,0.06) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -320,7 +325,7 @@ img { max-width: 100%; }
   display: flex;
   align-items: center;
   gap: 8px;
-  background: linear-gradient(135deg, var(--indigo), #4f52d9);
+  background: linear-gradient(135deg, var(--green), var(--green-dark));
   color: var(--white);
   font-weight: 700;
   font-size: 15px;
@@ -329,13 +334,14 @@ img { max-width: 100%; }
   border: none;
   cursor: pointer;
   transition: var(--transition);
-  box-shadow: 0 4px 20px rgba(99,102,241,0.3);
+  box-shadow: 0 4px 20px rgba(40,203,105,0.35);
   text-decoration: none;
+  font-family: 'Poppins', sans-serif;
 }
 
 .btn-primary:hover {
   transform: translateY(-3px);
-  box-shadow: 0 10px 30px rgba(99,102,241,0.5);
+  box-shadow: 0 10px 30px rgba(40,203,105,0.5);
 }
 
 .btn-secondary {
@@ -581,7 +587,7 @@ img { max-width: 100%; }
    HOW IT WORKS
    ========================================== */
 .how-it-works {
-  background: var(--bg-secondary);
+  background: #111620;
   padding: 100px 80px;
 }
 
@@ -741,7 +747,7 @@ img { max-width: 100%; }
    ========================================== */
 .platform-tabs-section {
   padding: 60px 80px 100px;
-  background: var(--bg-secondary);
+  background: #111620;
 }
 
 .platform-tabs-nav {

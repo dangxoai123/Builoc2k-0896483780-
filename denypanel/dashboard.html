@@ -19,7 +19,7 @@
   <aside class="sidebar" id="sidebar">
     <!-- Logo/Toggle -->
     <button class="sidebar-logo-btn" onclick="toggleSidebar()">
-      <div class="logo-circle">📡</div>
+      <div class="logo-circle"><i class="fas fa-wifi"></i></div>
       <span class="logo-text">Denypanel</span>
     </button>
 
@@ -33,35 +33,35 @@
 
       <!-- New Order -->
       <button class="sidebar-item" id="sb-order" onclick="showPage('order',this)">
-        <i class="fas fa-plus-square"></i>
+        <i class="fas fa-receipt"></i>
         <span>Đặt hàng mới</span>
         <div class="sidebar-tooltip">Đặt hàng mới</div>
       </button>
 
       <!-- Orders -->
       <button class="sidebar-item" id="sb-orders" onclick="showPage('orders',this)">
-        <i class="fas fa-list-alt"></i>
+        <i class="fas fa-archive"></i>
         <span>Đơn hàng</span>
         <div class="sidebar-tooltip">Đơn hàng</div>
       </button>
 
       <!-- Subscription -->
       <button class="sidebar-item" id="sb-sub" onclick="showPage('sub',this)">
-        <i class="fas fa-sync-alt"></i>
+        <i class="fas fa-retweet"></i>
         <span>Đặt Hàng Lớn</span>
         <div class="sidebar-tooltip">Đặt Hàng Lớn</div>
       </button>
 
       <!-- Add Funds -->
       <button class="sidebar-item" id="sb-funds" onclick="showPage('funds',this)">
-        <i class="fas fa-wallet"></i>
+        <i class="fas fa-dollar-sign"></i>
         <span>Nạp tiền</span>
         <div class="sidebar-tooltip">Nạp tiền</div>
       </button>
 
       <!-- Services -->
       <button class="sidebar-item" id="sb-services" onclick="showPage('services',this)">
-        <i class="fas fa-layer-group"></i>
+        <i class="fas fa-money-check-alt"></i>
         <span>Dịch vụ</span>
         <div class="sidebar-tooltip">Dịch vụ</div>
       </button>
@@ -73,21 +73,29 @@
         <div class="sidebar-tooltip">API</div>
       </button>
 
+      <!-- Support / Chat -->
+      <button class="sidebar-item" id="sb-support" onclick="" title="Hỗ trợ">
+        <i class="fas fa-comment-dots"></i>
+        <span>Hỗ trợ</span>
+        <div class="sidebar-tooltip">Hỗ trợ</div>
+      </button>
+
       <!-- Affiliate -->
       <button class="sidebar-item" id="sb-affiliate" onclick="showPage('affiliate',this)">
-        <i class="fas fa-users"></i>
+        <i class="fas fa-receipt"></i>
         <span>Đại lý</span>
         <div class="sidebar-tooltip">Đại lý</div>
+      </button>
+
+      <!-- Help -->
+      <button class="sidebar-item" id="sb-help" onclick="">
+        <i class="fas fa-question-square"></i>
+        <span>Hướng dẫn</span>
+        <div class="sidebar-tooltip">Hướng dẫn</div>
       </button>
     </nav>
 
     <div class="sidebar-bottom">
-      <!-- Theme toggle -->
-      <button class="sidebar-item" onclick="toggleTheme()">
-        <i class="fas fa-moon" id="themeIcon"></i>
-        <span>Dark Mode</span>
-        <div class="sidebar-tooltip">Đổi giao diện</div>
-      </button>
       <!-- Logout -->
       <button class="sidebar-item" onclick="logoutUser()">
         <i class="fas fa-sign-out-alt"></i>
@@ -103,7 +111,8 @@
     <!-- TOPBAR -->
     <header class="topbar">
       <div class="topbar-left">
-        <span class="topbar-title" id="topTitle">Đặt hàng</span>
+        <button onclick="toggleSidebar()" style="background:#28cb69;border:none;color:#fff;width:30px;height:30px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;transition:all 0.2s" id="sidebarToggleBtn">></button>
+        <span class="topbar-title" id="topTitle">Tất cả</span>
       </div>
       <div class="topbar-right">
         <!-- Cart -->
@@ -137,7 +146,7 @@
           <div class="notif-dot"></div>
         </div>
         <!-- User -->
-        <div class="user-avatar-btn" onclick="showPage('profile',null)" id="userAvatarBtn" title="Tài khoản">D</div>
+        <div class="user-avatar-btn" onclick="showPage('profile',null)" id="userAvatarBtn" title="Tài khoản">B</div>
       </div>
     </header>
 
@@ -158,7 +167,7 @@
         <div class="welcome-grid">
           <div class="welcome-card">
             <div class="welcome-info">
-              <div class="welcome-greeting">Chào mừng <span id="welcomeName">dangxoai</span> ✅</div>
+              <div class="welcome-greeting">Chào mừng <span id="welcomeName">dangxoai</span> <span style="color:#3498db;font-size:14px">✓</span></div>
               <div class="welcome-sub">Chúng tôi ở đây để cung cấp cho bạn dịch vụ tốt nhất!</div>
               <div class="welcome-stats">
                 <div class="welcome-stat-box">
@@ -169,10 +178,17 @@
                   </div>
                 </div>
                 <div class="welcome-stat-box">
-                  <div class="wsb-icon"><i class="fas fa-dollar-sign"></i></div>
+                  <div class="wsb-icon"><i class="fas fa-credit-card"></i></div>
                   <div>
                     <div class="wsb-val" style="color:var(--green)" id="balanceStat">$0.00</div>
                     <div class="wsb-lbl">Số dư</div>
+                  </div>
+                </div>
+                <div class="welcome-stat-box">
+                  <div class="wsb-icon"><i class="fas fa-dollar-sign"></i></div>
+                  <div>
+                    <div class="wsb-val" style="color:#f1c40f" id="totalSpentStat">$0.00</div>
+                    <div class="wsb-lbl">Đã tiêu</div>
                   </div>
                 </div>
               </div>
@@ -737,42 +753,50 @@
 </div><!-- /layout -->
 
 <!-- Service Detail Modal -->
-<div id="svcDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:5000;display:none;align-items:center;justify-content:center">
-  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;padding:0;position:relative">
-    <button onclick="closeSvcModal()" style="position:absolute;top:14px;right:16px;background:rgba(255,255,255,0.08);border:none;color:var(--white);font-size:18px;width:32px;height:32px;border-radius:50%;cursor:pointer;z-index:10">×</button>
-    <div style="padding:24px;text-align:center">
-      <div class="sip-id-badge" style="font-size:16px;padding:6px 18px;margin-bottom:14px;display:inline-block" id="modalSvcId">-</div>
-      <h3 style="font-size:16px;font-weight:800;line-height:1.5;margin-bottom:20px" id="modalSvcName">-</h3>
-      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:left;margin-bottom:16px">
-        <p style="font-size:14px;line-height:1.8;color:var(--gray2)" id="modalSvcDesc">-</p>
+<div id="svcDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:5000;align-items:center;justify-content:center">
+  <div style="background:#1c2330;border:1px solid #111620;border-radius:18px;width:100%;max-width:500px;max-height:92vh;overflow:hidden;position:relative;display:flex;flex-direction:column">
+    <!-- Close -->
+    <button onclick="closeSvcModal()" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#aaa;font-size:16px;width:30px;height:30px;border-radius:50%;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center">×</button>
+    <!-- Header -->
+    <div style="padding:28px 28px 20px;text-align:center;border-bottom:1px solid #111620;flex-shrink:0">
+      <div id="modalSvcId" style="background:#28cb69;color:#fff;font-size:15px;font-weight:800;padding:6px 20px;border-radius:30px;display:inline-block;margin-bottom:16px">-</div>
+      <h3 id="modalSvcName" style="font-size:15px;font-weight:700;line-height:1.6;color:#e6edf3">-</h3>
+    </div>
+    <!-- Scrollable detail list -->
+    <div style="overflow-y:auto;padding:0 28px;flex:1;scrollbar-width:thin;scrollbar-color:#28cb69 #0d1117">
+      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:baseline">
+        <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:80px">Speed:</span>
+        <span id="modalSvcSpeed" style="font-size:14px;color:#e6edf3;font-weight:700">-</span>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:left">
-          <div style="font-size:11px;color:var(--gray);margin-bottom:4px">Speed</div>
-          <div style="font-weight:800;font-size:14px" id="modalSvcSpeed">-</div>
-        </div>
-        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:left">
-          <div style="font-size:11px;color:var(--gray);margin-bottom:4px">Refill</div>
-          <div style="font-weight:800;font-size:14px" id="modalSvcRefill">-</div>
-        </div>
-        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:left">
-          <div style="font-size:11px;color:var(--gray);margin-bottom:4px">Quality</div>
-          <div style="font-weight:800;font-size:14px" id="modalSvcQuality">Rất Tốt</div>
-        </div>
-        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:left">
-          <div style="font-size:11px;color:var(--gray);margin-bottom:4px">Giá / 1000</div>
-          <div style="font-weight:800;font-size:14px;color:var(--green)" id="modalSvcRate">-</div>
-        </div>
-        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:left">
-          <div style="font-size:11px;color:var(--gray);margin-bottom:4px">Tối thiểu</div>
-          <div style="font-weight:800;font-size:14px" id="modalSvcMin">-</div>
-        </div>
-        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:left">
-          <div style="font-size:11px;color:var(--gray);margin-bottom:4px">Tối đa</div>
-          <div style="font-weight:800;font-size:14px" id="modalSvcMax">-</div>
-        </div>
+      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:baseline">
+        <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:80px">Refill:</span>
+        <span id="modalSvcRefill" style="font-size:14px;color:#e6edf3;font-weight:700">-</span>
       </div>
-      <button class="btn-dat-hang" style="width:100%;padding:16px;font-size:15px" id="modalBuyBtn" onclick="modalBuyNow()"><i class="fas fa-shopping-cart"></i> Mua ngay</button>
+      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:baseline">
+        <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:80px">Quality:</span>
+        <span id="modalSvcQuality" style="font-size:14px;color:#e6edf3;font-weight:700">Rất Tốt</span>
+      </div>
+      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:baseline">
+        <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:80px">Giá/1000:</span>
+        <span id="modalSvcRate" style="font-size:14px;color:#28cb69;font-weight:800">-</span>
+      </div>
+      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:baseline">
+        <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:80px">Min/Max:</span>
+        <span style="font-size:14px;color:#e6edf3;font-weight:700"><span id="modalSvcMin">-</span> / <span id="modalSvcMax">-</span></span>
+      </div>
+      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:baseline">
+        <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:80px">Link:</span>
+        <span style="font-size:14px;color:#e6edf3"></span>
+      </div>
+      <div style="padding:16px 0">
+        <p id="modalSvcDesc" style="font-size:13px;color:#bfd5fd;line-height:1.8">-</p>
+      </div>
+    </div>
+    <!-- Buy button -->
+    <div style="padding:16px 28px 24px;border-top:1px solid #111620;flex-shrink:0">
+      <button id="modalBuyBtn" onclick="modalBuyNow()" style="width:100%;padding:15px;background:#28cb69;color:#fff;border:none;border-radius:50px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.25s;box-shadow:0 4px 20px rgba(40,203,105,0.35)">
+        <i class="fas fa-shopping-cart"></i> Mua ngay
+      </button>
     </div>
   </div>
 </div>

@@ -9,65 +9,75 @@
 <style>
 .services-page-wrapper { padding: 120px 60px 80px; min-height: 100vh; }
 .services-filter-top {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 20px 24px;
-  margin-bottom: 24px;
+  background: #161b22;
+  border: 1px solid #111620;
+  border-radius: 15px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   flex-wrap: wrap;
 }
-.platform-icons-list { display: flex; gap: 10px; flex: 1; overflow-x: auto; padding-bottom: 4px; }
+.platform-icons-list { display: flex; gap: 8px; flex: 1; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+.platform-icons-list::-webkit-scrollbar { display: none; }
 .platform-icon-btn {
-  width: 42px; height: 42px; border-radius: 50%; border: none; cursor: pointer;
-  font-size: 18px; display: flex; align-items: center; justify-content: center;
-  transition: var(--transition); flex-shrink: 0; opacity: 0.7;
+  width: 38px; height: 38px; border-radius: 50%; border: 2px solid transparent; cursor: pointer;
+  font-size: 16px; display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s; flex-shrink: 0; opacity: 0.7;
 }
-.platform-icon-btn:hover, .platform-icon-btn.active { opacity: 1; transform: scale(1.15); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+.platform-icon-btn:hover, .platform-icon-btn.active { opacity: 1; border-color: #28cb69; transform: scale(1.1); }
 .search-services {
-  background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 50px;
-  padding: 10px 20px; color: var(--white); font-family: 'Montserrat',sans-serif; font-size: 13px;
-  outline: none; width: 220px; transition: var(--transition);
+  background: #0d1117; border: 1px solid #111620; border-radius: 50px;
+  padding: 9px 18px; color: #e6edf3; font-family: 'Poppins',sans-serif; font-size: 13px;
+  outline: none; width: 200px; transition: all 0.2s;
 }
-.search-services:focus { border-color: var(--green); }
-.support-tag { background: rgba(255,255,255,0.08); border-radius: 50px; padding: 8px 16px; font-size: 12px; color: var(--gray); cursor: pointer; white-space: nowrap; }
-.support-tag:hover { background: rgba(46,204,113,0.1); color: var(--green); }
+.search-services:focus { border-color: #28cb69; }
+.support-tag { background: rgba(255,255,255,0.06); border: 1px solid #111620; border-radius: 50px; padding: 7px 14px; font-size: 12px; color: #7d8590; white-space: nowrap; }
 
 /* Currency toggle */
-.currency-toggle-wrap { display:flex; align-items:center; gap:4px; background:rgba(255,255,255,.05); border:1px solid var(--border); border-radius:50px; padding:4px; flex-shrink:0; }
-.cur-btn { border:none; border-radius:50px; padding:5px 14px; font-size:12px; font-weight:700; cursor:pointer; transition:.2s; }
-.cur-btn.active { background:var(--green); color:#000; }
-.cur-btn:not(.active) { background:transparent; color:var(--gray); }
+.currency-toggle-wrap { display:flex; align-items:center; gap:4px; background:rgba(255,255,255,.05); border:1px solid #111620; border-radius:50px; padding:4px; flex-shrink:0; }
+.cur-btn { border:none; border-radius:50px; padding:5px 14px; font-size:12px; font-weight:700; cursor:pointer; transition:.2s; font-family:'Poppins',sans-serif; }
+.cur-btn.active { background:#28cb69; color:#fff; }
+.cur-btn:not(.active) { background:transparent; color:#7d8590; }
 
 .table-col-header {
   display: grid;
-  grid-template-columns: 100px 1fr 160px 100px 120px 160px;
-  gap: 12px; padding: 12px 20px;
-  background: var(--bg-card); border: 1px solid var(--border);
-  border-radius: var(--radius) var(--radius) 0 0;
-  font-size: 11px; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px;
+  grid-template-columns: 90px 1fr 160px 80px 100px 150px 130px;
+  gap: 8px; padding: 12px 20px;
+  background: #161b22; border: 1px solid #111620;
+  border-radius: 15px 15px 0 0;
+  font-size: 11px; font-weight: 700; color: #7d8590; text-transform: uppercase; letter-spacing: 0.5px;
 }
-.services-main-container { background: var(--bg-card); border: 1px solid var(--border); border-top: none; border-radius: 0 0 var(--radius) var(--radius); }
+.services-main-container { background: #161b22; border: 1px solid #111620; border-top: none; border-radius: 0 0 15px 15px; }
 .cat-header {
-  background: linear-gradient(135deg, var(--green), var(--green-dark));
-  padding: 14px 20px; font-size: 15px; font-weight: 700;
-  display: flex; align-items: center; gap: 10px;
+  background: linear-gradient(135deg, #28cb69, #0fac4e);
+  padding: 13px 20px; font-size: 14px; font-weight: 700;
+  display: flex; align-items: center; gap: 10px; color: #fff;
 }
 .service-item {
-  display: grid; grid-template-columns: 100px 1fr 160px 100px 120px 160px;
-  gap: 12px; padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.03);
-  transition: var(--transition); align-items: start; font-size: 13px;
+  display: grid; grid-template-columns: 90px 1fr 160px 80px 100px 150px 130px;
+  gap: 8px; padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.03);
+  transition: all 0.2s; align-items: start; font-size: 13px;
 }
-.service-item:hover { background: rgba(255,255,255,0.02); }
-.svc-id { background: rgba(46,204,113,0.15); color: var(--green); padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; text-align: center; display: inline-block; }
-.svc-name { font-weight: 700; margin-bottom: 4px; }
-.svc-type { font-size: 11px; color: var(--gray); }
-.svc-rate { font-weight: 800; color: var(--green); font-size: 14px; }
-.svc-rate-sub { font-size: 11px; color: var(--gray); margin-top: 3px; }
-.svc-num { color: var(--gray-light); }
-.loading-svc { text-align: center; padding: 60px; color: var(--gray); }
+.service-item:last-child { border-bottom: none; }
+.service-item:hover { background: rgba(255,255,255,0.015); }
+.svc-id { background: #28cb69; color: #fff; padding: 4px 10px; border-radius: 20px; font-weight: 800; font-size: 12px; text-align: center; display: inline-block; }
+.svc-name { font-weight: 700; margin-bottom: 4px; color: #e6edf3; font-size: 13px; line-height: 1.5; }
+.svc-type { font-size: 11px; color: #7d8590; }
+.svc-rate { font-weight: 800; color: #28cb69; font-size: 14px; }
+.svc-rate-sub { font-size: 11px; color: #7d8590; margin-top: 3px; }
+.svc-num { color: #bfd5fd; font-size: 13px; font-weight: 600; }
+.svc-max-red { color: #e74c3c; font-weight: 700; }
+.svc-time { color: #bfd5fd; font-size: 12px; }
+.btn-chitiet {
+  background: #28cb69; color: #fff; border: none; border-radius: 20px;
+  padding: 8px 18px; font-size: 12px; font-weight: 700; cursor: pointer;
+  font-family: 'Poppins', sans-serif; white-space: nowrap; transition: all 0.2s;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn-chitiet:hover { background: #0fac4e; transform: translateY(-1px); }
+.loading-svc { text-align: center; padding: 60px; color: #7d8590; }
 </style>
 </head>
 <body>
@@ -118,12 +128,13 @@
   </div>
 
   <div class="table-col-header">
-    <div>Mã DV</div>
-    <div>Tên dịch vụ</div>
-    <div>Giá / 1000 đơn vị</div>
+    <div>Mã dịch vụ</div>
+    <div>Dịch vụ</div>
+    <div>Giá cho 1000 đơn vị</div>
     <div>Tối thiểu</div>
     <div>Tối đa</div>
-    <div>Hành động</div>
+    <div>Thời gian trung bình</div>
+    <div></div>
   </div>
   <div class="services-main-container" id="svcContainer">
     <div class="loading-svc"><i class="fas fa-spinner fa-spin" style="font-size:28px;color:var(--green)"></i><br><br>Đang tải dịch vụ...</div>
@@ -226,8 +237,9 @@ function renderServices() {
             <div class="svc-rate-sub">${sub}</div>
           </div>
           <div class="svc-num">${Number(s.min).toLocaleString()}</div>
-          <div class="svc-num">${Number(s.max).toLocaleString()}</div>
-          <div><a href="signup.html" class="btn-green" style="font-size:12px;padding:8px 16px"><i class="fas fa-cart-plus"></i> Đặt hàng</a></div>
+          <div class="svc-max-red">${Number(s.max).toLocaleString()}</div>
+          <div class="svc-time">Đang tính toán</div>
+          <div><button class="btn-chitiet" onclick='showSvcDetail(${JSON.stringify(s).replace(/'/g, "&apos;")})'>Chi tiết</button></div>
         </div>`;
     });
   }
@@ -235,6 +247,86 @@ function renderServices() {
 }
 
 function toggleMenu() { document.getElementById('mobileMenu').classList.toggle('open'); }
+
+// ============================
+// SERVICE DETAIL MODAL
+// ============================
+function showSvcDetail(s) {
+  const r = parseFloat(s.rate || 0);
+  const vnd = (r * VND_RATE).toLocaleString('vi-VN', { maximumFractionDigits: 0 }) + ' ₫';
+  const usd = '$' + r.toFixed(4);
+
+  document.getElementById('sdmId').textContent = s.service;
+  document.getElementById('sdmName').textContent = s.name;
+  document.getElementById('sdmSpeed').textContent = s.type && s.type !== 'Default' ? s.type : 'N/A';
+  document.getElementById('sdmRefill').textContent = s.refill ? 'Có bảo hành' : 'Không bảo hành';
+  document.getElementById('sdmQuality').textContent = 'Rất Tốt';
+  document.getElementById('sdmRate').textContent = currentCur === 'VND' ? vnd : usd;
+  document.getElementById('sdmMin').textContent = Number(s.min).toLocaleString();
+  document.getElementById('sdmMax').textContent = Number(s.max).toLocaleString();
+  document.getElementById('sdmDesc').textContent = s.description || s.name || '';
+
+  const modal = document.getElementById('svcDetailModal');
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSvcDetailModal() {
+  document.getElementById('svcDetailModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// Close on overlay click
+document.getElementById('svcDetailModal').addEventListener('click', function(e) {
+  if (e.target === this) closeSvcDetailModal();
+});
+
+// Close on ESC
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSvcDetailModal(); });
 </script>
+
+<!-- SERVICE DETAIL MODAL -->
+<div id="svcDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:#1c2330;border:1px solid #111620;border-radius:18px;width:100%;max-width:500px;max-height:92vh;overflow:hidden;position:relative;display:flex;flex-direction:column;margin:20px">
+    <!-- Close -->
+    <button onclick="closeSvcDetailModal()" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#aaa;font-size:18px;width:30px;height:30px;border-radius:50%;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;line-height:1">×</button>
+    <!-- Header -->
+    <div style="padding:28px 28px 20px;text-align:center;border-bottom:1px solid #111620;flex-shrink:0">
+      <div id="sdmId" style="background:#28cb69;color:#fff;font-size:15px;font-weight:800;padding:6px 24px;border-radius:30px;display:inline-block;margin-bottom:16px">-</div>
+      <h3 id="sdmName" style="font-size:15px;font-weight:700;line-height:1.6;color:#e6edf3;padding:0 16px">-</h3>
+    </div>
+    <!-- Scrollable list -->
+    <div style="overflow-y:auto;padding:0 28px;flex:1;scrollbar-width:thin;scrollbar-color:#28cb69 #0d1117">
+      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px">
+        <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:90px">Speed:</span>
+        <span id="sdmSpeed" style="font-size:14px;color:#e6edf3;font-weight:700">-</span>
+      </div>
+      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px">
+        <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:90px">Refill:</span>
+        <span id="sdmRefill" style="font-size:14px;color:#e6edf3;font-weight:700">-</span>
+      </div>
+      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px">
+        <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:90px">Quality:</span>
+        <span id="sdmQuality" style="font-size:14px;color:#e6edf3;font-weight:700">Rất Tốt</span>
+      </div>
+      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px">
+        <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:90px">Giá/1000:</span>
+        <span id="sdmRate" style="font-size:14px;color:#28cb69;font-weight:800">-</span>
+      </div>
+      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px">
+        <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:90px">Min/Max:</span>
+        <span style="font-size:14px;color:#e6edf3;font-weight:700"><span id="sdmMin">-</span> / <span id="sdmMax">-</span></span>
+      </div>
+      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px">
+        <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:90px">Link:</span>
+        <span style="font-size:14px;color:#e6edf3"></span>
+      </div>
+      <div style="padding:16px 0">
+        <p id="sdmDesc" style="font-size:13px;color:#bfd5fd;line-height:1.8">-</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
