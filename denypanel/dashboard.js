@@ -459,14 +459,17 @@ async function _placeOrder(prefix) {
       _userProfile.balance = newBalance;
     }
 
+    const serviceName = opt.dataset.name || opt.textContent.split(' - ')[0];
+    // Dịch vụ "Bắt đầu sau" → trạng thái "Đang đợi" ngay khi đặt hàng
+    const isDelayed = serviceName.toLowerCase().includes('bắt đầu sau') || serviceName.toLowerCase().includes('bat dau sau');
     const order = {
       orderId: result.orderId,
       serviceId: parseInt(opt.value),
-      serviceName: opt.dataset.name || opt.textContent.split(' - ')[0],
+      serviceName,
       link,
       quantity: qty,
       charge: parseFloat(cost.toFixed(4)),
-      status: 'pending',
+      status: isDelayed ? 'waiting' : 'pending',
       remains: qty,
       refill: false,
       demo: result.demo || false
@@ -590,6 +593,7 @@ function mapDenyPanelStatus(raw) {
   if (s === 'partial') return 'partial';
   if (s === 'in progress') return 'in_progress';
   if (s === 'processing') return 'in_progress';
+  if (s === 'waiting') return 'waiting'; // ⚠️ Dịch vụ "Bắt đầu sau" → Waiting
   return 'pending';
 }
 
@@ -617,21 +621,28 @@ async function checkOrderById(orderId) {
     // Reload UI
     await loadOrdersPage();
 
-    const statusVi = { completed:'Hoàn thành ✅', in_progress:'Đang chạy ⚡', canceled:'Đã hủy ❌', partial:'Hoàn thành một phần ⚠️', pending:'Chờ xử lý 🕐' };
+    const statusVi = {
+      completed: 'Hoàn thành ✅',
+      in_progress: 'Đang chạy ⚡',
+      canceled: 'Đã hủy ❌',
+      partial: 'Hoàn thành một phần ⚠️',
+      pending: 'Chờ xử lý 🕐',
+      waiting: 'Đang đợi bắt đầu ⏳',
+    };
     showToastV2(`Đơn #${orderId}: ${statusVi[newStatus] || newStatus}`, newStatus === 'completed' ? 'ok' : 'info');
   } catch(e) {
     showToastV2('Lỗi: ' + e.message, 'err');
   }
 }
 
-// Auto-refresh trạng thái đơn đang chờ/đang chạy (mỗi 60 giây)
+// Auto-refresh trạng thái đơn đang chờ/đang chạy/đang đợi (mỗi 60 giây)
 let _autoRefreshTimer = null;
 async function startAutoRefreshOrders() {
   clearInterval(_autoRefreshTimer);
   _autoRefreshTimer = setInterval(async () => {
     if (!_firebaseUser) return;
     const orders = await getUserOrders(_firebaseUser.uid);
-    const activeOrders = orders.filter(o => o.status === 'pending' || o.status === 'in_progress');
+    const activeOrders = orders.filter(o => o.status === 'pending' || o.status === 'in_progress' || o.status === 'waiting');
     if (!activeOrders.length) return;
 
     for (const o of activeOrders) {
@@ -1165,6 +1176,8 @@ function getStatusLabel(status) {
     processing: '<i class="fas fa-spinner fa-spin"></i> Đang xử lý',
     completed: '<i class="fas fa-check-circle"></i> Hoàn thành',
     partial: '<i class="fas fa-adjust"></i> Một phần',
+    waiting: '<i class="fas fa-hourglass-half"></i> Đang đợi bắt đầu',
+    canceled: '<i class="fas fa-times-circle"></i> Đã hủy',
     cancelled: '<i class="fas fa-times-circle"></i> Đã hủy'
   };
   return map[status] || status;

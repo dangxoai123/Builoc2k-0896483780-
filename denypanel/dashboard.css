@@ -917,7 +917,8 @@ button { cursor: pointer; font-family: 'Montserrat', sans-serif; }
 .status-pill.in_progress, .status-pill.processing { background: rgba(99,102,241,0.15); color: #6366f1; }
 .status-pill.completed { background: rgba(46,204,113,0.15); color: #2ecc71; }
 .status-pill.partial { background: rgba(52,152,219,0.15); color: #3498db; }
-.status-pill.cancelled { background: rgba(231,76,60,0.15); color: #e74c3c; }
+.status-pill.waiting { background: rgba(243,156,18,0.15); color: #f39c12; }
+.status-pill.canceled, .status-pill.cancelled { background: rgba(231,76,60,0.15); color: #e74c3c; }
 
 /* ==========================================
    TOAST
