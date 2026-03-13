@@ -15,7 +15,8 @@
 const https = require('https');
 const querystring = require('querystring');
 
-const API_KEY = '2a6149e2e8ff0be95ded16a8e408e2d6';
+const API_KEY = '2a6149e2e8ff0be95ded16a8e408e2d6';      // Key đặt hàng (cũ)
+const SERVICES_API_KEY = '58788d220d60bd1d1110e7871f5871d3'; // Key đồng bộ giá (mới)
 // Service tham chiếu để tính tỷ giá (ID ổn định, có trên DenyPanel)
 const REF_SERVICE_ID = '1536';
 // Fallback nếu không lấy được tỷ giá từ DenyPanel
@@ -40,7 +41,7 @@ module.exports = async function handler(req, res) {
 
   try {
     // Bước 1: Lấy giá USD của dịch vụ tham chiếu từ DenyPanel API
-    const servicesRaw = await callDenyPanelAPI({ action: 'services', key: API_KEY });
+    const servicesRaw = await callDenyPanelAPI({ action: 'services', key: SERVICES_API_KEY });
     const services = JSON.parse(servicesRaw);
     const refService = services.find(s => String(s.service) === REF_SERVICE_ID);
 

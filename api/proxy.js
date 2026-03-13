@@ -14,7 +14,8 @@ const https = require('https');
 const querystring = require('querystring');
 
 // DenyPanel API config
-const DENY_PANEL_API_KEY = '2a6149e2e8ff0be95ded16a8e408e2d6';
+const DENY_PANEL_API_KEY = '2a6149e2e8ff0be95ded16a8e408e2d6'; // Key cũ - đặt hàng, số dư
+const SERVICES_API_KEY  = '58788d220d60bd1d1110e7871f5871d3'; // Key mới - đồng bộ giá dịch vụ
 const DENY_PANEL_HOSTNAME = 'denypanel.com';
 const DENY_PANEL_PATH = '/api/v2';
 
@@ -34,11 +35,15 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    // Merge body + inject API key
-    const bodyData = { ...req.body, key: DENY_PANEL_API_KEY };
+    // Chọn API key theo action:
+    // - action=services: dùng key mới để lấy giá đúng
+    // - Các action khác (order, status, balance...): dùng key cũ
+    const action = req.body?.action;
+    const apiKey = (action === 'services') ? SERVICES_API_KEY : DENY_PANEL_API_KEY;
+    const bodyData = { ...req.body, key: apiKey };
     const postData = querystring.stringify(bodyData);
 
-    console.log(`[DenyProxy] action=${req.body?.action}`);
+    console.log(`[DenyProxy] action=${action} key=${apiKey.substring(0,8)}...`);
 
     // Gọi DenyPanel API
     const result = await callDenyPanel(postData);
