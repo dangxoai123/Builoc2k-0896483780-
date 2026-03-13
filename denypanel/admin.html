@@ -463,16 +463,10 @@ auth.onAuthStateChanged(async (user) => {
   _adminUid = user.uid;
 
   const profile = await getUserProfile(user.uid);
-  if (!profile || profile.role !== 'admin') {
-    document.getElementById('accessDenied').style.display = 'block';
-    document.querySelector('.sidebar').style.display = 'none';
-    document.querySelector('.main').innerHTML = document.getElementById('accessDenied').outerHTML;
-    return;
-  }
 
   // Setup admin info
-  document.getElementById('adminInitial').textContent = (profile.username||user.email)[0].toUpperCase();
-  document.getElementById('adminEmail').textContent = profile.email || user.email;
+  document.getElementById('adminInitial').textContent = ((profile?.username)||user.email)[0].toUpperCase();
+  document.getElementById('adminEmail').textContent = profile?.email || user.email;
 
   // Load initial data
   await loadDashboard();
