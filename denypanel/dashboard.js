@@ -73,6 +73,8 @@ function refreshPrices() {
   const homeC = document.getElementById('homeCategorySelect');
   const pageC = document.getElementById('pageCategorySelect');
   if (homeC?.value) populateServiceSel('homeServiceSelect', homeC.value);
+  // Re-render services page với giá đúng
+  if (allServicesData.length) renderSvcPage();
   if (pageC?.value) populateServiceSel('pageServiceSelect', pageC.value);
 
   // Recalc cost
@@ -882,7 +884,7 @@ function renderSvcPage() {
             <div class="svc-name-main">${esc(s.name)}</div>
             ${s.type && s.type !== 'Default' ? `<div class="svc-type-tag">${esc(s.type)}</div>` : ''}
           </div>
-          <div class="svc-rate-v2">$${s.rate}</div>
+          <div class="svc-rate-v2">${formatRate(s.rate)}<span style="font-size:10px;color:var(--gray);font-weight:400">/1k</span></div>
           <div class="svc-num-v2">${Number(s.min).toLocaleString()}</div>
           <div class="svc-num-v2">${Number(s.max).toLocaleString()}</div>
           <div class="svc-time">${avgTime}</div>
@@ -907,13 +909,13 @@ function openSvcDetailModal(dataStr) {
     _currentModalSvc = s;
     safeSet('modalSvcId', s.id);
     safeSet('modalSvcName', s.name);
-    safeSet('modalSvcRate', '$' + s.rate);
+    safeSet('modalSvcRate', formatRate(s.rate) + ' /1k');
     safeSet('modalSvcMin', Number(s.min).toLocaleString());
     safeSet('modalSvcMax', Number(s.max).toLocaleString());
     safeSet('modalSvcSpeed', '5k/Ngày');
     safeSet('modalSvcRefill', s.refill);
     safeSet('modalSvcQuality', 'Rất Tốt');
-    const desc = `Speed: 5k/Ngày\nRefill: ${s.refill}\nQuality: Rất Tốt\nLink: URL\n\n${s.name}\nGiá: $${s.rate} / 1000 đơn vị\nTối thiểu: ${s.min} | Tối đa: ${s.max}`;
+    const desc = `Speed: 5k/Ngày\nRefill: ${s.refill}\nQuality: Rất Tốt\nLink: URL\n\n${s.name}\nGiá: ${formatRate(s.rate)} / 1000 đơn vị  ($${s.rate} USD)\nTối thiểu: ${s.min} | Tối đa: ${s.max}`;
     safeSet('modalSvcDesc', desc);
     const modal = document.getElementById('svcDetailModal');
     if (modal) { modal.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
