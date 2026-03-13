@@ -110,6 +110,22 @@
           <i class="fas fa-dollar-sign" style="color:var(--green)"></i>
           <span id="balanceDisplay">0.00</span>
         </div>
+        <!-- Currency Switcher -->
+        <div class="topbar-icon-btn currency-switcher-wrap" title="Đổi tiền tệ" onclick="toggleCurrencyDropdown(event)" style="position:relative;">
+          <button id="currencyToggleBtn" style="background:none;border:none;color:var(--white);font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px;">
+            <i class="fas fa-dollar-sign"></i> USD
+          </button>
+          <!-- Dropdown -->
+          <div id="currencyDropdown" style="display:none;position:absolute;top:calc(100% + 10px);right:0;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px;min-width:130px;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.4);">
+            <div style="font-size:11px;color:var(--gray);padding:4px 8px 8px;font-weight:600;">Tiền tệ</div>
+            <div id="currencyOptUSD" onclick="setCurrency('USD')" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;" class="currency-opt active">
+              <span style="background:var(--bg3);border-radius:6px;padding:4px 8px;font-size:12px;">$</span> USD
+            </div>
+            <div id="currencyOptVND" onclick="setCurrency('VND')" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;" class="currency-opt">
+              <span style="background:var(--bg3);border-radius:6px;padding:4px 8px;font-size:12px;">₫</span> VND
+            </div>
+          </div>
+        </div>
         <!-- Notifications -->
         <div class="topbar-icon-btn" title="Thông báo">
           <i class="fas fa-bell"></i>

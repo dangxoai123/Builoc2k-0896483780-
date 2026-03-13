@@ -2,9 +2,84 @@
  * ==========================================
  * DASHBOARD V2 - LOGIC
  * Tích hợp với DenyPanel API thực
- * API Key: 3b341f23c723707da4ce67f673f4e2f8
  * ==========================================
  */
+
+/**
+ * ==========================================
+ * CURRENCY SWITCHER - USD ↔ VND
+ * ==========================================
+ */
+const VND_RATE = 25500; // 1 USD = 25,500 VND
+
+/** Lấy đơn vị tiền hiện tại từ localStorage */
+function getCurrency() {
+  return localStorage.getItem('currency') || 'USD';
+}
+
+/** Đặt đơn vị tiền và refresh giá */
+function setCurrency(currency) {
+  localStorage.setItem('currency', currency);
+  refreshPrices();
+  updateCurrencyUI();
+}
+
+/** Format tiền theo đơn vị hiện tại */
+function formatMoney(usdAmount) {
+  const amount = parseFloat(usdAmount || 0);
+  if (getCurrency() === 'VND') {
+    const vnd = Math.round(amount * VND_RATE);
+    return vnd.toLocaleString('vi-VN') + ' ₫';
+  }
+  return '$' + amount.toFixed(2);
+}
+
+/** Format giá dịch vụ /1000 đơn vị */
+function formatRate(usdRate) {
+  const rate = parseFloat(usdRate || 0);
+  if (getCurrency() === 'VND') {
+    const vnd = Math.round(rate * VND_RATE);
+    return vnd.toLocaleString('vi-VN') + ' ₫';
+  }
+  return '$' + rate;
+}
+
+/** Cập nhật hiển thị nút currency trong UI */
+function updateCurrencyUI() {
+  const cur = getCurrency();
+  const btn = document.getElementById('currencyToggleBtn');
+  if (btn) {
+    btn.innerHTML = cur === 'VND'
+      ? '<i class="fas fa-dong-sign"></i> VND'
+      : '<i class="fas fa-dollar-sign"></i> USD';
+  }
+  // Update dropdown options
+  const optUSD = document.getElementById('currencyOptUSD');
+  const optVND = document.getElementById('currencyOptVND');
+  if (optUSD) optUSD.classList.toggle('active', cur === 'USD');
+  if (optVND) optVND.classList.toggle('active', cur === 'VND');
+}
+
+/** Refresh lại tất cả giá trên trang */
+function refreshPrices() {
+  // Rebuild service dropdowns với giá mới
+  const homeC = document.getElementById('homeCategorySelect');
+  const pageC = document.getElementById('pageCategorySelect');
+  if (homeC?.value) populateServiceSel('homeServiceSelect', homeC.value);
+  if (pageC?.value) populateServiceSel('pageServiceSelect', pageC.value);
+
+  // Recalc cost
+  homeCalcCost();
+  pageCalcCost();
+
+  // Balance
+  const user = getUserData();
+  const bal = parseFloat(user.balance || 0);
+  safeSet('balanceDisplay', formatMoney(bal));
+  safeSet('balanceStat', formatMoney(bal));
+  safeSet('profileBalance', formatMoney(bal));
+}
+
 
 // ==========================================
 // INIT
@@ -13,6 +88,14 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!isLoggedIn()) { window.location.href = 'login.html'; return; }
   initDashboard();
 });
+
+/** Toggle dropdown tiền tệ */
+function toggleCurrencyDropdown(e) {
+  e.stopPropagation();
+  const dd = document.getElementById('currencyDropdown');
+  if (!dd) return;
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+}
 
 async function initDashboard() {
   const user = getUserData();
@@ -41,6 +124,17 @@ async function initDashboard() {
   await loadAllServices();
   updateStats();
   loadOrdersPage();
+
+  // Init currency UI
+  updateCurrencyUI();
+
+  // Close currency dropdown khi click ngoài
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.currency-switcher-wrap')) {
+      const dd = document.getElementById('currencyDropdown');
+      if (dd) dd.style.display = 'none';
+    }
+  });
 }
 
 // ==========================================
@@ -48,14 +142,14 @@ async function initDashboard() {
 // ==========================================
 async function refreshBalance() {
   const result = await DenyPanelAPI.getBalance();
-  const bal = parseFloat(result.balance || '0').toFixed(2);
+  const bal = parseFloat(result.balance || '0').toFixed(4);
 
   const user = getUserData();
   user.balance = bal;
   saveUserData(user);
 
-  safeSet('balanceDisplay', bal);
-  safeSet('balanceStat', '$' + bal);
+  safeSet('balanceDisplay', formatMoney(bal));
+  safeSet('balanceStat', formatMoney(bal));
 }
 
 // ==========================================
@@ -66,7 +160,7 @@ function updateStats() {
   safeSet('totalOrdersStat', orders.length);
   safeSet('profileOrders', orders.length);
   const user = getUserData();
-  safeSet('profileBalance', '$' + parseFloat(user.balance || 0).toFixed(2));
+  safeSet('profileBalance', formatMoney(user.balance || 0));
 }
 
 // ==========================================
@@ -167,9 +261,9 @@ function populateServiceSel(selId, cat) {
   getServicesByCategory(cat).forEach(s => {
     const opt = document.createElement('option');
     opt.value = s.service;
-    // Format giống DenyPanel thực: icon [ID] Tên - $rate/1k
+    // Format: icon Tên - rate VND/1k
     const icon = getPlatformIcon(s.category);
-    opt.textContent = icon + ' ' + s.name + ' - $' + s.rate + '/1k';
+    opt.textContent = icon + ' ' + s.name + ' - ' + formatRate(s.rate) + '/1k';
     opt.dataset.rate = s.rate;
     opt.dataset.min = s.min;
     opt.dataset.max = s.max;
@@ -194,7 +288,7 @@ function homeCalcCost() {
   const opt = sel?.options[sel.selectedIndex];
   const qty = parseInt(document.getElementById('homeOrderQty')?.value) || 0;
   const cost = opt?.dataset?.rate && qty ? (qty / 1000) * parseFloat(opt.dataset.rate) : 0;
-  safeSet('homeCostDisplay', '$' + cost.toFixed(4));
+  safeSet('homeCostDisplay', formatMoney(cost));
 }
 
 // Order page
@@ -257,7 +351,7 @@ function pageOnServiceChange() {
       <h4>M\u00f4 t\u1ea3</h4>
       <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px;font-size:12px;color:var(--gray2);line-height:1.9;white-space:pre-line">
         <strong style="color:var(--white)">${icon} ${esc(svc.name)}</strong>\n\n
-Speed: ${speed}\nRefill: ${warranty}\nQuality: R\u1ea5t T\u1ed1t\nLink: URL / Link\n\nGi\u00e1: <span style="color:var(--green);font-weight:700">$${svc.rate}/1000 \u0111\u01a1n v\u1ecb</span>\nT\u1ed1i thi\u1ec3u: ${Number(svc.min).toLocaleString()} | T\u1ed1i \u0111a: ${Number(svc.max).toLocaleString()}\n\nLo\u1ea1i: ${svc.type}
+Speed: ${speed}\nRefill: ${warranty}\nQuality: Rất Tốt\nLink: URL / Link\n\nGiá: <span style="color:var(--green);font-weight:700">${formatRate(svc.rate)}/1000 đơn vị</span>\nTối thiểu: ${Number(svc.min).toLocaleString()} | Tối đa: ${Number(svc.max).toLocaleString()}\n\nLoại: ${svc.type}
       </div>`;
     safeSet('sipDesc', descHtml, 'innerHTML');
   }
@@ -270,7 +364,7 @@ function pageCalcCost() {
   const opt = sel?.options[sel.selectedIndex];
   const qty = parseInt(document.getElementById('pageOrderQty')?.value) || 0;
   const cost = opt?.dataset?.rate && qty ? (qty / 1000) * parseFloat(opt.dataset.rate) : 0;
-  safeSet('pageCostDisplay', '$' + cost.toFixed(4));
+  safeSet('pageCostDisplay', formatMoney(cost));
 }
 
 // ==========================================
@@ -302,7 +396,7 @@ async function _placeOrder(prefix) {
   const balance = parseFloat(user.balance || 0);
 
   if (cost > balance) {
-    showMsg(msgBox, `⚠️ Số dư không đủ! Cần $${cost.toFixed(4)}, bạn có $${balance.toFixed(2)}`, 'err');
+    showMsg(msgBox, `⚠️ Số dư không đủ! Cần ${formatMoney(cost)}, bạn có ${formatMoney(balance)}`, 'err');
     return;
   }
 
@@ -340,7 +434,7 @@ async function _placeOrder(prefix) {
     sel.value = '';
     document.getElementById(`${prefix}OrderLink`).value = '';
     document.getElementById(`${prefix}OrderQty`).value = '';
-    safeSet(`${prefix}CostDisplay`, '$0.00');
+    safeSet(`${prefix}CostDisplay`, '0 ₫');
 
     await refreshBalance();
     updateStats();
