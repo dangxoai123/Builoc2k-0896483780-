@@ -20,9 +20,10 @@ const https = require('https');
 // ==========================================
 // CONFIG
 // ==========================================
-const WEB2M_TOKEN = '457F855D-4890-5004-77B0-7B07614D845E'; // VCB token
-const VCB_ACCOUNT = '1016232687';                         // Số TK VCB
-const VCB_PASSWORD = 'Locbui2k@';                         // Mật khẩu Internet Banking
+const WEB2M_TOKEN = '457F855D-4890-5004-77B0-7B07614D845E'; // VCB token (web2m)
+const VCB_ACCOUNT = '1016232687';                              // Số TK VCB
+const VCB_PASSWORD = 'Locbui2k@';                             // Mật khẩu Internet Banking
+const WEB2M_API_PATH = 'historyapivcbv3';                       // API v3 (mới nhất)
 
 // Firebase Admin SDK via REST API (không cần firebase-admin package)
 const FIREBASE_PROJECT = 'builoc2k-denypanel';
@@ -140,7 +141,9 @@ async function handlePolling(req, res) {
 // ==========================================
 async function callWeb2mAPI(account) {
   return new Promise((resolve, reject) => {
-    const path = `/historyapivcb/${encodeURIComponent(VCB_PASSWORD)}/${account}/${WEB2M_TOKEN}`;
+    // URL mới: /historyapivcbv3/{password}/{sotaikhoan}/{token}
+    const cleanToken = WEB2M_TOKEN.trim().replace(/[\u200B-\u200D\uFEFF\u00A0]/g, '');
+    const path = `/${WEB2M_API_PATH}/${encodeURIComponent(VCB_PASSWORD)}/${account}/${cleanToken}`;
     const options = {
       hostname: 'api.web2m.com',
       port: 443,
