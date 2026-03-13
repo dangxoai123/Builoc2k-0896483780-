@@ -645,7 +645,7 @@ function toggleOrderFilter() { showToastV2('Bộ lọc nâng cao sắp ra mắt!
 // ADD FUNDS - VCB QR Auto Deposit
 // ==========================================
 // ⚠️ Cập nhật số TK VCB thực của bạn vào đây:
-const VCB_ACCOUNT = '9345678901'; // SỐ TK VCB (cần cập nhật)
+const VCB_ACCOUNT = '1016232687'; // SỐ TK VCB
 const VCB_OWNER   = 'BUI NGUYEN LOC';
 const VCB_BANK_CODE = 'VCB';
 const DEPOSIT_TIMEOUT_MS = 15 * 60 * 1000; // 15 phút
