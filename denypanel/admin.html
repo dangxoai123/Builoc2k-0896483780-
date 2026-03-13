@@ -621,10 +621,14 @@ async function applyBalance() {
     const userDoc = await userRef.get();
     const currentBal = parseFloat(userDoc.data().balance || 0);
 
+    // ⚠️ Admin nhập số tiền bằng VND, balance lưu bằng USD
+    // Cần chia cho ADMIN_VND_RATE trước khi lưu
+    const amountUSD = amount / ADMIN_VND_RATE;
+
     let newBal;
-    if (_balMode === 'add') newBal = currentBal + amount;
-    else if (_balMode === 'sub') newBal = Math.max(0, currentBal - amount);
-    else newBal = amount; // set
+    if (_balMode === 'add') newBal = currentBal + amountUSD;
+    else if (_balMode === 'sub') newBal = Math.max(0, currentBal - amountUSD);
+    else newBal = amountUSD; // set: nhập VND, lưu USD tương đương
 
     await userRef.update({ balance: newBal });
 
