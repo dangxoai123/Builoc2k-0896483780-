@@ -14,7 +14,7 @@ const https = require('https');
 const querystring = require('querystring');
 
 // DenyPanel API config
-const DENY_PANEL_API_KEY = '3b341f23c723707da4ce67f673f4e2f8';
+const DENY_PANEL_API_KEY = '5c89dc0a79cbb981b6444ca9cdc106dc';
 const DENY_PANEL_HOSTNAME = 'denypanel.com';
 const DENY_PANEL_PATH = '/api/v2';
 
