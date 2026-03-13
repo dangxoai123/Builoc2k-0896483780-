@@ -1,226 +1,174 @@
 /**
- * ==========================================
  * VERCEL SERVERLESS FUNCTION - AUTO PAYMENT (Sepay)
- * File: api/payment.js
- *
- * Tích hợp Sepay.vn để tự động nhận tiền nạp.
- * - GET /api/payment?ref=BUILOCXXXXX  → polling từ frontend
- * - POST /api/payment                 → webhook từ Sepay
- *
- * Firestore rules đã được cập nhật để cho phép:
- *   - balance update mà không cần auth
- *   - pending_deposits read/update không cần auth
- * ==========================================
+ * GET  /api/payment?ref=BUILOCXXXXXX → polling
+ * POST /api/payment                  → Sepay webhook
  */
 
 const https = require('https');
 
-// ==========================================
-// CONFIG
-// ==========================================
-const SEPAY_TOKEN  = 'WW6NPUYVK0DSVDH5N2C8T9OAOAUMLIK4GVCJ5AE2SYMTTJIPFLCW4BKED3UEZBMR';
-const REAL_ACCOUNT = '8837755253';   // Số TK BIDV thực
-
+const SEPAY_TOKEN         = 'WW6NPUYVK0DSVDH5N2C8T9OAOAUMLIK4GVCJ5AE2SYMTTJIPFLCW4BKED3UEZBMR';
+const REAL_ACCOUNT        = '8837755253';
 const FIREBASE_PROJECT    = 'builoc2k-denypanel';
 const FIREBASE_WEB_API_KEY = 'AIzaSyDA6SIIeT8jlzLMyp1r6WnefnsGQxMgygA';
 
-// ==========================================
-// MAIN HANDLER
-// ==========================================
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.status(204).end();
-  if (req.method === 'GET')  return handlePolling(req, res);
-  if (req.method === 'POST') return handleWebhook(req, res);
+  if (req.method === 'GET')     return handlePolling(req, res);
+  if (req.method === 'POST')    return handleWebhook(req, res);
   return res.status(405).json({ error: 'Method not allowed' });
 };
 
-// ==========================================
-// POLLING
-// ==========================================
 async function handlePolling(req, res) {
   const { ref } = req.query;
   if (!ref) return res.status(400).json({ error: 'Missing ref' });
-
   try {
-    const transactions = await fetchSepayTransactions(20);
-    const match = transactions.find(tx =>
+    const txs   = await fetchSepay(20);
+    const match = txs.find(tx =>
       (tx.transaction_content || '').toUpperCase().includes(ref.toUpperCase())
     );
-
     if (match) {
       const amount = parseFloat(match.amount_in || 0);
       const txId   = String(match.id || ref);
-      const desc   = match.transaction_content || '';
-      const result = await creditByRef(ref, amount, txId, desc);
+      const result = await creditByRef(ref, amount, txId, match.transaction_content || '');
       return res.status(200).json({ found: true, amount, result });
     }
-
     return res.status(200).json({ found: false });
-  } catch (e) {
-    console.error('[Polling]', e.message);
+  } catch(e) {
     return res.status(500).json({ error: e.message });
   }
 }
 
-// ==========================================
-// WEBHOOK
-// ==========================================
 async function handleWebhook(req, res) {
   try {
     const body = req.body || {};
-    if (body.transferType !== 'in') return res.status(200).json({ success: true, skipped: 'not incoming' });
-
+    if (body.transferType !== 'in') return res.status(200).json({ skipped: 'not incoming' });
     const content = body.content || '';
     const amount  = parseFloat(body.transferAmount || 0);
     const txId    = String(body.id || '');
-
-    if (!content || amount <= 0) return res.status(200).json({ success: true, skipped: 'empty' });
-
-    const refMatch = content.toUpperCase().match(/BUILOC[A-Z0-9]{6}/);
-    if (!refMatch) return res.status(200).json({ success: true, skipped: 'no ref' });
-
-    const ref    = refMatch[0];
-    const result = await creditByRef(ref, amount, txId, content);
+    if (!content || amount <= 0) return res.status(200).json({ skipped: 'empty' });
+    const m = content.toUpperCase().match(/BUILOC[A-Z0-9]{6}/);
+    if (!m) return res.status(200).json({ skipped: 'no ref' });
+    const result = await creditByRef(m[0], amount, txId, content);
     return res.status(200).json({ success: true, amount, result });
-  } catch (e) {
+  } catch(e) {
     return res.status(500).json({ error: e.message });
   }
 }
 
-// ==========================================
-// SEPAY API
-// ==========================================
-async function fetchSepayTransactions(limit = 20) {
+// Sepay API — ⚠️ returns 'transactions' (not 'transaction_list')
+async function fetchSepay(limit = 20) {
   return new Promise((resolve, reject) => {
-    const path = `/userapi/transactions/list?limit=${limit}&account_number=${REAL_ACCOUNT}`;
-    const req  = https.request({
-      hostname: 'my.sepay.vn', port: 443, path, method: 'GET',
-      headers: { 'Authorization': `Bearer ${SEPAY_TOKEN}`, 'Content-Type': 'application/json' },
+    const r = https.request({
+      hostname: 'my.sepay.vn', port: 443,
+      path: `/userapi/transactions/list?limit=${limit}&account_number=${REAL_ACCOUNT}`,
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${SEPAY_TOKEN}` },
     }, (resp) => {
-      let data = '';
-      resp.on('data', c => data += c);
+      let d = '';
+      resp.on('data', c => d += c);
       resp.on('end', () => {
         try {
-          const json = JSON.parse(data);
-          // ⚠️ Sepay trả về 'transactions' không phải 'transaction_list'
-          const list = json.transactions || json.transaction_list || [];
-          resolve(list.filter(tx => parseFloat(tx.amount_in || 0) > 0));
+          const j = JSON.parse(d);
+          resolve((j.transactions || j.transaction_list || []).filter(tx => parseFloat(tx.amount_in || 0) > 0));
         } catch { resolve([]); }
       });
     });
-    req.on('error', reject);
-    req.setTimeout(12000, () => { req.destroy(); reject(new Error('timeout')); });
-    req.end();
+    r.on('error', reject);
+    r.setTimeout(12000, () => { r.destroy(); reject(new Error('timeout')); });
+    r.end();
   });
 }
 
-// ==========================================
-// CREDIT USER — Firestore REST API
-// (rules đã mở cho phép balance update + pending_deposits read/write)
-// ==========================================
+// Credit user via Firestore REST API
+// Flow: pending_deposits/{ref} → get uid → users/{uid} PATCH balance
 async function creditByRef(ref, amount, txId, description) {
-  const base = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents`;
-  const key  = `?key=${FIREBASE_WEB_API_KEY}`;
-
+  const rq  = `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents:runQuery?key=${FIREBASE_WEB_API_KEY}`;
+  const k   = `?key=${FIREBASE_WEB_API_KEY}`;
   try {
-    // 1. Tìm pending deposit theo ref
-    const qBody = JSON.stringify({
+    // 1. Find pending deposit by ref (rules: read=true)
+    const qResp = await httpPost('firestore.googleapis.com', rq, JSON.stringify({
       structuredQuery: {
         from: [{ collectionId: 'pending_deposits' }],
-        where: {
-          compositeFilter: {
-            op: 'AND',
-            filters: [
-              { fieldFilter: { field: { fieldPath: 'ref' },    op: 'EQUAL', value: { stringValue: ref } } },
-              { fieldFilter: { field: { fieldPath: 'status' }, op: 'EQUAL', value: { stringValue: 'pending' } } },
-            ],
-          },
-        },
+        where: { compositeFilter: { op: 'AND', filters: [
+          { fieldFilter: { field: { fieldPath: 'ref' },    op: 'EQUAL', value: { stringValue: ref } } },
+          { fieldFilter: { field: { fieldPath: 'status' }, op: 'EQUAL', value: { stringValue: 'pending' } } },
+        ]}},
         limit: 1,
       },
-    });
+    }));
+    const pDoc = JSON.parse(qResp).find(d => d.document)?.document;
+    if (!pDoc) return { error: `No pending deposit: ${ref}` };
 
-    const qResp  = await post(`firestore.googleapis.com`, `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents:runQuery${key}`, qBody);
-    const qDocs  = JSON.parse(qResp);
-    const pDoc   = qDocs.find(d => d.document)?.document;
-    if (!pDoc) return { error: 'No pending deposit for ref: ' + ref };
+    const uid   = pDoc.fields?.uid?.stringValue;
+    const email = pDoc.fields?.email?.stringValue;
+    const pPath = pDoc.name.replace('https://firestore.googleapis.com/v1', '');
+    if (!uid) return { error: 'No uid in pending deposit' };
 
-    const email   = pDoc.fields?.email?.stringValue;
-    if (!email)   return { error: 'No email in pending deposit' };
-    const pPath   = pDoc.name.split('/v1/')[1];
+    // 2. Read current balance (use uid path directly — no email query needed)
+    const uPath    = `projects/${FIREBASE_PROJECT}/databases/(default)/documents/users/${uid}`;
+    const uResp    = await httpGet('firestore.googleapis.com', `/v1/${uPath}${k}`);
+    const uDoc     = JSON.parse(uResp);
+    const oldBal   = parseFloat(uDoc.fields?.balance?.doubleValue || uDoc.fields?.balance?.integerValue || 0);
+    const newBal   = oldBal + parseFloat(amount);
 
-    // 2. Đánh dấu pending deposit = completed
-    await patch(`firestore.googleapis.com`,
-      `/v1/${pPath}?updateMask.fieldPaths=status&updateMask.fieldPaths=txId&updateMask.fieldPaths=completedAt${key}`,
-      JSON.stringify({ fields: { status: { stringValue: 'completed' }, txId: { stringValue: txId }, completedAt: { stringValue: new Date().toISOString() } } })
+    // 3. Mark pending deposit completed (rules: update=true)
+    await httpPatch('firestore.googleapis.com',
+      `/v1${pPath}?updateMask.fieldPaths=status&updateMask.fieldPaths=txId&updateMask.fieldPaths=completedAt${k}`,
+      JSON.stringify({ fields: { status: { stringValue: 'completed' }, txId: { stringValue: String(txId) }, completedAt: { stringValue: new Date().toISOString() } } })
     );
 
-    // 3. Tìm user theo email
-    const uBody = JSON.stringify({
-      structuredQuery: {
-        from: [{ collectionId: 'users' }],
-        where: { fieldFilter: { field: { fieldPath: 'email' }, op: 'EQUAL', value: { stringValue: email } } },
-        limit: 1,
-      },
-    });
-    const uResp  = await post('firestore.googleapis.com', `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents:runQuery${key}`, uBody);
-    const uDocs  = JSON.parse(uResp);
-    const uDoc   = uDocs.find(d => d.document)?.document;
-    if (!uDoc) return { error: 'User not found: ' + email };
-
-    const oldBal = parseFloat(uDoc.fields?.balance?.doubleValue || uDoc.fields?.balance?.integerValue || 0);
-    const newBal = oldBal + parseFloat(amount);
-    const uPath  = uDoc.name.split('/v1/')[1];
-
-    // 4. Cộng tiền
-    await patch('firestore.googleapis.com',
-      `/v1/${uPath}?updateMask.fieldPaths=balance${key}`,
+    // 4. Update balance (rules: balance-only update without auth is allowed)
+    await httpPatch('firestore.googleapis.com',
+      `/v1/${uPath}?updateMask.fieldPaths=balance${k}`,
       JSON.stringify({ fields: { balance: { doubleValue: newBal } } })
     );
 
-    // 5. Ghi log
-    await post('firestore.googleapis.com',
-      `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/transactions${key}`,
+    // 5. Log transaction (rules: create=true)
+    await httpPost('firestore.googleapis.com',
+      `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/transactions${k}`,
       JSON.stringify({ fields: {
-        email:       { stringValue: email },
-        type:        { stringValue: 'deposit' },
-        amount:      { doubleValue: parseFloat(amount) },
-        txId:        { stringValue: txId },
-        ref:         { stringValue: ref },
-        description: { stringValue: description || '' },
-        createdAt:   { stringValue: new Date().toISOString() },
+        email:         { stringValue: email || '' },
+        uid:           { stringValue: uid },
+        type:          { stringValue: 'deposit' },
+        amount:        { doubleValue: parseFloat(amount) },
+        txId:          { stringValue: String(txId) },
+        ref:           { stringValue: ref },
+        description:   { stringValue: description || '' },
+        createdAt:     { stringValue: new Date().toISOString() },
         balanceBefore: { doubleValue: oldBal },
         balanceAfter:  { doubleValue: newBal },
-        gateway:     { stringValue: 'Sepay/BIDV' },
+        gateway:       { stringValue: 'Sepay/BIDV' },
       }})
     );
 
-    console.log(`[credit] ✅ ${email} +${amount} → ${newBal}`);
+    console.log(`[credit] ✅ uid=${uid} +${amount} → ${newBal}`);
     return { success: true, email, amount, newBalance: newBal };
-
-  } catch (e) {
-    console.error('[credit] Error:', e.message);
+  } catch(e) {
+    console.error('[credit]', e.message);
     return { error: e.message };
   }
 }
 
-function post(hostname, path, body)       { return req('POST',  hostname, path, body); }
-function patch(hostname, path, body)      { return req('PATCH', hostname, path, body); }
-function req(method, hostname, path, body) {
+function httpGet(hostname, path) {
+  return new Promise((resolve, reject) => {
+    const r = https.request({ hostname, port: 443, path, method: 'GET', headers: { 'Content-Type': 'application/json' } }, resp => {
+      let d = ''; resp.on('data', c => d += c); resp.on('end', () => resolve(d));
+    });
+    r.on('error', reject); r.setTimeout(12000, () => { r.destroy(); reject(new Error('timeout')); }); r.end();
+  });
+}
+function httpPost(h, p, b)  { return httpReq('POST',  h, p, b); }
+function httpPatch(h, p, b) { return httpReq('PATCH', h, p, b); }
+function httpReq(method, hostname, path, body) {
   return new Promise((resolve, reject) => {
     const buf = Buffer.from(body || '', 'utf8');
-    const r   = https.request({ hostname, port: 443, path, method, headers: { 'Content-Type': 'application/json', 'Content-Length': buf.length } }, (resp) => {
-      let data = '';
-      resp.on('data', c => data += c);
-      resp.on('end', () => resolve(data));
+    const r   = https.request({ hostname, port: 443, path, method, headers: { 'Content-Type': 'application/json', 'Content-Length': buf.length } }, resp => {
+      let d = ''; resp.on('data', c => d += c); resp.on('end', () => resolve(d));
     });
-    r.on('error', reject);
-    r.setTimeout(12000, () => { r.destroy(); reject(new Error('Timeout')); });
-    if (body) r.write(buf);
-    r.end();
+    r.on('error', reject); r.setTimeout(12000, () => { r.destroy(); reject(new Error('timeout')); });
+    r.write(buf); r.end();
   });
 }
