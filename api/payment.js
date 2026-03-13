@@ -21,6 +21,8 @@ const https = require('https');
 // CONFIG
 // ==========================================
 const WEB2M_TOKEN = '457F855D-4890-5004-77B0-7B07614D845E'; // VCB token
+const VCB_ACCOUNT = '1016232687';                         // Số TK VCB
+const VCB_PASSWORD = 'Locbui2k@';                         // Mật khẩu Internet Banking
 
 // Firebase Admin SDK via REST API (không cần firebase-admin package)
 const FIREBASE_PROJECT = 'builoc2k-denypanel';
@@ -97,54 +99,57 @@ async function handleWebhook(req, res) {
 
 // ==========================================
 // POLLING (Frontend gọi để check giao dịch mới)
-// ── GET: Kiểm tra giao dịch mới từ web2m (polling)
+// GET /api/payment?ref=BUILOCXXXXXX
+// ==========================================
 async function handlePolling(req, res) {
-  const { account, ref } = req.query;
-  if (!account || !ref) {
-    return res.status(400).json({ error: 'Missing account or ref' });
+  const { ref } = req.query;
+  if (!ref) {
+    return res.status(400).json({ error: 'Missing ref' });
   }
 
   try {
-    // Gọi web2m API để lấy giao dịch gần nhất
-    const txData = await callWeb2mAPI(account);
-    if (!txData || !txData.transactions) {
-      return res.status(200).json({ found: false });
+    // Gọi web2m API lấy lịch sử giao dịch VCB
+    const txData = await callWeb2mAPI(VCB_ACCOUNT);
+    const transactions = normalizeTransactions(txData);
+
+    if (!transactions.length) {
+      return res.status(200).json({ found: false, debug: 'no transactions' });
     }
 
     // Tìm giao dịch có nội dung chứa mã ref (BUILOC...)
-    const match = txData.transactions.find(tx => {
-      const desc = (tx.description || tx.content || '').toUpperCase();
-      return desc.includes(ref.toUpperCase());
-    });
+    const match = transactions.find(tx =>
+      (tx.description || '').toUpperCase().includes(ref.toUpperCase())
+    );
 
     if (match) {
-      const txId = match.id || match.referenceCode || ref;
-      const amount = parseFloat(match.amount || 0);
-
       // Credit vào user qua Firestore pending_deposits
-      const result = await creditByRef(ref, amount, txId, match.description || '');
-      return res.status(200).json({ found: true, amount, result });
+      const result = await creditByRef(ref, match.amount, match.id, match.description);
+      return res.status(200).json({ found: true, amount: match.amount, result });
     }
 
     return res.status(200).json({ found: false });
   } catch (e) {
+    console.error('[Polling] Error:', e.message);
     return res.status(500).json({ error: e.message });
   }
 }
 
 // ==========================================
-// WEB2M API CALL
+// WEB2M API CALL - Lấy lịch sử giao dịch VCB
+// URL format: /historyapivcb/{password}/{sotaikhoan}/{token}
 // ==========================================
 async function callWeb2mAPI(account) {
   return new Promise((resolve, reject) => {
-    // web2m API format: /paymentapi/{account}/{password}/{token}
-    const path = `/paymentapi/${account}/1/${WEB2M_TOKEN}`;
+    const path = `/historyapivcb/${encodeURIComponent(VCB_PASSWORD)}/${account}/${WEB2M_TOKEN}`;
     const options = {
       hostname: 'api.web2m.com',
       port: 443,
       path,
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0',
+      },
     };
     const req = https.request(options, (response) => {
       let data = '';
@@ -154,9 +159,27 @@ async function callWeb2mAPI(account) {
       });
     });
     req.on('error', reject);
-    req.setTimeout(10000, () => { req.destroy(); reject(new Error('Timeout')); });
+    req.setTimeout(12000, () => { req.destroy(); reject(new Error('Timeout')); });
     req.end();
   });
+}
+
+/**
+ * Normalize giao dịch từ web2m VCB API về dạng chuẩn
+ * API trả về: data.chiTietGiaoDich[]
+ * Mỗi item: { SoThamChieu, SoTienGhiCo, MoTa, NgayGiaoDich, CD }
+ */
+function normalizeTransactions(apiResp) {
+  if (!apiResp?.status) return [];
+  const list = apiResp?.data?.chiTietGiaoDich || apiResp?.transactions || [];
+  return list
+    .filter(tx => (tx.CD || tx.cd || '+') === '+') // Chỉ lấy giao dịch Cộng tiền (+)
+    .map(tx => ({
+      id: tx.SoThamChieu || tx.id,
+      amount: parseFloat((tx.SoTienGhiCo || tx.amount || '0').toString().replace(/[^0-9.]/g, '')),
+      description: tx.MoTa || tx.description || tx.content || '',
+      date: tx.NgayGiaoDich || tx.date || '',
+    }));
 }
 
 // ==========================================

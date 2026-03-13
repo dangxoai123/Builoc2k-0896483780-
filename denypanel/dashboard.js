@@ -754,7 +754,7 @@ async function pollDeposit() {
     }
 
     // Cũng gọi API kiểm tra trực tiếp
-    const resp = await fetch(`/api/payment?ref=${_depositRef}&account=${VCB_ACCOUNT}`);
+    const resp = await fetch(`/api/payment?ref=${_depositRef}`);
     const result = await resp.json();
 
     if (result.found) {
