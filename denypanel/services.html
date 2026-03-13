@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dịch vụ - Denypanel</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+.services-page-wrapper { padding: 120px 60px 80px; min-height: 100vh; }
+.services-filter-top {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.platform-icons-list { display: flex; gap: 10px; flex: 1; overflow-x: auto; padding-bottom: 4px; }
+.platform-icon-btn {
+  width: 42px; height: 42px; border-radius: 50%; border: none; cursor: pointer;
+  font-size: 18px; display: flex; align-items: center; justify-content: center;
+  transition: var(--transition); flex-shrink: 0; opacity: 0.7;
+}
+.platform-icon-btn:hover, .platform-icon-btn.active { opacity: 1; transform: scale(1.15); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+.search-services {
+  background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 50px;
+  padding: 10px 20px; color: var(--white); font-family: 'Montserrat',sans-serif; font-size: 13px;
+  outline: none; width: 220px; transition: var(--transition);
+}
+.search-services:focus { border-color: var(--green); }
+.support-tag { background: rgba(255,255,255,0.08); border-radius: 50px; padding: 8px 16px; font-size: 12px; color: var(--gray); cursor: pointer; white-space: nowrap; }
+.support-tag:hover { background: rgba(46,204,113,0.1); color: var(--green); }
+.table-col-header {
+  display: grid;
+  grid-template-columns: 100px 1fr 140px 100px 120px 160px;
+  gap: 12px; padding: 12px 20px;
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius) var(--radius) 0 0;
+  font-size: 11px; font-weight: 700; color: var(--gray); text-transform: uppercase; letter-spacing: 0.5px;
+}
+.services-main-container { background: var(--bg-card); border: 1px solid var(--border); border-top: none; border-radius: 0 0 var(--radius) var(--radius); }
+.cat-header {
+  background: linear-gradient(135deg, var(--green), var(--green-dark));
+  padding: 14px 20px; font-size: 15px; font-weight: 700;
+  display: flex; align-items: center; gap: 10px;
+}
+.service-item {
+  display: grid; grid-template-columns: 100px 1fr 140px 100px 120px 160px;
+  gap: 12px; padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.03);
+  transition: var(--transition); align-items: start; font-size: 13px;
+}
+.service-item:hover { background: rgba(255,255,255,0.02); }
+.svc-id { background: rgba(46,204,113,0.15); color: var(--green); padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 12px; text-align: center; display: inline-block; }
+.svc-name { font-weight: 700; margin-bottom: 4px; }
+.svc-type { font-size: 11px; color: var(--gray); }
+.svc-rate { font-weight: 800; color: var(--green); font-size: 15px; }
+.svc-num { color: var(--gray-light); }
+.loading-svc { text-align: center; padding: 60px; color: var(--gray); }
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <div class="nav-logo"><div class="logo-icon">📡</div>Denypanel<div class="nav-globe">🌐</div></div>
+  <div class="nav-center">
+    <a href="services.html" class="nav-link active">Dịch vụ</a>
+    <a href="terms.html" class="nav-link">Điều khoản</a>
+  </div>
+  <div class="nav-right">
+    <a href="login.html" class="btn-login">Đăng Nhập</a>
+    <a href="signup.html" class="btn-register">Đăng Kí <i class="fas fa-arrow-right"></i></a>
+  </div>
+  <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
+</nav>
+
+<div class="mobile-menu" id="mobileMenu">
+  <a href="services.html" class="nav-link active">Dịch vụ</a>
+  <a href="terms.html" class="nav-link">Điều khoản</a>
+  <a href="login.html" class="btn-login">Đăng Nhập</a>
+  <a href="signup.html" class="btn-green">Đăng Kí →</a>
+</div>
+
+<div class="services-page-wrapper">
+  <div class="services-filter-top">
+    <div class="platform-icons-list" id="platformIcons">
+      <button class="platform-icon-btn active" style="background:#555" onclick="filterSvc('all',this)" title="Tất cả"><i class="fas fa-th" style="color:white"></i></button>
+      <button class="platform-icon-btn" style="background:#e1306c" onclick="filterSvc('Instagram',this)" title="Instagram">📸</button>
+      <button class="platform-icon-btn" style="background:#fe2c55" onclick="filterSvc('TikTok',this)" title="TikTok">🎵</button>
+      <button class="platform-icon-btn" style="background:#1da1f2" onclick="filterSvc('Twitter',this)" title="Twitter">🐦</button>
+      <button class="platform-icon-btn" style="background:#ff0000" onclick="filterSvc('YouTube',this)" title="YouTube">▶</button>
+      <button class="platform-icon-btn" style="background:#229ed9" onclick="filterSvc('Telegram',this)" title="Telegram">✈</button>
+      <button class="platform-icon-btn" style="background:#1877f2" onclick="filterSvc('Facebook',this)" title="Facebook">f</button>
+      <button class="platform-icon-btn" style="background:#1db954" onclick="filterSvc('Spotify',this)" title="Spotify">🎧</button>
+      <button class="platform-icon-btn" style="background:#5865f2" onclick="filterSvc('Discord',this)" title="Discord">👾</button>
+      <button class="platform-icon-btn" style="background:#ff6600" onclick="filterSvc('Reddit',this)" title="Reddit">🔴</button>
+      <button class="platform-icon-btn" style="background:#fffc00;color:#000" onclick="filterSvc('Snapchat',this)" title="Snapchat">👻</button>
+    </div>
+    <input type="text" class="search-services" placeholder="🔍 Tìm kiếm dịch vụ..." id="svcSearch" oninput="renderServices()">
+    <div class="support-tag">Giờ hỗ trợ: 8:00 - 22:00</div>
+  </div>
+
+  <div class="table-col-header">
+    <div>Mã DV</div>
+    <div>Tên dịch vụ</div>
+    <div>Giá / 1000 đơn vị</div>
+    <div>Tối thiểu</div>
+    <div>Tối đa</div>
+    <div>Hành động</div>
+  </div>
+  <div class="services-main-container" id="svcContainer">
+    <div class="loading-svc"><i class="fas fa-spinner fa-spin" style="font-size:28px;color:var(--green)"></i><br><br>Đang tải dịch vụ...</div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-logo"><div class="logo-icon">📡</div>Denypanel</div>
+    <div class="footer-links">
+      <a href="#" class="footer-link">Blog</a>
+      <a href="terms.html" class="footer-link">Điều khoản</a>
+      <a href="api.html" class="footer-link">API</a>
+    </div>
+    <div class="footer-copyright">© 2024 Denypanel. All rights reserved.</div>
+  </div>
+</footer>
+
+<div class="floating-bell">🔔<div class="badge">1</div></div>
+
+<script src="api.js"></script>
+<script>
+let currentFilter = 'all';
+let svcData = [];
+
+async function init() {
+  svcData = await DenyPanelAPI.getServices();
+  renderServices();
+}
+init();
+
+function filterSvc(platform, btn) {
+  currentFilter = platform;
+  document.querySelectorAll('.platform-icon-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderServices();
+}
+
+function renderServices() {
+  const container = document.getElementById('svcContainer');
+  const search = document.getElementById('svcSearch').value.toLowerCase();
+  let filtered = svcData;
+  if (currentFilter !== 'all') filtered = filtered.filter(s => s.category.startsWith(currentFilter));
+  if (search) filtered = filtered.filter(s => s.name.toLowerCase().includes(search) || String(s.service).includes(search));
+
+  if (!filtered.length) { container.innerHTML = '<div class="loading-svc">Không tìm thấy dịch vụ phù hợp</div>'; return; }
+
+  const cats = {};
+  filtered.forEach(s => { if (!cats[s.category]) cats[s.category] = []; cats[s.category].push(s); });
+
+  let html = '';
+  for (const [cat, services] of Object.entries(cats)) {
+    html += `<div class="cat-header"><i class="fas fa-tag"></i> ${cat}</div>`;
+    services.forEach(s => {
+      html += `
+        <div class="service-item">
+          <div><span class="svc-id">${s.service}</span></div>
+          <div><div class="svc-name">${s.name}</div>${s.type !== 'Default' ? `<div class="svc-type">${s.type}</div>` : ''}</div>
+          <div class="svc-rate">$${s.rate}</div>
+          <div class="svc-num">${Number(s.min).toLocaleString()}</div>
+          <div class="svc-num">${Number(s.max).toLocaleString()}</div>
+          <div><a href="signup.html" class="btn-green" style="font-size:12px;padding:8px 16px"><i class="fas fa-cart-plus"></i> Đặt hàng</a></div>
+        </div>`;
+    });
+  }
+  container.innerHTML = html;
+}
+
+function toggleMenu() { document.getElementById('mobileMenu').classList.toggle('open'); }
+</script>
+</body>
+</html>

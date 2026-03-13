@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Đăng Nhập - Denypanel</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="auth.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="auth-body">
+
+<!-- HEADER -->
+<header class="auth-header">
+  <a href="index.html" class="nav-logo" style="text-decoration:none">
+    <div class="logo-icon">📡</div>
+    Denypanel
+  </a>
+  <a href="index.html" class="btn-secondary" style="font-size:13px;padding:10px 20px">Trang chủ</a>
+</header>
+
+<div class="auth-container">
+  <!-- LEFT SIDE -->
+  <div class="auth-left">
+    <div class="auth-illustration">
+      <div class="social-card">
+        <div class="social-avatar">👨‍💻</div>
+        <div>
+          <div class="social-name">Finn Sword</div>
+          <div class="social-user">@finnsword ✓</div>
+        </div>
+        <button class="follow-btn">Follow</button>
+      </div>
+      <div class="social-img">
+        <div class="social-img-placeholder">📊</div>
+      </div>
+      <div class="followers-badge">
+        <div class="avatar-sm">🧑</div>
+        <span>+1000 New Followers!</span>
+      </div>
+    </div>
+    <h2 class="auth-tagline">Phát triển <span class="highlight" style="font-family:'Dancing Script',cursive">mạng xã<br>hội.</span></h2>
+    <a href="services.html" class="btn-green" style="width:fit-content">Dịch vụ <i class="fas fa-arrow-up-right"></i></a>
+  </div>
+
+  <!-- RIGHT SIDE - FORM -->
+  <div class="auth-right">
+    <div class="auth-form-box">
+      <h1 class="auth-title">Đăng Nhập</h1>
+      <p class="auth-subtitle">Chào mừng bạn trở lại! Vui lòng đăng nhập.</p>
+
+      <div id="loginError" class="auth-error" style="display:none"></div>
+
+      <form id="loginForm" onsubmit="handleLogin(event)">
+        <div class="form-group">
+          <label>Tên đăng nhập hoặc Email</label>
+          <input type="text" id="loginUsername" class="form-input" placeholder="Nhập tên đăng nhập..." required>
+        </div>
+        <div class="form-group">
+          <label>Mật khẩu</label>
+          <div class="input-password">
+            <input type="password" id="loginPassword" class="form-input" placeholder="Nhập mật khẩu..." required>
+            <button type="button" class="eye-btn" onclick="togglePass('loginPassword',this)"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+        <div class="form-remember">
+          <label class="check-label">
+            <input type="checkbox" id="rememberMe"> Ghi nhớ đăng nhập
+          </label>
+          <a href="#" class="forgot-link">Quên mật khẩu?</a>
+        </div>
+        <button type="submit" class="btn-auth" id="loginBtn">
+          <span>Đăng Nhập</span>
+        </button>
+      </form>
+
+      <div class="auth-divider"><span>hoặc</span></div>
+
+      <p class="auth-switch">Chưa có tài khoản? <a href="signup.html" class="auth-link">Đăng ký ngay</a></p>
+    </div>
+  </div>
+</div>
+
+<script>
+function togglePass(id, btn) {
+  const input = document.getElementById(id);
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+  } else {
+    input.type = 'password';
+    btn.innerHTML = '<i class="fas fa-eye"></i>';
+  }
+}
+
+function handleLogin(e) {
+  e.preventDefault();
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const btn = document.getElementById('loginBtn');
+  const errorBox = document.getElementById('loginError');
+
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang đăng nhập...';
+  btn.disabled = true;
+  errorBox.style.display = 'none';
+
+  // Save credentials to localStorage (simulate login)
+  setTimeout(() => {
+    // For demo purposes, accept any credentials
+    const userData = {
+      username: username,
+      email: username.includes('@') ? username : username + '@gmail.com',
+      balance: '50.00',
+      currency: 'USD',
+      totalOrders: 0,
+      pendingOrders: 0,
+      completedOrders: 0,
+      apiKey: 'YOUR_API_KEY_HERE',
+      loginTime: new Date().toISOString()
+    };
+    localStorage.setItem('dp_user', JSON.stringify(userData));
+    localStorage.setItem('dp_logged_in', 'true');
+    window.location.href = 'dashboard.html';
+  }, 1200);
+}
+</script>
+</body>
+</html>

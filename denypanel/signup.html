@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Đăng Ký - Denypanel</title>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="auth.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body class="auth-body">
+
+<header class="auth-header">
+  <a href="index.html" class="nav-logo" style="text-decoration:none">
+    <div class="logo-icon">📡</div>
+    Denypanel
+  </a>
+  <a href="index.html" class="btn-secondary" style="font-size:13px;padding:10px 20px">Trang chủ</a>
+</header>
+
+<div class="auth-container">
+  <div class="auth-left">
+    <div class="auth-illustration">
+      <div class="social-card">
+        <div class="social-avatar">👨‍💻</div>
+        <div>
+          <div class="social-name">Finn Sword</div>
+          <div class="social-user">@finnsword ✓</div>
+        </div>
+        <button class="follow-btn">Follow</button>
+      </div>
+      <div class="social-img"><div class="social-img-placeholder">📊</div></div>
+      <div class="followers-badge">
+        <div class="avatar-sm">🧑</div>
+        <span>+1000 New Followers!</span>
+      </div>
+    </div>
+    <h2 class="auth-tagline">Phát triển <span class="highlight" style="font-family:'Dancing Script',cursive">mạng xã<br>hội.</span></h2>
+    <a href="services.html" class="btn-green" style="width:fit-content">Dịch vụ <i class="fas fa-arrow-up-right"></i></a>
+  </div>
+
+  <div class="auth-right">
+    <div class="auth-form-box">
+      <h1 class="auth-title">Đăng Ký</h1>
+      <p class="auth-subtitle">Tạo tài khoản miễn phí ngay hôm nay!</p>
+
+      <div id="signupError" class="auth-error" style="display:none"></div>
+      <div id="signupSuccess" class="auth-success" style="display:none"></div>
+
+      <form id="signupForm" onsubmit="handleSignup(event)">
+        <div class="form-group">
+          <label>Username <span class="required">*</span></label>
+          <input type="text" id="regUsername" class="form-input" placeholder="Chọn tên đăng nhập..." required>
+        </div>
+        <div class="form-group">
+          <label>Email <span class="required">*</span></label>
+          <input type="email" id="regEmail" class="form-input" placeholder="Nhập địa chỉ email..." required>
+        </div>
+        <div class="form-group">
+          <label>Password <span class="required">*</span></label>
+          <div class="input-password">
+            <input type="password" id="regPassword" class="form-input" placeholder="Tạo mật khẩu mạnh..." required>
+            <button type="button" class="eye-btn" onclick="togglePass('regPassword',this)"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Confirm password <span class="required">*</span></label>
+          <div class="input-password">
+            <input type="password" id="regConfirm" class="form-input" placeholder="Nhập lại mật khẩu..." required>
+            <button type="button" class="eye-btn" onclick="togglePass('regConfirm',this)"><i class="fas fa-eye"></i></button>
+          </div>
+        </div>
+
+        <div class="captcha-box">
+          <input type="checkbox" id="captchaCheck">
+          <label for="captchaCheck">Tôi là con người</label>
+          <div style="margin-left:auto;font-size:12px;color:var(--gray);text-align:right">
+            <div style="font-weight:700;color:var(--white)">hCaptcha</div>
+            Riêng tư · Điều kiện
+          </div>
+        </div>
+
+        <label class="check-label" style="margin-bottom:20px">
+          <input type="checkbox" id="agreeTerms">
+          Tôi đồng ý với điều khoản <a href="terms.html" class="auth-link">Điều khoản dịch vụ</a>
+        </label>
+
+        <button type="submit" class="btn-auth" id="signupBtn">
+          <span>Đăng Kí</span>
+        </button>
+      </form>
+
+      <p class="auth-switch">Đã có tài khoản? <a href="login.html" class="auth-link">Đăng nhập</a></p>
+    </div>
+  </div>
+</div>
+
+<script>
+function togglePass(id, btn) {
+  const input = document.getElementById(id);
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
+  } else {
+    input.type = 'password';
+    btn.innerHTML = '<i class="fas fa-eye"></i>';
+  }
+}
+
+function handleSignup(e) {
+  e.preventDefault();
+  const username = document.getElementById('regUsername').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const confirm = document.getElementById('regConfirm').value;
+  const captcha = document.getElementById('captchaCheck').checked;
+  const terms = document.getElementById('agreeTerms').checked;
+  const btn = document.getElementById('signupBtn');
+  const errorBox = document.getElementById('signupError');
+  const successBox = document.getElementById('signupSuccess');
+
+  errorBox.style.display = 'none';
+  successBox.style.display = 'none';
+
+  if (password !== confirm) {
+    errorBox.textContent = 'Mật khẩu xác nhận không khớp!';
+    errorBox.style.display = 'block';
+    return;
+  }
+  if (!captcha) {
+    errorBox.textContent = 'Vui lòng xác nhận bạn là con người!';
+    errorBox.style.display = 'block';
+    return;
+  }
+  if (!terms) {
+    errorBox.textContent = 'Vui lòng đồng ý với điều khoản dịch vụ!';
+    errorBox.style.display = 'block';
+    return;
+  }
+
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tạo tài khoản...';
+  btn.disabled = true;
+
+  setTimeout(() => {
+    const userData = { username, email, balance: '0.00', currency: 'USD', totalOrders: 0, pendingOrders: 0, completedOrders: 0, apiKey: 'demo_key_' + Date.now(), loginTime: new Date().toISOString() };
+    localStorage.setItem('dp_user', JSON.stringify(userData));
+    localStorage.setItem('dp_logged_in', 'true');
+    successBox.textContent = 'Tạo tài khoản thành công! Đang chuyển hướng...';
+    successBox.style.display = 'block';
+    setTimeout(() => window.location.href = 'dashboard.html', 1500);
+  }, 1500);
+}
+</script>
+</body>
+</html>

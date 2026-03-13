@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard - Denypanel</title>
+<link rel="stylesheet" href="dashboard.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div class="layout">
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar" id="sidebar">
+    <!-- Logo/Toggle -->
+    <button class="sidebar-logo-btn" onclick="toggleSidebar()">
+      <div class="logo-circle">📡</div>
+      <span class="logo-text">Denypanel</span>
+    </button>
+
+    <nav class="sidebar-nav">
+      <!-- Home -->
+      <button class="sidebar-item active" id="sb-home" onclick="showPage('home',this)">
+        <i class="fas fa-home"></i>
+        <span>Trang chủ</span>
+        <div class="sidebar-tooltip">Trang chủ</div>
+      </button>
+
+      <!-- New Order -->
+      <button class="sidebar-item" id="sb-order" onclick="showPage('order',this)">
+        <i class="fas fa-plus-square"></i>
+        <span>Đặt hàng mới</span>
+        <div class="sidebar-tooltip">Đặt hàng mới</div>
+      </button>
+
+      <!-- Orders -->
+      <button class="sidebar-item" id="sb-orders" onclick="showPage('orders',this)">
+        <i class="fas fa-list-alt"></i>
+        <span>Đơn hàng</span>
+        <div class="sidebar-tooltip">Đơn hàng</div>
+      </button>
+
+      <!-- Subscription -->
+      <button class="sidebar-item" id="sb-sub" onclick="showPage('sub',this)">
+        <i class="fas fa-sync-alt"></i>
+        <span>Đặt Hàng Lớn</span>
+        <div class="sidebar-tooltip">Đặt Hàng Lớn</div>
+      </button>
+
+      <!-- Add Funds -->
+      <button class="sidebar-item" id="sb-funds" onclick="showPage('funds',this)">
+        <i class="fas fa-wallet"></i>
+        <span>Nạp tiền</span>
+        <div class="sidebar-tooltip">Nạp tiền</div>
+      </button>
+
+      <!-- Services -->
+      <button class="sidebar-item" id="sb-services" onclick="showPage('services',this)">
+        <i class="fas fa-layer-group"></i>
+        <span>Dịch vụ</span>
+        <div class="sidebar-tooltip">Dịch vụ</div>
+      </button>
+
+      <!-- API -->
+      <button class="sidebar-item" id="sb-api" onclick="showPage('api',this)">
+        <i class="fas fa-code"></i>
+        <span>API</span>
+        <div class="sidebar-tooltip">API</div>
+      </button>
+
+      <!-- Affiliate -->
+      <button class="sidebar-item" id="sb-affiliate" onclick="showPage('affiliate',this)">
+        <i class="fas fa-users"></i>
+        <span>Đại lý</span>
+        <div class="sidebar-tooltip">Đại lý</div>
+      </button>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <!-- Theme toggle -->
+      <button class="sidebar-item" onclick="toggleTheme()">
+        <i class="fas fa-moon" id="themeIcon"></i>
+        <span>Dark Mode</span>
+        <div class="sidebar-tooltip">Đổi giao diện</div>
+      </button>
+      <!-- Logout -->
+      <button class="sidebar-item" onclick="logout()">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Đăng xuất</span>
+        <div class="sidebar-tooltip">Đăng xuất</div>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN ===== -->
+  <div class="main" id="main">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-title" id="topTitle">Đặt hàng</span>
+      </div>
+      <div class="topbar-right">
+        <!-- Cart -->
+        <div class="topbar-icon-btn" onclick="" title="Giỏ hàng">
+          <i class="fas fa-shopping-cart"></i>
+        </div>
+        <!-- Balance -->
+        <div class="topbar-icon-btn" style="width:auto;padding:0 14px;gap:6px;font-size:13px;font-weight:700;color:var(--green)">
+          <i class="fas fa-dollar-sign" style="color:var(--green)"></i>
+          <span id="balanceDisplay">0.00</span>
+        </div>
+        <!-- Notifications -->
+        <div class="topbar-icon-btn" title="Thông báo">
+          <i class="fas fa-bell"></i>
+          <div class="notif-dot"></div>
+        </div>
+        <!-- User -->
+        <div class="user-avatar-btn" onclick="showPage('profile',null)" id="userAvatarBtn" title="Tài khoản">D</div>
+      </div>
+    </header>
+
+    <!-- PAGE CONTENT -->
+    <div class="page-content">
+
+      <!-- ===========================
+           HOME PAGE
+      ============================ -->
+      <div class="page active" id="page-home">
+        <!-- Announcement banner -->
+        <div class="announce-banner">
+          <h3>📢 Hãy tham gia Channel Telegram thông báo dịch vụ để cập nhật thông tin mới nhất : t.me/Denypanel</h3>
+          <p>Zalo Admin : 0979431641</p>
+        </div>
+
+        <!-- Welcome + Rank -->
+        <div class="welcome-grid">
+          <div class="welcome-card">
+            <div class="welcome-info">
+              <div class="welcome-greeting">Chào mừng <span id="welcomeName">dangxoai</span> ✅</div>
+              <div class="welcome-sub">Chúng tôi ở đây để cung cấp cho bạn dịch vụ tốt nhất!</div>
+              <div class="welcome-stats">
+                <div class="welcome-stat-box">
+                  <div class="wsb-icon"><i class="fas fa-chart-line"></i></div>
+                  <div>
+                    <div class="wsb-val" id="totalOrdersStat">0</div>
+                    <div class="wsb-lbl">Tổng đơn hàng</div>
+                  </div>
+                </div>
+                <div class="welcome-stat-box">
+                  <div class="wsb-icon"><i class="fas fa-dollar-sign"></i></div>
+                  <div>
+                    <div class="wsb-val" style="color:var(--green)" id="balanceStat">$0.00</div>
+                    <div class="wsb-lbl">Số dư</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="welcome-3d">🧑‍💼⚡</div>
+          </div>
+
+          <div class="rank-card">
+            <div class="rank-info">
+              <div class="rank-label">Thứ hạng hiện tại</div>
+              <div class="rank-name">🏅 Bronze</div>
+              <div class="rank-progress-bg"><div class="rank-progress-fill" style="width:0%"></div></div>
+              <div class="rank-pct">0%</div>
+              <br>
+              <button class="rank-btn" onclick="showPage('affiliate',null)">Xem quyền lợi</button>
+            </div>
+            <div class="rank-medal" style="font-size:70px">🏆</div>
+          </div>
+        </div>
+
+        <!-- Quick new order form on home -->
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
+          <div class="order-tabs" style="padding:0 20px">
+            <button class="order-tab active"><i class="fas fa-plus-square"></i> Đặt hàng</button>
+            <button class="order-tab"><i class="fas fa-heart"></i> Yêu thích</button>
+            <button class="order-tab"><i class="fas fa-shopping-basket"></i> Đặt Hàng Lớn</button>
+          </div>
+          <div class="order-search-bar">
+            <input class="order-search-input" placeholder="Tìm kiếm theo ID dịch vụ" id="homeOrderSearch" oninput="filterHomeOrder()">
+            <i class="fas fa-search" style="color:var(--gray);cursor:pointer"></i>
+          </div>
+          <div class="order-form-body" id="homeOrderForm">
+            <div class="form-group-v2">
+              <label class="form-label-v2">Mục dịch vụ</label>
+              <!-- Hidden select for JS logic -->
+              <select class="form-select-v2" id="homeCategorySelect" onchange="homeOnCategoryChange()" style="display:none"></select>
+              <!-- Custom icon dropdown -->
+              <div class="custom-select-wrap" id="homeCatDropWrap">
+                <div class="custom-sel-trigger" id="homeCatTrigger" onclick="toggleCustomDrop('homeCatDrop','homeCatTrigger')">
+                  <span class="csd-icon" id="homeCatIcon"><i class="fas fa-th" style="color:#aaa"></i></span>
+                  <span class="csd-text" id="homeCatText">-- Chọn mục --</span>
+                  <i class="fas fa-chevron-down csd-arrow" id="homeCatArrow"></i>
+                </div>
+                <div class="custom-sel-list" id="homeCatDrop" style="display:none"></div>
+              </div>
+            </div>
+            <div class="form-group-v2">
+              <label class="form-label-v2">Dịch vụ</label>
+              <select class="form-select-v2" id="homeServiceSelect" onchange="homeOnServiceChange()">
+                <option value="">-- Chọn dịch vụ --</option>
+              </select>
+            </div>
+            <div class="form-group-v2">
+              <label class="form-label-v2">Link</label>
+              <input type="url" class="form-input-v2" id="homeOrderLink" placeholder="https://...">
+            </div>
+            <div class="form-group-v2">
+              <label class="form-label-v2">Số lượng</label>
+              <input type="number" class="form-input-v2" id="homeOrderQty" placeholder="0" oninput="homeCalcCost()">
+            </div>
+            <div class="form-group-v2">
+              <label class="form-label-v2">Giá tiền</label>
+              <div class="cost-field" id="homeCostDisplay">$0.00</div>
+            </div>
+            <div id="homeOrderMsg"></div>
+            <div class="order-action-btns">
+              <button class="btn-dat-hang" onclick="homePlaceOrder()"><i class="fas fa-shopping-bag"></i> Đặt hàng</button>
+              <button class="btn-gio-hang" onclick="homeAddToCart()"><i class="fas fa-cart-plus"></i> Thêm vào giỏ hàng</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===========================
+           ORDER PAGE (Dedicated)
+      ============================ -->
+      <div class="page" id="page-order">
+        <div class="order-layout">
+          <!-- Left: Form -->
+          <div class="order-main-card">
+            <div class="order-tabs">
+              <button class="order-tab active"><i class="fas fa-plus-square"></i> Đặt hàng</button>
+              <button class="order-tab"><i class="fas fa-heart"></i> Yêu thích</button>
+              <button class="order-tab"><i class="fas fa-shopping-basket"></i> Đặt Hàng Lớn</button>
+            </div>
+            <div class="order-search-bar">
+              <input class="order-search-input" placeholder="Tìm kiếm theo ID dịch vụ" id="orderPageSearch" oninput="filterOrderSearch()">
+              <i class="fas fa-search" style="color:var(--gray);cursor:pointer" onclick="filterOrderSearch()"></i>
+            </div>
+            <div class="order-form-body">
+              <div class="form-group-v2">
+                <label class="form-label-v2">Mục dịch vụ</label>
+                <!-- Hidden select for JS logic -->
+                <select class="form-select-v2" id="pageCategorySelect" onchange="pageOnCategoryChange()" style="display:none"></select>
+                <!-- Custom icon dropdown -->
+                <div class="custom-select-wrap" id="pageCatDropWrap">
+                  <div class="custom-sel-trigger" id="pageCatTrigger" onclick="toggleCustomDrop('pageCatDrop','pageCatTrigger')">
+                    <span class="csd-icon" id="pageCatIcon"><i class="fas fa-th" style="color:#aaa"></i></span>
+                    <span class="csd-text" id="pageCatText">-- Chọn mục --</span>
+                    <i class="fas fa-chevron-down csd-arrow" id="pageCatArrow"></i>
+                  </div>
+                  <div class="custom-sel-list" id="pageCatDrop" style="display:none"></div>
+                </div>
+              </div>
+              <div class="form-group-v2">
+                <label class="form-label-v2">Dịch vụ</label>
+                <select class="form-select-v2" id="pageServiceSelect" onchange="pageOnServiceChange()">
+                  <option value="">-- Chọn dịch vụ --</option>
+                </select>
+              </div>
+              <div class="form-group-v2">
+                <label class="form-label-v2">Link</label>
+                <input type="url" class="form-input-v2" id="pageOrderLink" placeholder="https://...">
+              </div>
+              <div class="form-group-v2">
+                <label class="form-label-v2">Số lượng</label>
+                <input type="number" class="form-input-v2" id="pageOrderQty" placeholder="0" min="1" oninput="pageCalcCost()">
+              </div>
+              <div class="form-group-v2">
+                <label class="form-label-v2">Giá tiền</label>
+                <div class="cost-field" id="pageCostDisplay">$0.00</div>
+              </div>
+              <div id="pageOrderMsg"></div>
+              <div class="order-action-btns">
+                <button class="btn-dat-hang" id="btnDatHang" onclick="pagePlaceOrder()"><i class="fas fa-shopping-bag"></i> Đặt hàng</button>
+                <button class="btn-gio-hang"><i class="fas fa-cart-plus"></i> Thêm vào giỏ hàng</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Service Info -->
+          <div class="service-info-panel" id="serviceInfoPanel">
+            <div class="sip-selected-service" id="sipHeader" style="display:none">
+              <span class="sip-id-badge" id="sipId">-</span>
+              <span class="sip-name" id="sipName">-</span>
+            </div>
+            <div class="sip-stats-grid" id="sipStatsGrid">
+              <div class="sip-stat">
+                <div class="sip-stat-label">Thời gian trung bình</div>
+                <div class="sip-stat-icon" style="background:rgba(46,204,113,0.1)">⏱</div>
+                <div class="sip-stat-value" id="sipTime">--</div>
+              </div>
+              <div class="sip-stat">
+                <div class="sip-stat-label">Chất lượng</div>
+                <div class="sip-stat-icon" style="background:rgba(241,196,15,0.1)">⭐</div>
+                <div class="sip-stat-value" id="sipQuality">Rất tốt</div>
+              </div>
+              <div class="sip-stat">
+                <div class="sip-stat-label">Tốc độ</div>
+                <div class="sip-stat-icon" style="background:rgba(52,152,219,0.1)">🛡</div>
+                <div class="sip-stat-value" id="sipSpeed">--</div>
+              </div>
+              <div class="sip-stat">
+                <div class="sip-stat-label">Bảo hành</div>
+                <div class="sip-stat-icon" style="background:rgba(46,204,113,0.1)">✅</div>
+                <div class="sip-stat-value" id="sipWarranty">--</div>
+              </div>
+              <div class="sip-stat">
+                <div class="sip-stat-label">Link</div>
+                <div class="sip-stat-icon" style="background:rgba(99,102,241,0.1)">🌐</div>
+                <div class="sip-stat-value" id="sipLink">--</div>
+              </div>
+              <div class="sip-stat">
+                <div class="sip-stat-label">Tối thiểu • Tối đa</div>
+                <div class="sip-stat-icon" style="background:rgba(255,255,255,0.05)">📊</div>
+                <div class="sip-stat-value" id="sipMinMax">-- • --</div>
+              </div>
+            </div>
+            <div class="sip-desc" id="sipDesc">
+              <h4>Mô tả</h4>
+              <p style="color:var(--gray);font-style:italic">Chọn một dịch vụ để xem thông tin chi tiết...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===========================
+           ORDERS HISTORY
+      ============================ -->
+      <div class="page" id="page-orders">
+        <div class="filter-bar-v2">
+          <button class="filter-btn-v2" onclick="toggleOrderFilter()"><i class="fas fa-filter"></i> Bộ lọc <i class="fas fa-chevron-down"></i></button>
+          <div class="search-v2">
+            <i class="fas fa-search"></i>
+            <input placeholder="Tìm kiếm..." id="orderSearchInput" oninput="renderOrdersPage()">
+          </div>
+          <select class="form-select-v2" id="statusFilterSel" onchange="renderOrdersPage()" style="width:auto;padding:10px 16px;border-radius:50px">
+            <option value="">Tất cả trạng thái</option>
+            <option value="pending">Chờ xử lý</option>
+            <option value="in_progress">Đang xử lý</option>
+            <option value="completed">Hoàn thành</option>
+            <option value="partial">Một phần</option>
+            <option value="cancelled">Đã hủy</option>
+          </select>
+        </div>
+        <div id="ordersPageContainer">
+          <div class="empty-orders-box">
+            <p style="font-size:50px;margin-bottom:16px">📭</p>
+            <p>Xin chào <strong id="emptyOrdersUser">dangxoai</strong>, bạn chưa từng đặt hàng trước đây.<br>
+            Bạn có thể thêm số dư và đặt bất kỳ dịch vụ nào trên trang <strong>Đơn đặt hàng mới.</strong></p>
+            <br>
+            <button class="btn-dat-hang" style="display:inline-flex;padding:12px 28px" onclick="showPage('funds',null)">
+              <i class="fas fa-wallet"></i> Nạp tiền
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===========================
+           SUBSCRIPTION (Đặt Hàng Lớn)
+      ============================ -->
+      <div class="page" id="page-sub">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:60px;text-align:center">
+          <div style="font-size:60px;margin-bottom:20px">📦</div>
+          <h3 style="font-size:20px;font-weight:800;margin-bottom:12px">Đặt Hàng Lớn</h3>
+          <p style="color:var(--gray2);font-size:14px;line-height:1.8;max-width:500px;margin:0 auto 24px">Tính năng đặt hàng số lượng lớn với ưu đãi đặc biệt. Liên hệ Admin để biết thêm thông tin.</p>
+          <a href="https://t.me/Denypanel" target="_blank" class="btn-dat-hang" style="display:inline-flex;padding:12px 28px">
+            <i class="fab fa-telegram"></i> Liên hệ qua Telegram
+          </a>
+        </div>
+      </div>
+
+      <!-- ===========================
+           ADD FUNDS
+      ============================ -->
+      <div class="page" id="page-funds">
+        <div class="funds-layout">
+          <!-- Left: Payment form -->
+          <div class="funds-main-card">
+            <div class="funds-header">
+              <div class="funds-header-left">
+                <div class="funds-header-icon"><i class="fas fa-wallet"></i></div>
+                Nạp tiền
+              </div>
+              <button class="btn-history"><i class="fas fa-history"></i> Lịch sử</button>
+            </div>
+
+            <div class="form-group-v2">
+              <label class="form-label-v2">Phương thức thanh toán</label>
+              <select class="form-select-v2" id="paymentMethod">
+                <option value="cryptomus">Cryptomus | Cổng tự động nạp tiền tự động Crypto USDT - BTC - BNB</option>
+                <option value="usdt">USDT TRC20</option>
+                <option value="coinbase">Coinbase</option>
+                <option value="acb">ACB</option>
+                <option value="vcb">Vietcombank (Auto)</option>
+                <option value="paypal">PayPal Invoice</option>
+              </select>
+            </div>
+            <div class="form-group-v2">
+              <label class="form-label-v2">Số tiền nạp</label>
+              <input type="number" class="form-input-v2" id="fundAmountInput" placeholder="Min $10" min="2">
+            </div>
+            <div id="fundErrorMsg"></div>
+            <button class="btn-dat-hang" style="margin-top:8px" onclick="submitFundRequest()">
+              <i class="fas fa-credit-card"></i> Thanh toán
+            </button>
+          </div>
+
+          <!-- Right: Notes -->
+          <div class="funds-note-card">
+            <div class="funds-note-icon"><i class="fas fa-info-circle"></i></div>
+            <h3>Chú ý</h3>
+            <p>Giá trị quy đổi <strong>27.000 vnd/1$</strong><br>Min 10$/lần nạp (Min 2$ cho user mới nạp lần đầu)</p>
+            <p>Chúng tôi có hầu hết các phương thức thanh toán hiện phổ biến hiện tại. Nếu bạn cần thêm bất kỳ phương thức thanh toán nào vui lòng liên hệ với Admin để nhận hỗ trợ.</p>
+            <p>Đôi khi thông báo của ngân hàng có sự chậm chễ, vui lòng liên hệ bộ phận support để kiểm tra cộng tiền.</p>
+            <p><strong>Thông tin liên hệ hỗ trợ:</strong></p>
+            <div class="contact-item"><i class="fab fa-facebook"></i> Facebook</div>
+            <div class="contact-item"><i class="fab fa-whatsapp"></i> Whatsapp</div>
+            <div class="contact-item"><i class="fab fa-telegram"></i> Telegram: t.me/Denypanel</div>
+            <div class="contact-item"><i class="fas fa-phone"></i> Zalo: 0979431641</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===========================
+           SERVICES
+      ============================ -->
+      <div class="page" id="page-services">
+        <div class="services-filter-row">
+          <div class="platform-scroll" id="platformBtns">
+            <button class="plat-btn active" style="background:#555" onclick="filterSvcPage('all',this)" title="Tất cả"><i class="fas fa-th" style="color:white;font-size:14px"></i></button>
+            <button class="plat-btn" style="background:#e1306c" onclick="filterSvcPage('Instagram',this)" title="Instagram">📷</button>
+            <button class="plat-btn" style="background:#010101" onclick="filterSvcPage('TikTok',this)" title="TikTok">🎵</button>
+            <button class="plat-btn" style="background:#1da1f2" onclick="filterSvcPage('Twitter',this)" title="Twitter">🐦</button>
+            <button class="plat-btn" style="background:#ff0000" onclick="filterSvcPage('Youtube',this)" title="YouTube">▶</button>
+            <button class="plat-btn" style="background:#229ed9" onclick="filterSvcPage('Telegram',this)" title="Telegram">✈</button>
+            <button class="plat-btn" style="background:#1877f2" onclick="filterSvcPage('Facebook',this)" title="Facebook">f</button>
+            <button class="plat-btn" style="background:#1db954" onclick="filterSvcPage('Spotify',this)" title="Spotify">🎵</button>
+            <button class="plat-btn" style="background:#5865f2" onclick="filterSvcPage('Discord',this)" title="Discord">👾</button>
+            <button class="plat-btn" style="background:#ff4500" onclick="filterSvcPage('Reddit',this)" title="Reddit">👽</button>
+            <button class="plat-btn" style="background:#fffc00" onclick="filterSvcPage('Snapchat',this)" title="Snapchat">👻</button>
+            <button class="plat-btn" style="background:#0088cc" onclick="filterSvcPage('Twitch',this)" title="Twitch">🎮</button>
+            <button class="plat-btn" style="background:#ff6600" onclick="filterSvcPage('SoundCloud',this)" title="SoundCloud">☁</button>
+            <button class="plat-btn" style="background:#e60023" onclick="filterSvcPage('Pinterest',this)" title="Pinterest">📌</button>
+          </div>
+          <div class="svc-search-box">
+            <i class="fas fa-search"></i>
+            <input placeholder="Giờ hỗ trợ" id="svcPageSearch" oninput="renderSvcPage()">
+          </div>
+          <button class="req-svc-btn" onclick="openReqSvcModal()"><i class="fas fa-plus"></i> Yêu cầu dịch vụ mới</button>
+        </div>
+        <div class="svc-table-header">
+          <div>❤</div>
+          <div>Mã DV</div>
+          <div>Dịch vụ</div>
+          <div>Giá cho 1000 đơn vị</div>
+          <div>Tối thiểu</div>
+          <div>Tối đa</div>
+          <div>Thời gian trung bình</div>
+          <div style="text-align:right"></div>
+        </div>
+        <div class="svc-body" id="svcPageBody">
+          <div style="text-align:center;padding:60px;color:var(--gray)"><i class="fas fa-spinner fa-spin" style="font-size:24px;color:var(--green)"></i><br><br>Đang tải...</div>
+        </div>
+      </div>
+
+      <!-- ===========================
+           API PAGE
+      ============================ -->
+      <div class="page" id="page-api">
+        <div class="api-hero">
+          <div class="api-hero-title">
+            <div class="api-hero-icon"><i class="fas fa-code"></i></div>
+            API
+          </div>
+          <div class="api-info-grid">
+            <div class="api-info-item">
+              <div class="api-info-label">HTTP Method</div>
+              <div class="api-info-value" style="color:var(--green)">POST</div>
+            </div>
+            <div class="api-info-item">
+              <div class="api-info-label">API Url</div>
+              <div class="api-info-value" style="font-size:12px;color:var(--gray2)">https://denypanel.com/api/v2</div>
+            </div>
+            <div class="api-info-item">
+              <div class="api-info-label">API Key</div>
+              <div class="api-info-value" style="font-size:11px;color:var(--gray2)">Get on Account Page</div>
+            </div>
+            <div class="api-info-item">
+              <div class="api-info-label">Response Format</div>
+              <div class="api-info-value">JSON</div>
+            </div>
+          </div>
+          <label class="form-label-v2">API Key của bạn</label>
+          <div class="api-key-display">
+            <code id="displayApiKeyV2">3b341f23c723707da4ce67f673f4e2f8</code>
+            <button class="copy-api-btn" onclick="copyText('3b341f23c723707da4ce67f673f4e2f8')">
+              <i class="fas fa-copy"></i> Sao chép
+            </button>
+          </div>
+        </div>
+
+        <!-- API Methods -->
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:20px">
+          <!-- Service List -->
+          <div class="api-hero" style="margin:0;padding:20px">
+            <h3 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+              <span style="background:rgba(46,204,113,0.2);color:var(--green);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:800">POST</span>
+              Service List
+            </h3>
+            <p style="font-size:12px;color:var(--gray2);margin-bottom:12px">Service List API Responses</p>
+            <div style="display:flex;gap:20px;font-size:12px;color:var(--gray2);margin-bottom:12px">
+              <div><strong style="color:var(--white)">key</strong><br>Your API key</div>
+              <div><strong style="color:var(--white)">action</strong><br>services</div>
+            </div>
+            <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:12px;font-family:monospace;font-size:11px;color:#adb5bd">
+[ { "service": 1, "name": "Followers", "type": "Default", "rate": "0.90", "min": "50", "max": "10000" } ]
+            </div>
+          </div>
+          <!-- Add Order -->
+          <div class="api-hero" style="margin:0;padding:20px">
+            <h3 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+              <span style="background:rgba(46,204,113,0.2);color:var(--green);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:800">POST</span>
+              Add Order
+            </h3>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--gray2);margin-bottom:12px">
+              <span><strong style="color:var(--white)">key</strong> API key</span>
+              <span><strong style="color:var(--white)">action</strong> add</span>
+              <span><strong style="color:var(--white)">service</strong> ID</span>
+              <span><strong style="color:var(--white)">link</strong> URL</span>
+              <span><strong style="color:var(--white)">quantity</strong> số lượng</span>
+            </div>
+            <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:12px;font-family:monospace;font-size:11px;color:#adb5bd">{ "order": 23501 }</div>
+          </div>
+          <!-- Order Status -->
+          <div class="api-hero" style="margin:0;padding:20px">
+            <h3 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+              <span style="background:rgba(46,204,113,0.2);color:var(--green);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:800">POST</span>
+              Order Status
+            </h3>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--gray2);margin-bottom:12px">
+              <span><strong style="color:var(--white)">key</strong> API key</span>
+              <span><strong style="color:var(--white)">action</strong> status</span>
+              <span><strong style="color:var(--white)">order</strong> Order ID</span>
+            </div>
+            <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:12px;font-family:monospace;font-size:11px;color:#adb5bd">{ "charge": "0.27819", "start_count": "3579", "status": "Partial", "remains": "157", "currency": "USD" }</div>
+          </div>
+          <!-- Balance -->
+          <div class="api-hero" style="margin:0;padding:20px">
+            <h3 style="font-size:15px;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+              <span style="background:rgba(46,204,113,0.2);color:var(--green);padding:2px 8px;border-radius:4px;font-size:10px;font-weight:800">POST</span>
+              User Balance
+            </h3>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--gray2);margin-bottom:12px">
+              <span><strong style="color:var(--white)">key</strong> API key</span>
+              <span><strong style="color:var(--white)">action</strong> balance</span>
+            </div>
+            <div style="background:rgba(0,0,0,0.3);border-radius:8px;padding:12px;font-family:monospace;font-size:11px;color:#adb5bd">{ "balance": "100.84292", "currency": "USD" }</div>
+          </div>
+        </div>
+
+        <!-- API Test -->
+        <div class="api-hero" style="margin:0;padding:24px">
+          <h3 style="font-size:15px;margin-bottom:16px">🧪 Thử API trực tiếp</h3>
+          <div style="display:flex;gap:12px;margin-bottom:12px">
+            <select class="form-select-v2" id="testActionSel" style="flex:1">
+              <option value="balance">Lấy số dư</option>
+              <option value="services">Lấy danh sách dịch vụ (3 đầu tiên)</option>
+            </select>
+            <button class="btn-dat-hang" style="padding:12px 24px;border-radius:10px" onclick="testApiCall()">
+              <i class="fas fa-play"></i> Chạy
+            </button>
+          </div>
+          <div id="apiTestResultV2" style="display:none;background:rgba(0,0,0,0.4);border:1px solid var(--border);border-radius:10px;padding:16px;font-family:monospace;font-size:13px;color:var(--green);white-space:pre-wrap;word-break:break-all;max-height:300px;overflow-y:auto"></div>
+        </div>
+      </div>
+
+      <!-- ===========================
+           AFFILIATE
+      ============================ -->
+      <div class="page" id="page-affiliate">
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:50px;text-align:center;max-width:700px;margin:0 auto">
+          <div style="font-size:60px;margin-bottom:20px">🤝</div>
+          <h3 style="font-size:22px;font-weight:800;margin-bottom:16px">Chương trình Đại lý</h3>
+          <p style="color:var(--gray2);font-size:14px;line-height:1.8;margin-bottom:24px">Giới thiệu bạn bè sử dụng Denypanel và nhận hoa hồng từ mỗi đơn hàng của họ.</p>
+          <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 18px;display:flex;align-items:center;gap:12px;margin-bottom:24px;text-align:left">
+            <code style="flex:1;font-family:monospace;font-size:13px;color:var(--green)" id="affLinkV2">https://denypanel.com/ref/dangxoai</code>
+            <button class="copy-api-btn" onclick="copyText(document.getElementById('affLinkV2').textContent)"><i class="fas fa-copy"></i> Copy</button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px">
+              <div style="font-size:22px;font-weight:800;color:var(--green)">0</div>
+              <div style="font-size:12px;color:var(--gray2);margin-top:4px">Số người giới thiệu</div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px">
+              <div style="font-size:22px;font-weight:800;color:var(--green)">$0.00</div>
+              <div style="font-size:12px;color:var(--gray2);margin-top:4px">Hoa hồng kiếm được</div>
+            </div>
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px">
+              <div style="font-size:22px;font-weight:800;color:var(--green)">5%</div>
+              <div style="font-size:12px;color:var(--gray2);margin-top:4px">Tỉ lệ hoa hồng</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===========================
+           PROFILE
+      ============================ -->
+      <div class="page" id="page-profile">
+        <div style="display:grid;grid-template-columns:280px 1fr;gap:20px">
+          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;text-align:center;height:fit-content">
+            <div style="width:80px;height:80px;background:linear-gradient(135deg,var(--green),var(--green2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 16px;box-shadow:0 8px 25px rgba(46,204,113,0.3)">🧑</div>
+            <div style="font-size:18px;font-weight:800;margin-bottom:4px" id="profileNameDisplay">dangxoai</div>
+            <div style="font-size:13px;color:var(--gray2);margin-bottom:24px" id="profileEmailDisplay"></div>
+            <div style="display:flex;gap:10px;justify-content:center">
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 20px;text-align:center">
+                <span style="font-size:20px;font-weight:800;color:var(--green);display:block" id="profileOrders">0</span>
+                <div style="font-size:11px;color:var(--gray2);margin-top:4px">Đơn hàng</div>
+              </div>
+              <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px 20px;text-align:center">
+                <span style="font-size:20px;font-weight:800;color:var(--green);display:block" id="profileBalance">$0</span>
+                <div style="font-size:11px;color:var(--gray2);margin-top:4px">Số dư</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:28px">
+            <h3 style="font-size:16px;margin-bottom:20px;padding-bottom:12px;border-bottom:1px solid var(--border)">Thông tin tài khoản</h3>
+            <div class="form-group-v2">
+              <label class="form-label-v2">Tên đăng nhập</label>
+              <input class="form-input-v2" id="settUsernameV2" readonly>
+            </div>
+            <div class="form-group-v2">
+              <label class="form-label-v2">Email</label>
+              <input class="form-input-v2" id="settEmailV2" readonly>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:20px;margin-top:4px">
+              <h4 style="font-size:14px;margin-bottom:16px">API Key</h4>
+              <div class="form-group-v2">
+                <label class="form-label-v2">API Key của bạn</label>
+                <div class="api-key-display">
+                  <code style="font-size:13px;word-break:break-all">3b341f23c723707da4ce67f673f4e2f8</code>
+                  <button class="copy-api-btn" onclick="copyText('3b341f23c723707da4ce67f673f4e2f8')"><i class="fas fa-copy"></i></button>
+                </div>
+              </div>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:20px;margin-top:4px">
+              <h4 style="font-size:14px;margin-bottom:16px">Đổi mật khẩu</h4>
+              <div class="form-group-v2">
+                <label class="form-label-v2">Mật khẩu mới</label>
+                <input type="password" class="form-input-v2" id="newPassV2" placeholder="••••••••">
+              </div>
+              <div class="form-group-v2">
+                <label class="form-label-v2">Xác nhận mật khẩu</label>
+                <input type="password" class="form-input-v2" id="confirmPassV2" placeholder="••••••••">
+              </div>
+              <div id="profileMsgV2"></div>
+              <button class="btn-dat-hang" onclick="saveProfileV2()"><i class="fas fa-save"></i> Lưu thay đổi</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-content -->
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<!-- Service Detail Modal -->
+<div id="svcDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:5000;display:none;align-items:center;justify-content:center">
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;padding:0;position:relative">
+    <button onclick="closeSvcModal()" style="position:absolute;top:14px;right:16px;background:rgba(255,255,255,0.08);border:none;color:var(--white);font-size:18px;width:32px;height:32px;border-radius:50%;cursor:pointer;z-index:10">×</button>
+    <div style="padding:24px;text-align:center">
+      <div class="sip-id-badge" style="font-size:16px;padding:6px 18px;margin-bottom:14px;display:inline-block" id="modalSvcId">-</div>
+      <h3 style="font-size:16px;font-weight:800;line-height:1.5;margin-bottom:20px" id="modalSvcName">-</h3>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:left;margin-bottom:16px">
+        <p style="font-size:14px;line-height:1.8;color:var(--gray2)" id="modalSvcDesc">-</p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:left">
+          <div style="font-size:11px;color:var(--gray);margin-bottom:4px">Speed</div>
+          <div style="font-weight:800;font-size:14px" id="modalSvcSpeed">-</div>
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:left">
+          <div style="font-size:11px;color:var(--gray);margin-bottom:4px">Refill</div>
+          <div style="font-weight:800;font-size:14px" id="modalSvcRefill">-</div>
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:left">
+          <div style="font-size:11px;color:var(--gray);margin-bottom:4px">Quality</div>
+          <div style="font-weight:800;font-size:14px" id="modalSvcQuality">Rất Tốt</div>
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:left">
+          <div style="font-size:11px;color:var(--gray);margin-bottom:4px">Giá / 1000</div>
+          <div style="font-weight:800;font-size:14px;color:var(--green)" id="modalSvcRate">-</div>
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:left">
+          <div style="font-size:11px;color:var(--gray);margin-bottom:4px">Tối thiểu</div>
+          <div style="font-weight:800;font-size:14px" id="modalSvcMin">-</div>
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:left">
+          <div style="font-size:11px;color:var(--gray);margin-bottom:4px">Tối đa</div>
+          <div style="font-weight:800;font-size:14px" id="modalSvcMax">-</div>
+        </div>
+      </div>
+      <button class="btn-dat-hang" style="width:100%;padding:16px;font-size:15px" id="modalBuyBtn" onclick="modalBuyNow()"><i class="fas fa-shopping-cart"></i> Mua ngay</button>
+    </div>
+  </div>
+</div>
+
+<!-- Request New Service Modal -->
+<div id="reqSvcModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(6px);z-index:5000;align-items:center;justify-content:center">
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:480px;padding:28px;position:relative">
+    <button onclick="closeReqSvcModal()" style="position:absolute;top:14px;right:16px;background:rgba(255,255,255,0.08);border:none;color:var(--white);font-size:18px;width:32px;height:32px;border-radius:50%;cursor:pointer">×</button>
+    <h3 style="font-size:16px;font-weight:800;margin-bottom:20px">Yêu cầu dịch vụ mới</h3>
+    <div class="form-group-v2">
+      <label class="form-label-v2">Hạng mục dịch vụ</label>
+      <select class="form-select-v2" id="reqSvcCategory">
+        <option>Instagram</option><option>TikTok</option><option>YouTube</option>
+        <option>Telegram</option><option>Facebook</option><option>Twitter</option>
+        <option>Spotify</option><option>Discord</option><option>Khác</option>
+      </select>
+    </div>
+    <div class="form-group-v2">
+      <label class="form-label-v2">Tên dịch vụ</label>
+      <input class="form-input-v2" id="reqSvcName" placeholder="Nhập tên dịch vụ...">
+    </div>
+    <div class="form-group-v2">
+      <label class="form-label-v2">Mỗi 1000 Giá</label>
+      <input class="form-input-v2" id="reqSvcPrice" placeholder="Ví dụ: $1.50">
+    </div>
+    <div class="form-group-v2">
+      <label class="form-label-v2">Điểm đích</label>
+      <textarea class="form-input-v2" id="reqSvcTarget" rows="3" placeholder="Mô tả chi tiết dịch vụ cần yêu cầu..." style="resize:vertical"></textarea>
+    </div>
+    <div id="reqSvcMsg"></div>
+    <button class="btn-dat-hang" style="width:100%;padding:14px" onclick="submitReqSvc()"><i class="fas fa-paper-plane"></i> Yêu cầu dịch vụ</button>
+  </div>
+</div>
+<div class="toast-v2" id="toastV2"><i class="fas fa-check-circle"></i> <span id="toastMsg">.</span></div>
+
+<!-- FAB Bell -->
+<div class="fab-bell" onclick="showPage('home',null)">
+  🔔
+  <div class="fab-badge">1</div>
+</div>
+
+<script src="api.js"></script>
+<script src="dashboard.js"></script>
+</body>
+</html>
