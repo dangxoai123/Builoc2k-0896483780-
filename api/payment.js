@@ -1,17 +1,21 @@
 /**
  * ==========================================
- * VERCEL SERVERLESS FUNCTION - AUTO PAYMENT
+ * VERCEL SERVERLESS FUNCTION - AUTO PAYMENT (Sepay)
  * File: api/payment.js
- * 
- * Nhận webhook từ web2m.com (sPayment) khi có
- * giao dịch chuyển khoản VCB mới.
- * 
- * Cơ chế:
- *   web2m phát hiện CK → POST webhook về đây
- *   → Parse nội dung → Tìm user → Cộng tiền Firestore
- * 
- * Nội dung CK user cần ghi: NAP <email>
- * Ví dụ: NAP user@gmail.com
+ *
+ * Tích hợp Sepay.vn để tự động nhận tiền nạp.
+ * Sepay dùng Open Banking - KHÔNG cần mật khẩu IB.
+ *
+ * Flow:
+ *   1. User nạp tiền → nhận mã ref ngẫu nhiên (BUILOCXXXXX)
+ *   2. User chuyển khoản với nội dung chứa mã ref đó
+ *   3. Frontend poll GET /api/payment?ref=BUILOCXXXXX mỗi 15s
+ *   4. Server hỏi Sepay API → tìm giao dịch có chứa ref
+ *   5. Nếu thấy → cộng tiền vào Firestore
+ *
+ * Webhook từ Sepay (POST /api/payment):
+ *   Sepay phát hiện CK → POST real-time về đây
+ *   → Tìm pending_deposit khớp ref → credit user
  * ==========================================
  */
 
@@ -20,13 +24,13 @@ const https = require('https');
 // ==========================================
 // CONFIG
 // ==========================================
-const WEB2M_TOKEN = '457F855D-4890-5004-77B0-7B07614D845E'; // VCB token (web2m)
-const VCB_ACCOUNT = '1016232687';                              // Số TK VCB
-const VCB_PASSWORD = 'Locbui2k@';                             // Mật khẩu Internet Banking
-const WEB2M_API_PATH = 'historyapivcbv3';                       // API v3 (mới nhất)
+const SEPAY_TOKEN  = 'WW6NPUYVK0DSVDH5N2C8T9OAOAUMLIK4GVCJ5AE2SYMTTJIPFLCW4BKED3UEZBMR';
+const BANK_ACCOUNT = '96247NDQTE';  // Số TK ảo BIDV (VA Sepay)
+const REAL_ACCOUNT = '8837755253';  // Số TK BIDV thực
+const BANK_NAME    = 'BIDV';
 
-// Firebase Admin SDK via REST API (không cần firebase-admin package)
-const FIREBASE_PROJECT = 'builoc2k-denypanel';
+// Firebase project
+const FIREBASE_PROJECT    = 'builoc2k-denypanel';
 const FIREBASE_WEB_API_KEY = 'AIzaSyDA6SIIeT8jlzLMyp1r6WnefnsGQxMgygA';
 
 // ==========================================
@@ -39,96 +43,45 @@ module.exports = async function handler(req, res) {
 
   if (req.method === 'OPTIONS') return res.status(204).end();
 
-  // ── GET: Kiểm tra giao dịch mới từ web2m (polling)
-  if (req.method === 'GET') {
-    return await handlePolling(req, res);
-  }
+  // GET: Frontend polling — kiểm tra xem ref đã được nạp chưa
+  if (req.method === 'GET') return handlePolling(req, res);
 
-  // ── POST: Nhận webhook từ web2m
-  if (req.method === 'POST') {
-    return await handleWebhook(req, res);
-  }
+  // POST: Webhook từ Sepay — có giao dịch mới
+  if (req.method === 'POST') return handleWebhook(req, res);
 
   return res.status(405).json({ error: 'Method not allowed' });
 };
 
 // ==========================================
-// WEBHOOK HANDLER (web2m gọi vào đây)
-// ==========================================
-async function handleWebhook(req, res) {
-  try {
-    const body = req.body;
-    console.log('[Payment Webhook]', JSON.stringify(body));
-
-    // Xác thực token từ web2m
-    const token = req.headers['authorization'] || req.headers['x-token'] || body?.token;
-    if (token && token !== WEB2M_TOKEN && token !== `Bearer ${WEB2M_TOKEN}`) {
-      return res.status(200).json({ code: '01', message: 'Invalid token' });
-    }
-
-    // Chỉ xử lý giao dịch chuyển tiền vào (transferType = in)
-    const transferType = (body?.transferType || body?.type || '').toLowerCase();
-    if (transferType && transferType !== 'in') {
-      return res.status(200).json({ code: '00', message: 'Skipped (not incoming)' });
-    }
-
-    const amount = parseFloat(body?.amount || body?.value || 0);
-    const description = (body?.description || body?.content || '').toLowerCase().trim();
-    const transactionId = body?.id || body?.referenceCode || Date.now().toString();
-
-    if (!amount || amount <= 0) {
-      return res.status(200).json({ code: '00', message: 'Amount = 0, skipped' });
-    }
-
-    // Parse email user từ nội dung chuyển khoản
-    // Định dạng: NAP <email> hoặc NAP<email>
-    const email = parseEmailFromDesc(description);
-    if (!email) {
-      console.log('[Payment] Cannot parse email from description:', description);
-      return res.status(200).json({ code: '00', message: 'Cannot parse user from description' });
-    }
-
-    // Tìm user trong Firestore và cộng tiền
-    const result = await creditUserBalance(email, amount, transactionId, description);
-    return res.status(200).json({ code: '00', message: result });
-
-  } catch (e) {
-    console.error('[Payment Webhook Error]', e.message);
-    return res.status(200).json({ code: '00', message: 'Error: ' + e.message });
-  }
-}
-
-// ==========================================
-// POLLING (Frontend gọi để check giao dịch mới)
-// GET /api/payment?ref=BUILOCXXXXXX
+// POLLING — Frontend gọi mỗi 15s
+// GET /api/payment?ref=BUILOCXXXXX
 // ==========================================
 async function handlePolling(req, res) {
   const { ref } = req.query;
-  if (!ref) {
-    return res.status(400).json({ error: 'Missing ref' });
-  }
+  if (!ref) return res.status(400).json({ error: 'Missing ref' });
 
   try {
-    // Gọi web2m API lấy lịch sử giao dịch VCB
-    const txData = await callWeb2mAPI(VCB_ACCOUNT);
-    const transactions = normalizeTransactions(txData);
+    // Lấy 20 giao dịch gần nhất từ Sepay
+    const transactions = await fetchSepayTransactions(20);
 
-    if (!transactions.length) {
-      return res.status(200).json({ found: false, debug: 'no transactions' });
-    }
-
-    // Tìm giao dịch có nội dung chứa mã ref (BUILOC...)
+    // Tìm giao dịch có nội dung chứa mã ref
     const match = transactions.find(tx =>
-      (tx.description || '').toUpperCase().includes(ref.toUpperCase())
+      (tx.transaction_content || '').toUpperCase().includes(ref.toUpperCase())
     );
 
     if (match) {
-      // Credit vào user qua Firestore pending_deposits
-      const result = await creditByRef(ref, match.amount, match.id, match.description);
-      return res.status(200).json({ found: true, amount: match.amount, result });
+      const amount = parseFloat(match.amount_in || 0);
+      const txId   = match.id || match.reference_number || ref;
+      const desc   = match.transaction_content || '';
+
+      // Cộng tiền user trong Firestore
+      const result = await creditByRef(ref, amount, txId, desc);
+      console.log(`[Payment] ✅ Khớp ref=${ref} amount=${amount} txId=${txId}`);
+      return res.status(200).json({ found: true, amount, result });
     }
 
     return res.status(200).json({ found: false });
+
   } catch (e) {
     console.error('[Polling] Error:', e.message);
     return res.status(500).json({ error: e.message });
@@ -136,258 +89,275 @@ async function handlePolling(req, res) {
 }
 
 // ==========================================
-// WEB2M API CALL - Lấy lịch sử giao dịch VCB
-// URL format: /historyapivcb/{password}/{sotaikhoan}/{token}
+// WEBHOOK — Sepay gọi khi có giao dịch mới
+// POST /api/payment
+// Body: { id, gateway, transferAmount, content, transferType, ... }
 // ==========================================
-async function callWeb2mAPI(account) {
+async function handleWebhook(req, res) {
+  try {
+    const body = req.body || {};
+
+    console.log('[Webhook] Sepay payload:', JSON.stringify(body));
+
+    // Chỉ xử lý giao dịch tiền VÀO
+    if (body.transferType !== 'in') {
+      return res.status(200).json({ success: true, skipped: 'not incoming' });
+    }
+
+    const content = (body.content || body.code || '').toUpperCase();
+    const amount  = parseFloat(body.transferAmount || 0);
+    const txId    = String(body.id || body.referenceCode || '');
+
+    if (!content || amount <= 0) {
+      return res.status(200).json({ success: true, skipped: 'no content or zero amount' });
+    }
+
+    // Tìm pending deposit khớp với nội dung chuyển khoản
+    const pending = await findPendingByContent(content);
+
+    if (!pending) {
+      console.log(`[Webhook] Không tìm thấy pending deposit với content: ${content}`);
+      return res.status(200).json({ success: true, skipped: 'no matching pending deposit' });
+    }
+
+    // Cộng tiền
+    const result = await creditByRef(pending.ref, amount, txId, body.content || '');
+    console.log(`[Webhook] ✅ Credited user ref=${pending.ref} amount=${amount}`);
+
+    return res.status(200).json({ success: true, credited: true, amount, result });
+
+  } catch (e) {
+    console.error('[Webhook] Error:', e.message);
+    return res.status(500).json({ error: e.message });
+  }
+}
+
+// ==========================================
+// SEPAY API — Lấy danh sách giao dịch
+// GET https://my.sepay.vn/userapi/transactions/list
+// ==========================================
+async function fetchSepayTransactions(limit = 20) {
   return new Promise((resolve, reject) => {
-    // URL mới: /historyapivcbv3/{password}/{sotaikhoan}/{token}
-    const cleanToken = WEB2M_TOKEN.trim().replace(/[\u200B-\u200D\uFEFF\u00A0]/g, '');
-    const path = `/${WEB2M_API_PATH}/${encodeURIComponent(VCB_PASSWORD)}/${account}/${cleanToken}`;
+    const path = `/userapi/transactions/list?limit=${limit}&account_number=${BANK_ACCOUNT}`;
     const options = {
-      hostname: 'api.web2m.com',
+      hostname: 'my.sepay.vn',
       port: 443,
       path,
       method: 'GET',
       headers: {
+        'Authorization': `Bearer ${SEPAY_TOKEN}`,
         'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0',
       },
     };
-    const req = https.request(options, (response) => {
+
+    const req = https.request(options, (resp) => {
       let data = '';
-      response.on('data', c => data += c);
-      response.on('end', () => {
-        try { resolve(JSON.parse(data)); } catch { resolve(null); }
+      resp.on('data', c => data += c);
+      resp.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          // Sepay trả về: { messages:{success:"1"}, transaction_list:[...] }
+          const list = json.transaction_list || [];
+          // Chỉ lấy giao dịch tiền vào (amount_in > 0)
+          const incoming = list.filter(tx => parseFloat(tx.amount_in || 0) > 0);
+          resolve(incoming);
+        } catch (err) {
+          resolve([]);
+        }
       });
     });
+
     req.on('error', reject);
-    req.setTimeout(12000, () => { req.destroy(); reject(new Error('Timeout')); });
+    req.setTimeout(12000, () => { req.destroy(); reject(new Error('Sepay API timeout')); });
     req.end();
   });
 }
 
-/**
- * Normalize giao dịch từ web2m VCB API về dạng chuẩn
- * API trả về: data.chiTietGiaoDich[]
- * Mỗi item: { SoThamChieu, SoTienGhiCo, MoTa, NgayGiaoDich, CD }
- */
-function normalizeTransactions(apiResp) {
-  if (!apiResp?.status) return [];
-  const list = apiResp?.data?.chiTietGiaoDich || apiResp?.transactions || [];
-  return list
-    .filter(tx => (tx.CD || tx.cd || '+') === '+') // Chỉ lấy giao dịch Cộng tiền (+)
-    .map(tx => ({
-      id: tx.SoThamChieu || tx.id,
-      amount: parseFloat((tx.SoTienGhiCo || tx.amount || '0').toString().replace(/[^0-9.]/g, '')),
-      description: tx.MoTa || tx.description || tx.content || '',
-      date: tx.NgayGiaoDich || tx.date || '',
-    }));
-}
-
 // ==========================================
-// FIRESTORE REST API - Cộng tiền user
+// FIRESTORE — Tìm pending deposit theo content
 // ==========================================
-async function creditUserBalance(email, amount, txId, description) {
-  // Tìm user theo email trong Firestore
+async function findPendingByContent(upperContent) {
   const firestoreBase = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents`;
 
-  // Query users where email == email
-  const queryBody = JSON.stringify({
-    structuredQuery: {
-      from: [{ collectionId: 'users' }],
-      where: {
-        fieldFilter: {
-          field: { fieldPath: 'email' },
-          op: 'EQUAL',
-          value: { stringValue: email }
-        }
+  try {
+    const queryBody = JSON.stringify({
+      structuredQuery: {
+        from: [{ collectionId: 'pending_deposits' }],
+        where: {
+          fieldFilter: {
+            field: { fieldPath: 'status' },
+            op: 'EQUAL',
+            value: { stringValue: 'pending' },
+          },
+        },
+        limit: 50,
       },
-      limit: 1
+    });
+
+    const resp = await httpsPost(
+      `firestore.googleapis.com`,
+      `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents:runQuery?key=${FIREBASE_WEB_API_KEY}`,
+      queryBody
+    );
+
+    const docs = JSON.parse(resp);
+    for (const item of docs) {
+      if (!item.document) continue;
+      const fields = item.document.fields || {};
+      const ref = fields.ref?.stringValue || '';
+      if (ref && upperContent.includes(ref.toUpperCase())) {
+        return { ref, docPath: item.document.name };
+      }
     }
-  });
-
-  const userDoc = await httpsPost(
-    `${firestoreBase}:runQuery?key=${FIREBASE_WEB_API_KEY}`,
-    queryBody
-  );
-
-  const parsed = JSON.parse(userDoc);
-  if (!parsed[0]?.document) {
-    return `User not found: ${email}`;
+    return null;
+  } catch {
+    return null;
   }
-
-  const docName = parsed[0].document.name;
-  const currentBalance = parseFloat(parsed[0].document.fields?.balance?.doubleValue || parsed[0].document.fields?.balance?.integerValue || 0);
-  const newBalance = currentBalance + amount;
-
-  // Kiểm tra giao dịch đã được xử lý chưa (tránh cộng 2 lần)
-  const txCheck = await httpGet(
-    `${firestoreBase}/transactions/${txId}?key=${FIREBASE_WEB_API_KEY}`
-  );
-  const txParsed = JSON.parse(txCheck);
-  if (txParsed?.fields) {
-    return `Transaction ${txId} already processed`;
-  }
-
-  // Cập nhật số dư user
-  const uid = docName.split('/').pop();
-  const updateBody = JSON.stringify({
-    fields: { balance: { doubleValue: newBalance } }
-  });
-  await httpsPatch(
-    `${firestoreBase}/users/${uid}?updateMask.fieldPaths=balance&key=${FIREBASE_WEB_API_KEY}`,
-    updateBody
-  );
-
-  // Lưu lịch sử giao dịch để tránh cộng 2 lần
-  const logBody = JSON.stringify({
-    fields: {
-      uid: { stringValue: uid },
-      email: { stringValue: email },
-      type: { stringValue: 'bank_transfer' },
-      amount: { doubleValue: amount },
-      balanceBefore: { doubleValue: currentBalance },
-      balanceAfter: { doubleValue: newBalance },
-      note: { stringValue: description },
-      gateway: { stringValue: 'VietcomBank' },
-      processed: { booleanValue: true },
-      createdAt: { timestampValue: new Date().toISOString() }
-    }
-  });
-  await httpsPost(
-    `${firestoreBase}/transactions?documentId=${txId}&key=${FIREBASE_WEB_API_KEY}`,
-    logBody
-  );
-
-  console.log(`[Payment] Credited ${amount} VND to ${email}. New balance: ${newBalance}`);
-  return `OK: Credited ${amount} VND to ${email}`;
 }
 
-// Credit tiền dựa vào mã REF (BUILOC...) từ Firestore pending_deposits
+// ==========================================
+// FIRESTORE — Cộng tiền user theo ref code
+// ==========================================
 async function creditByRef(ref, amount, txId, description) {
   const firestoreBase = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents`;
 
-  // Tìm pending_deposit theo ref
-  const depositDoc = await httpGet(
-    `${firestoreBase}/pending_deposits/${ref}?key=${FIREBASE_WEB_API_KEY}`
-  );
-  const deposit = JSON.parse(depositDoc);
-  if (!deposit?.fields) return `Deposit ref ${ref} not found`;
-  if (deposit.fields.status?.stringValue === 'completed') return `Already processed: ${ref}`;
+  try {
+    // 1. Tìm pending deposit theo ref
+    const queryBody = JSON.stringify({
+      structuredQuery: {
+        from: [{ collectionId: 'pending_deposits' }],
+        where: {
+          compositeFilter: {
+            op: 'AND',
+            filters: [
+              { fieldFilter: { field: { fieldPath: 'ref' }, op: 'EQUAL', value: { stringValue: ref } } },
+              { fieldFilter: { field: { fieldPath: 'status' }, op: 'EQUAL', value: { stringValue: 'pending' } } },
+            ],
+          },
+        },
+        limit: 1,
+      },
+    });
 
-  const uid = deposit.fields.uid?.stringValue;
-  const depositAmount = parseFloat(deposit.fields.amount?.doubleValue || deposit.fields.amount?.integerValue || amount);
+    const qResp = await httpsPost(
+      'firestore.googleapis.com',
+      `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents:runQuery?key=${FIREBASE_WEB_API_KEY}`,
+      queryBody
+    );
 
-  // Lấy số dư hiện tại của user
-  const userDoc = await httpGet(`${firestoreBase}/users/${uid}?key=${FIREBASE_WEB_API_KEY}`);
-  const user = JSON.parse(userDoc);
-  const currentBalance = parseFloat(user?.fields?.balance?.doubleValue || user?.fields?.balance?.integerValue || 0);
-  const newBalance = currentBalance + depositAmount;
+    const docs = JSON.parse(qResp);
+    const doc  = docs.find(d => d.document)?.document;
+    if (!doc) return { error: 'Pending deposit not found for ref: ' + ref };
 
-  // Cập nhật số dư
-  await httpsPatch(
-    `${firestoreBase}/users/${uid}?updateMask.fieldPaths=balance&key=${FIREBASE_WEB_API_KEY}`,
-    JSON.stringify({ fields: { balance: { doubleValue: newBalance } } })
-  );
+    const fields  = doc.fields || {};
+    const email   = fields.email?.stringValue;
+    const docPath = doc.name;
 
-  // Đánh dấu deposit là completed
-  await httpsPatch(
-    `${firestoreBase}/pending_deposits/${ref}?updateMask.fieldPaths=status&key=${FIREBASE_WEB_API_KEY}`,
-    JSON.stringify({ fields: { status: { stringValue: 'completed' } } })
-  );
+    if (!email) return { error: 'No email in pending deposit' };
 
-  // Ghi transaction log
-  await httpsPost(
-    `${firestoreBase}/transactions?documentId=${ref}&key=${FIREBASE_WEB_API_KEY}`,
-    JSON.stringify({
-      fields: {
-        uid: { stringValue: uid },
-        type: { stringValue: 'bank_transfer' },
-        amount: { doubleValue: depositAmount },
-        balanceBefore: { doubleValue: currentBalance },
-        balanceAfter: { doubleValue: newBalance },
-        ref: { stringValue: ref },
-        note: { stringValue: description },
-        gateway: { stringValue: 'VietcomBank' },
-        processed: { booleanValue: true },
-        createdAt: { timestampValue: new Date().toISOString() }
-      }
-    })
-  );
+    // 2. Đánh dấu pending deposit = 'completed'
+    const patchPath = docPath.replace('https://firestore.googleapis.com/v1/', '');
+    await httpsRequest('PATCH',
+      'firestore.googleapis.com',
+      `/v1/${patchPath}?updateMask.fieldPaths=status&updateMask.fieldPaths=completedAt&updateMask.fieldPaths=txId&updateMask.fieldPaths=amount&key=${FIREBASE_WEB_API_KEY}`,
+      JSON.stringify({
+        fields: {
+          status:      { stringValue: 'completed' },
+          completedAt: { stringValue: new Date().toISOString() },
+          txId:        { stringValue: String(txId) },
+          amount:      { doubleValue: amount },
+        },
+      })
+    );
 
-  console.log(`[Payment] Ref ${ref}: +${depositAmount} VND → uid ${uid}. Balance: ${newBalance}`);
-  return `OK: +${depositAmount} VND to uid ${uid}`;
-}
+    // 3. Tìm user theo email và cộng số dư
+    const userQuery = JSON.stringify({
+      structuredQuery: {
+        from: [{ collectionId: 'users' }],
+        where: {
+          fieldFilter: {
+            field: { fieldPath: 'email' },
+            op: 'EQUAL',
+            value: { stringValue: email },
+          },
+        },
+        limit: 1,
+      },
+    });
 
-// ==========================================
-// PARSE EMAIL TỪ NỘI DUNG CHUYỂN KHOẢN
-// ==========================================
-function parseEmailFromDesc(description) {
-  // Tìm pattern: NAP email@domain.com
-  const patterns = [
-    /nap\s+([a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i,
-    /([a-zA-Z0-9._+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i,
-    /nap\s+([^\s]+)/i,
-  ];
-  for (const p of patterns) {
-    const m = description.match(p);
-    if (m) return m[1].toLowerCase();
+    const uResp  = await httpsPost('firestore.googleapis.com', `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents:runQuery?key=${FIREBASE_WEB_API_KEY}`, userQuery);
+    const uDocs  = JSON.parse(uResp);
+    const uDoc   = uDocs.find(d => d.document)?.document;
+    if (!uDoc) return { error: 'User not found: ' + email };
+
+    const uFields  = uDoc.fields || {};
+    const oldBal   = parseFloat(uFields.balance?.doubleValue || uFields.balance?.integerValue || 0);
+    const newBal   = oldBal + amount;
+    const uDocPath = uDoc.name.replace('https://firestore.googleapis.com/v1/', '');
+
+    await httpsRequest('PATCH',
+      'firestore.googleapis.com',
+      `/v1/${uDocPath}?updateMask.fieldPaths=balance&key=${FIREBASE_WEB_API_KEY}`,
+      JSON.stringify({ fields: { balance: { doubleValue: newBal } } })
+    );
+
+    // 4. Ghi log giao dịch
+    await httpsPost(
+      'firestore.googleapis.com',
+      `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/transactions?key=${FIREBASE_WEB_API_KEY}`,
+      JSON.stringify({
+        fields: {
+          email:       { stringValue: email },
+          type:        { stringValue: 'deposit' },
+          amount:      { doubleValue: amount },
+          txId:        { stringValue: String(txId) },
+          description: { stringValue: description || '' },
+          ref:         { stringValue: ref },
+          createdAt:   { stringValue: new Date().toISOString() },
+          balanceBefore: { doubleValue: oldBal },
+          balanceAfter:  { doubleValue: newBal },
+          gateway:     { stringValue: 'Sepay/VCB' },
+        },
+      })
+    );
+
+    console.log(`[creditByRef] ✅ ${email} +${amount} VND (was ${oldBal} → ${newBal})`);
+    return { success: true, email, amount, newBalance: newBal };
+
+  } catch (e) {
+    console.error('[creditByRef] Error:', e.message);
+    return { error: e.message };
   }
-  return null;
 }
 
 // ==========================================
 // HTTP HELPERS
 // ==========================================
-function httpGet(url) {
+function httpsPost(hostname, path, body) {
+  return httpsRequest('POST', hostname, path, body);
+}
+
+function httpsRequest(method, hostname, path, body) {
   return new Promise((resolve, reject) => {
-    const req = https.get(url, (res) => {
+    const buf = Buffer.from(body || '', 'utf8');
+    const options = {
+      hostname,
+      port: 443,
+      path,
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': buf.length,
+      },
+    };
+    const req = https.request(options, (resp) => {
       let data = '';
-      res.on('data', c => data += c);
-      res.on('end', () => resolve(data));
+      resp.on('data', c => data += c);
+      resp.on('end', () => resolve(data));
     });
     req.on('error', reject);
     req.setTimeout(10000, () => { req.destroy(); reject(new Error('Timeout')); });
-  });
-}
-
-function httpsPost(url, body) {
-  return new Promise((resolve, reject) => {
-    const urlObj = new URL(url);
-    const options = {
-      hostname: urlObj.hostname,
-      path: urlObj.pathname + urlObj.search,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
-    };
-    const req = https.request(options, (res) => {
-      let data = '';
-      res.on('data', c => data += c);
-      res.on('end', () => resolve(data));
-    });
-    req.on('error', reject);
-    req.write(body);
-    req.end();
-  });
-}
-
-function httpsPatch(url, body) {
-  return new Promise((resolve, reject) => {
-    const urlObj = new URL(url);
-    const options = {
-      hostname: urlObj.hostname,
-      path: urlObj.pathname + urlObj.search,
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
-    };
-    const req = https.request(options, (res) => {
-      let data = '';
-      res.on('data', c => data += c);
-      res.on('end', () => resolve(data));
-    });
-    req.on('error', reject);
-    req.write(body);
+    if (body) req.write(buf);
     req.end();
   });
 }
