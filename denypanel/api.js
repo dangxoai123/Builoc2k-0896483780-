@@ -144,7 +144,7 @@ const DenyPanelAPI = {
       throw new Error('Invalid rate');
     } catch (err) {
       console.warn('[DenyPanel API] Không lấy được tỷ giá, dùng fallback:', err.message);
-      return 26294.5; // Fallback
+      return 27000; // Fallback: Tỷ giá chính thức DenyPanel 27,000 VND = 1 USD
     }
   },
 
