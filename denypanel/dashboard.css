@@ -1814,3 +1814,38 @@ button { cursor: pointer; font-family: 'Poppins', sans-serif; }
     top: 56px;
   }
 }
+
+.notif-icon-btn {
+  background: rgba(255,255,255,0.08);
+  border: none;
+  color: #aaa;
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 11px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.notif-icon-btn:hover { background: rgba(255,255,255,0.15); color: #fff; }
+.notif-item-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.notif-item-top-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.notif-share-btn {
+  background: none;
+  border: none;
+  color: #555;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 5px;
+  border-radius: 6px;
+  transition: color 0.2s;
+}
+.notif-share-btn:hover { color: #aaa; }

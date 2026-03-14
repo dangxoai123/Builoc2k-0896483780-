@@ -154,8 +154,9 @@
     <!-- NOTIFICATION PANEL -->
     <div id="notifPanel" class="notif-panel" style="display:none">
       <div class="notif-panel-header">
-        <span class="notif-panel-title">🔔 Tin tức mới nhất</span>
-        <div style="display:flex;gap:8px;align-items:center">
+        <span class="notif-panel-title">What's new on MMOpanel</span>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="notif-icon-btn" title="Tìm kiếm"><i class="fas fa-search"></i></button>
           <button class="notif-close-btn" onclick="toggleNotifPanel()" title="Đóng"><i class="fas fa-times"></i></button>
         </div>
       </div>
@@ -163,7 +164,10 @@
         <!-- Rendered by JS -->
       </div>
       <div class="notif-panel-footer">
-        <span style="font-size:11px;color:var(--gray)">MMOpanel · Cập nhật tự động</span>
+        <span style="font-size:11px;color:var(--gray);display:flex;align-items:center;gap:5px;justify-content:center">
+          <i class="fas fa-paper-plane" style="color:var(--green);font-size:10px"></i>
+          We are &nbsp;<strong style="color:var(--white)">by MMOpanel</strong>
+        </span>
       </div>
     </div>
     <div id="notifOverlay" onclick="toggleNotifPanel()" style="display:none;position:fixed;inset:0;z-index:1998"></div>

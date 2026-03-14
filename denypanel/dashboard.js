@@ -1803,8 +1803,13 @@ function renderNotifPanel() {
   body.innerHTML = _notifData.map(n => `
     <div class="notif-item">
       <div class="notif-item-top">
-        ${n.isNew ? '<span class="notif-badge-new">NEW</span>' : ''}
-        <span class="notif-date">${n.date}</span>
+        <div class="notif-item-top-left">
+          ${n.isNew ? '<span class="notif-badge-new">NEW</span>' : ''}
+          <span class="notif-date">${n.date}</span>
+        </div>
+        <button class="notif-share-btn" title="Chia sẻ" onclick="event.stopPropagation()">
+          <i class="fas fa-share-alt"></i>
+        </button>
       </div>
       <div class="notif-item-title">${n.title}</div>
       <div class="notif-item-body">${n.body.replace(/\n/g,'<br>')}</div>
