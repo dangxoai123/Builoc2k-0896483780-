@@ -933,6 +933,60 @@ button { cursor: pointer; font-family: 'Poppins', sans-serif; }
 .copy-api-btn:hover { background: rgba(40,203,105,0.2); }
 
 /* ==========================================
+   FAQ PAGE
+   ========================================== */
+.faq-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.faq-q {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  text-align: left;
+  gap: 16px;
+  transition: var(--tr);
+}
+
+.faq-q:hover { background: var(--bg-card2); }
+.faq-q span { flex: 1; }
+
+.faq-icon {
+  color: var(--green);
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: transform 0.3s ease;
+}
+
+.faq-a {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+}
+
+.faq-a.open { max-height: 300px; }
+
+.faq-a-inner {
+  padding: 0 24px 20px;
+  font-size: 14px;
+  color: var(--gray2);
+  line-height: 1.8;
+  border-top: 1px solid var(--border);
+}
+
+/* ==========================================
    COMMON UI
    ========================================== */
 .msg-ok  { background: rgba(40,203,105,0.1); border: 1px solid rgba(40,203,105,0.3); border-radius: var(--radius-sm); padding: 11px 16px; color: var(--green); font-size: 13px; margin-bottom: 14px; }

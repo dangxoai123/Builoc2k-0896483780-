@@ -1192,6 +1192,7 @@ function showPage(name, btn) {
 
   if (name === 'orders') loadOrdersPage();
   if (name === 'funds') initFundsPage();
+  if (name === 'faq') renderFaq();
   if (name === 'profile') {
     const user = getUserData();
     safeSet('profileNameDisplay', user.username || 'dangxoai');
@@ -1517,3 +1518,79 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 });
+
+// ==========================================
+// FAQ PAGE
+// ==========================================
+const faqData = [
+  {
+    q: 'Làm thế nào để bắt đầu sử dụng dịch vụ?',
+    a: 'Đăng ký tài khoản → Nạp tiền vào tài khoản → Chọn dịch vụ phù hợp trong mục Đặt hàng mới → Điền link và số lượng → Nhấn Đặt hàng. Đơn sẽ được xử lý tự động ngay sau khi thanh toán thành công.'
+  },
+  {
+    q: 'Tôi cần nạp tiền tối thiểu bao nhiêu?',
+    a: 'Số tiền nạp tối thiểu là 10.000đ. Chúng tôi hỗ trợ nạp tiền qua chuyển khoản ngân hàng (tự động xác nhận qua Sepay).'
+  },
+  {
+    q: 'Đơn hàng của tôi mất bao lâu để hoàn thành?',
+    a: 'Thời gian xử lý phụ thuộc vào từng dịch vụ. Mỗi dịch vụ đều có thông tin "Thời gian trung bình" trong trang Dịch vụ. Một số dịch vụ chỉ mất vài phút, một số khác có thể mất vài giờ đến vài ngày.'
+  },
+  {
+    q: 'Trạng thái đơn hàng "Hoàn tiền một phần" nghĩa là gì?',
+    a: '"Hoàn tiền một phần" có nghĩa là đơn hàng đã được xử lý một phần (ví dụ: bắt đầu 5000/10000) nhưng không thể tiếp tục và hệ thống đã hoàn lại tiền cho phần chưa thực hiện. Điều này thường xảy ra do thiếu tài nguyên tạm thời.'
+  },
+  {
+    q: 'Dịch vụ có bảo hành không?',
+    a: 'Có, nhiều dịch vụ có bảo hành từ 15 đến 30 ngày. Nếu số lượng bị giảm trong thời gian bảo hành, hệ thống sẽ tự động bù (refill). Thông tin bảo hành được hiển thị rõ ở phần Chi tiết dịch vụ.'
+  },
+  {
+    q: 'Tôi có thể hủy đơn hàng không?',
+    a: 'Một số đơn hàng có thể hủy nếu chưa bắt đầu xử lý. Tuy nhiên, đơn hàng đang trong tiến trình xử lý thường không thể hủy. Vui lòng liên hệ hỗ trợ để được kiểm tra.'
+  },
+  {
+    q: 'Tại sao đơn hàng của tôi bị lỗi?',
+    a: 'Đơn hàng có thể bị lỗi do: link không đúng định dạng, tài khoản bị khóa riêng tư, hoặc số lượng vượt quá giới hạn tối đa. Vui lòng kiểm tra lại link và thử đặt lại. Nếu vẫn lỗi, liên hệ hỗ trợ.'
+  },
+  {
+    q: 'Có thể sử dụng API không?',
+    a: 'Có! Chúng tôi cung cấp đầy đủ API để tích hợp vào hệ thống của bạn. Truy cập mục API trong sidebar để xem API Key và tài liệu hướng dẫn sử dụng.'
+  },
+  {
+    q: 'Chương trình đại lý hoạt động như thế nào?',
+    a: 'Khi bạn giới thiệu người dùng mới đăng ký qua link đại lý của bạn, bạn sẽ nhận được hoa hồng 5% từ mỗi đơn hàng của họ. Hoa hồng được cộng tự động vào số dư tài khoản của bạn.'
+  },
+  {
+    q: 'Tôi quên mật khẩu thì phải làm gì?',
+    a: 'Vui lòng liên hệ Admin qua Telegram hoặc Zalo để được hỗ trợ đặt lại mật khẩu. Chúng tôi sẽ xác minh danh tính và hỗ trợ bạn trong thời gian sớm nhất.'
+  }
+];
+
+function renderFaq() {
+  const list = document.getElementById('faqList');
+  if (!list) return;
+  list.innerHTML = faqData.map((item, i) => `
+    <div class="faq-item" id="faq-item-${i}">
+      <button class="faq-q" onclick="toggleFaq(${i})">
+        <span>${item.q}</span>
+        <i class="fas fa-plus faq-icon" id="faq-icon-${i}"></i>
+      </button>
+      <div class="faq-a" id="faq-a-${i}">
+        <div class="faq-a-inner">${item.a}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleFaq(i) {
+  const answer = document.getElementById('faq-a-' + i);
+  const icon = document.getElementById('faq-icon-' + i);
+  const isOpen = answer.classList.contains('open');
+  // close all
+  document.querySelectorAll('.faq-a').forEach(el => el.classList.remove('open'));
+  document.querySelectorAll('.faq-icon').forEach(el => { el.classList.remove('fa-minus'); el.classList.add('fa-plus'); });
+  if (!isOpen) {
+    answer.classList.add('open');
+    icon.classList.remove('fa-plus');
+    icon.classList.add('fa-minus');
+  }
+}
