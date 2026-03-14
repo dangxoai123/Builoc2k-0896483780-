@@ -819,7 +819,7 @@ button { cursor: pointer; font-family: 'Poppins', sans-serif; }
   grid-template-columns: 30px 80px 1fr 130px 80px 100px 130px;
   gap: 8px;
   padding: 10px 16px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--gray);
   text-transform: uppercase;
@@ -847,9 +847,9 @@ button { cursor: pointer; font-family: 'Poppins', sans-serif; }
   display: grid;
   grid-template-columns: 30px 80px 1fr 130px 80px 100px 130px;
   gap: 8px;
-  padding: 14px 16px;
+  padding: 16px 16px;
   border-bottom: 1px solid rgba(255,255,255,0.02);
-  font-size: 13px;
+  font-size: 14px;
   transition: var(--tr);
   align-items: start;
   color: var(--text);
@@ -857,14 +857,14 @@ button { cursor: pointer; font-family: 'Poppins', sans-serif; }
 
 .svc-service-row:hover { background: var(--bg-card2); }
 
-.fav-btn { background: none; border: none; color: var(--gray); font-size: 14px; cursor: pointer; transition: var(--tr); padding: 2px; }
+.fav-btn { background: none; border: none; color: var(--gray); font-size: 15px; cursor: pointer; transition: var(--tr); padding: 2px; }
 .fav-btn:hover, .fav-btn.active { color: #f1c40f; }
-.svc-id-tag { background: var(--green3); color: var(--green); padding: 3px 8px; border-radius: 6px; font-weight: 700; font-size: 12px; text-align: center; display: inline-block; }
-.svc-name-main { font-weight: 700; font-size: 13px; margin-bottom: 3px; color: var(--text); }
-.svc-type-tag { font-size: 11px; color: var(--gray2); }
-.svc-rate-v2 { font-weight: 800; color: var(--green); }
-.svc-num-v2 { color: var(--gray2); font-size: 12px; }
-.svc-time { color: var(--gray2); font-size: 12px; }
+.svc-id-tag { background: var(--green3); color: var(--green); padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 17px; text-align: center; display: inline-block; }
+.svc-name-main { font-weight: 700; font-size: 18px; margin-bottom: 4px; color: var(--text); line-height: 1.5; }
+.svc-type-tag { font-size: 16px; color: var(--gray2); }
+.svc-rate-v2 { font-weight: 800; color: var(--green); font-size: 18px; }
+.svc-num-v2 { color: var(--gray2); font-size: 17px; }
+.svc-time { color: var(--gray2); font-size: 17px; }
 
 /* ==========================================
    API PAGE
@@ -1082,7 +1082,7 @@ button { cursor: pointer; font-family: 'Poppins', sans-serif; }
 .csd-text.placeholder { color: var(--gray); }
 
 .csd-arrow {
-  font-size: 11px;
+  font-size: 14px;
   color: var(--gray);
   transition: transform 0.2s ease;
   flex-shrink: 0;

@@ -235,13 +235,29 @@ async function updateStats() {
 // ==========================================
 // SERVICES DATA
 // ==========================================
+// Descriptions map: id -> description text (loaded from service-descriptions.json)
+let svcDescriptions = {};
+
+async function loadSvcDescriptions() {
+  try {
+    const r = await fetch("service-descriptions.json");
+    if (r.ok) svcDescriptions = await r.json();
+    console.log("[Descriptions] Loaded", Object.keys(svcDescriptions).length, "descriptions");
+  } catch(e) { console.warn("[Descriptions] Could not load:", e.message); }
+}
+
 let allServicesData = [];
 let currentSvcFilter = 'all';
 
 async function loadAllServices() {
-  allServicesData = await DenyPanelAPI.getServices();
+  // Load descriptions cùng lúc với services (parallel)
+  const [services] = await Promise.all([
+    DenyPanelAPI.getServices(),
+    loadSvcDescriptions()
+  ]);
+  allServicesData = services;
   buildCategorySelects();
-  buildCustomCategoryDropdown(); // Build custom icon dropdown
+  buildCustomCategoryDropdown();
   renderSvcPage();
 }
 
@@ -973,33 +989,34 @@ function openSvcDetailModal(dataStr) {
     const s = JSON.parse(decodeURIComponent(dataStr));
     _currentModalSvc = s;
 
-    function extractSpeed(name) {
-      const m = name.match(/T.c ..\s+([\d\-k.\/ ]+(?:\/(?:Ng.y|h|gi..?|ph.t))?)/i)
-               || name.match(/([\d]+[-][\d]+[k]?\/(?:Ng.y|h|gi..?|ph.t))/i)
-               || name.match(/([\d]+[k]?\/(?:Ng.y|h|gi..?|ph.t))/i);
-      if (m) return m[1].trim();
-      if (/24\/7/i.test(name)) return "5k/Ng\u00e0y";
-      return "\u0110ang t\u00ednh to\u00e1n";
+    // Lấy description từ file JSON đã scrape từ denypanel.com
+    const rawDesc = svcDescriptions[String(s.id)] || "";
+
+    // Parse Speed, Refill, Quality, Link, StartTime từ description text
+    function parseField(text, field) {
+      const re = new RegExp(field + "[:\\s]+([^\\n]+)", "i");
+      const m = text.match(re);
+      return m ? m[1].trim() : "";
     }
 
-    function extractWarranty(name, refillFlag) {
-      if (/v\u0129nh vi\u1ec5n/i.test(name)) return "V\u0129nh vi\u1ec5n \u267e\ufe0f";
-      const m = name.match(/b\u1ea3o h\u00e0nh\s+(\d+\s*ng\u00e0y)/i);
-      if (m) return m[1];
-      if (/kh\u00f4ng b\u1ea3o h\u00e0nh/i.test(name)) return "Kh\u00f4ng b\u1ea3o h\u00e0nh";
-      return refillFlag ? "30 Ng\u00e0y" : "Kh\u00f4ng b\u1ea3o h\u00e0nh";
-    }
+    const speed    = parseField(rawDesc, "Speed") || "Đang tính toán";
+    const refill   = parseField(rawDesc, "Refill") || (s.refill ? "30 Ngày" : "Không bảo hành");
+    const quality  = parseField(rawDesc, "Quality") || "Rất Tốt";
+    const link     = parseField(rawDesc, "Link") || "https://...";
+    const startTime = parseField(rawDesc, "B[áa]t đầu sau|Start Time");
 
-    function extractStartTime(name) {
-      const m = name.match(/b\u1eaft \u0111\u1ea7u sau\s+([^|!\n(,]+)/i);
-      return m ? m[1].trim().replace(/[-\u2013]\s*$/, "").trim() : null;
+    // Lấy phần description text (bỏ các dòng Speed/Refill/Quality/Link ở đầu)
+    let descText = rawDesc;
+    if (rawDesc) {
+      // Bỏ 4 dòng đầu (Speed, Refill, Quality, Link)
+      const descLines = rawDesc.split("\\n").map(l => l.trim()).filter(Boolean);
+      const skipPrefixes = ["Speed:", "Refill:", "Quality:", "Link:"];
+      const bodyLines = descLines.filter(l => !skipPrefixes.some(p => l.toLowerCase().startsWith(p.toLowerCase())));
+      descText = bodyLines.join("\\n").trim();
+    } else {
+      // Fallback: dùng tên dịch vụ
+      descText = s.name;
     }
-
-    const speed     = extractSpeed(s.name);
-    const warranty  = extractWarranty(s.name, s.refill);
-    const startTime = extractStartTime(s.name);
-    const parts     = s.name.split(/\s*[|]\s*/);
-    const descText  = parts.length > 1 ? parts.slice(1).join(" | ").trim() : s.name;
 
     safeSet("modalSvcId", s.id);
     safeSet("modalSvcName", s.name);
@@ -1007,18 +1024,20 @@ function openSvcDetailModal(dataStr) {
     safeSet("modalSvcMin", Number(s.min).toLocaleString());
     safeSet("modalSvcMax", Number(s.max).toLocaleString());
     safeSet("modalSvcSpeed", speed);
-    safeSet("modalSvcRefill", warranty);
-    safeSet("modalSvcQuality", "R\u1ea5t T\u1ed1t");
-    safeSet("modalSvcLink", "https://...");
+    safeSet("modalSvcRefill", refill);
+    safeSet("modalSvcQuality", quality);
+    safeSet("modalSvcLink", link);
 
     let descHtml = "";
     if (startTime) {
-      descHtml += "<div style=\"padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:baseline\"><span style=\"font-size:14px;color:#bfd5fd;font-weight:600;min-width:90px\">Start Time:</span><span style=\"font-size:14px;color:#e6edf3;font-weight:700\">" + startTime + "</span></div>";
+      descHtml += "<div style=\"padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;gap:8px;align-items:baseline\"><span style=\"font-size:13px;color:#bfd5fd;font-weight:600;min-width:110px\">Start Time:</span><span style=\"font-size:13px;color:#e6edf3;font-weight:700\">" + startTime + "</span></div>";
     }
-    descHtml += "<div style=\"padding:16px 0\"><p style=\"font-size:13px;color:#bfd5fd;line-height:1.9\">" + esc(descText) + "</p></div>";
+    if (descText) {
+      descHtml += "<div style=\"padding:14px 0\"><p style=\"font-size:13px;color:#c9d1d9;line-height:1.85;white-space:pre-line\">" + esc(descText) + "</p></div>";
+    }
 
     const descEl = document.getElementById("modalSvcDesc");
-    if (descEl) descEl.innerHTML = descHtml;
+    if (descEl) descEl.innerHTML = descHtml || "<p style=\"color:var(--gray);font-style:italic\">Không có mô tả cho dịch vụ này.</p>";
 
     const modal = document.getElementById("svcDetailModal");
     if (modal) { modal.style.display = "flex"; document.body.style.overflow = "hidden"; }
