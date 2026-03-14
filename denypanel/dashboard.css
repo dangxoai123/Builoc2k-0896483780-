@@ -1166,3 +1166,255 @@ button { cursor: pointer; font-family: 'Poppins', sans-serif; }
 .currency-opt { transition: background 0.15s; }
 .currency-opt:hover { background: var(--bg3) !important; }
 .currency-opt.active { background: var(--green3) !important; color: var(--green) !important; }
+
+/* ==========================================
+   RESPONSIVE - TABLET (769px - 1024px)
+   ========================================== */
+@media (max-width: 1024px) {
+  .welcome-grid { grid-template-columns: 1fr; }
+  .rank-card { display: none; }
+  .order-layout { grid-template-columns: 1fr; }
+  .funds-layout { grid-template-columns: 1fr; }
+  .api-info-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Services table: ẩn cột min/max/time */
+  .svc-table-header,
+  .svc-service-row {
+    grid-template-columns: 30px 70px 1fr 120px auto !important;
+  }
+  .svc-table-header > *:nth-child(5),
+  .svc-table-header > *:nth-child(6),
+  .svc-table-header > *:nth-child(7),
+  .svc-service-row > *:nth-child(5),
+  .svc-service-row > *:nth-child(6),
+  .svc-service-row > *:nth-child(7) { display: none; }
+}
+
+/* ==========================================
+   RESPONSIVE - MOBILE (≤768px)
+   ========================================== */
+@media (max-width: 768px) {
+
+  /* === SIDEBAR → BOTTOM NAV === */
+  .sidebar {
+    width: 100% !important;
+    height: 60px;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    z-index: 500;
+    padding: 0 4px;
+  }
+
+  .sidebar.expanded {
+    width: 100% !important;
+    height: 60px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+  }
+
+  .sidebar-logo-btn { display: none; }
+
+  .sidebar-nav {
+    flex-direction: row;
+    padding: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    width: 100%;
+    justify-content: space-around;
+    align-items: center;
+    height: 60px;
+    flex: unset;
+  }
+
+  .sidebar-item {
+    flex-direction: column;
+    padding: 6px 8px;
+    gap: 3px;
+    font-size: 9px;
+    min-width: 48px;
+    border-radius: 8px !important;
+    margin: 0 !important;
+    width: auto !important;
+  }
+
+  .sidebar.expanded .sidebar-item {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 6px 8px;
+    padding-left: 8px !important;
+  }
+
+  .sidebar-item i { font-size: 18px; width: auto; }
+  .sidebar-item span { display: block !important; font-size: 9px; white-space: nowrap; }
+  .sidebar-tooltip { display: none !important; }
+  .sidebar-bottom { display: none; }
+
+  .sidebar.expanded .sidebar-item.active {
+    margin: 0 !important;
+    width: auto !important;
+    border-radius: 8px !important;
+  }
+
+  /* === MAIN CONTENT === */
+  .main { margin-left: 0 !important; padding-bottom: 60px; }
+  .sidebar.expanded ~ .main { margin-left: 0 !important; }
+
+  /* === TOPBAR === */
+  .topbar { padding: 0 12px; height: 56px; }
+  .topbar-title { font-size: 14px; }
+  .topbar-right { gap: 8px; }
+  .topbar-icon-btn { width: 34px; height: 34px; font-size: 14px; }
+  .user-avatar-btn { width: 34px; height: 34px; font-size: 13px; }
+
+  /* === PAGE CONTENT === */
+  .page-content { padding: 12px; }
+
+  /* === WELCOME CARD === */
+  .welcome-grid { grid-template-columns: 1fr; gap: 12px; }
+  .rank-card { display: none; }
+  .welcome-card { padding: 16px; gap: 12px; }
+  .welcome-greeting { font-size: 16px; }
+  .welcome-sub { font-size: 12px; margin-bottom: 12px; }
+  .welcome-stats { flex-wrap: wrap; gap: 8px; }
+  .welcome-stat-box { min-width: calc(50% - 4px); padding: 10px 12px; }
+  .wsb-val { font-size: 16px; }
+  .wsb-lbl { font-size: 10px; }
+  .welcome-3d { display: none; }
+
+  /* === ORDER FORM === */
+  .order-layout { grid-template-columns: 1fr; gap: 12px; }
+  .order-form-body { padding: 12px; }
+  .order-action-btns { grid-template-columns: 1fr; gap: 8px; }
+
+  /* === SERVICES PAGE === */
+  .services-filter-row { padding: 10px 12px; gap: 8px; }
+  .svc-search-box { min-width: 0; flex: 1; }
+
+  /* Bảng dịch vụ → thành cards trên mobile */
+  .svc-table-header { display: none; }
+  .svc-body { border-radius: var(--radius); }
+
+  .svc-service-row {
+    display: flex !important;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+
+  /* Row header: ID + Name */
+  .svc-service-row > div:nth-child(1) { /* fav */
+    position: absolute;
+    top: 12px; right: 12px;
+  }
+  .svc-service-row > div:nth-child(2) { /* ID */
+    order: 1;
+  }
+  .svc-service-row > div:nth-child(3) { /* Name */
+    order: 2;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .svc-service-row > div:nth-child(4) { /* Rate */
+    order: 3;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--green);
+  }
+  .svc-service-row > div:nth-child(5) { /* Min */
+    order: 4;
+    display: flex !important;
+    gap: 6px;
+  }
+  .svc-service-row > div:nth-child(5)::before { content: "Tối thiểu: "; color: var(--gray); font-size: 12px; }
+  .svc-service-row > div:nth-child(6) { /* Max */
+    order: 5;
+    display: flex !important;
+    gap: 6px;
+  }
+  .svc-service-row > div:nth-child(6)::before { content: "Tối đa: "; color: var(--gray); font-size: 12px; }
+  .svc-service-row > div:nth-child(7) { /* Avg time */
+    order: 6;
+    display: flex !important;
+    gap: 6px;
+  }
+  .svc-service-row > div:nth-child(7)::before { content: "⏱ "; }
+  .svc-service-row > div:nth-child(8) { /* Buttons */
+    order: 7;
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+  .svc-service-row > div:nth-child(8) button {
+    flex: 1;
+    justify-content: center;
+  }
+
+  /* === FUNDS PAGE === */
+  .funds-layout { grid-template-columns: 1fr; }
+
+  /* === MODALS === */
+  .modal-overlay > div,
+  [id*="Modal"] > div,
+  [id*="modal"] > div {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    margin: 10px auto !important;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  /* === API PAGE === */
+  .api-info-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  .api-hero { padding: 16px; }
+
+  /* === DATA TABLE ORDERS === */
+  .data-table-v2 { font-size: 12px; }
+  .data-table-v2 th, .data-table-v2 td { padding: 10px 8px; }
+
+  /* Ẩn cột link và remains trên mobile trong bảng orders */
+  .data-table-v2 th:nth-child(3),
+  .data-table-v2 td:nth-child(3),
+  .data-table-v2 th:nth-child(5),
+  .data-table-v2 td:nth-child(5) { display: none; }
+
+  /* === PROFILE PAGE === */
+  .profile-layout { grid-template-columns: 1fr !important; }
+
+  /* === ANNOUNCE BANNER === */
+  .announce-banner { padding: 14px 16px; }
+  .announce-banner h3 { font-size: 14px; }
+  .announce-banner p { font-size: 12px; }
+
+  /* === SIP (Service Info Panel) === */
+  .sip-stats-grid { grid-template-columns: 1fr 1fr; }
+
+  /* === FILTER BAR === */
+  .filter-bar-v2 { flex-wrap: wrap; gap: 8px; }
+  .filter-btn-v2 { font-size: 12px; padding: 8px 14px; }
+  .search-v2 { min-width: 100%; }
+}
+
+/* ==========================================
+   RESPONSIVE - SMALL MOBILE (≤480px)
+   ========================================== */
+@media (max-width: 480px) {
+  .topbar { padding: 0 8px; }
+  .topbar-title { font-size: 13px; }
+  .page-content { padding: 8px; }
+  .welcome-stats { flex-direction: column; }
+  .welcome-stat-box { width: 100%; }
+  .plat-btn { width: 34px; height: 34px; font-size: 14px; }
+  .svc-service-row > div:nth-child(8) button { font-size: 11px; padding: 6px !important; }
+}
+
