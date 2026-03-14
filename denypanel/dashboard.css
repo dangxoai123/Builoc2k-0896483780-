@@ -859,12 +859,12 @@ button { cursor: pointer; font-family: 'Poppins', sans-serif; }
 
 .fav-btn { background: none; border: none; color: var(--gray); font-size: 15px; cursor: pointer; transition: var(--tr); padding: 2px; }
 .fav-btn:hover, .fav-btn.active { color: #f1c40f; }
-.svc-id-tag { background: var(--green3); color: var(--green); padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 17px; text-align: center; display: inline-block; }
-.svc-name-main { font-weight: 700; font-size: 18px; margin-bottom: 4px; color: var(--text); line-height: 1.5; }
-.svc-type-tag { font-size: 16px; color: var(--gray2); }
-.svc-rate-v2 { font-weight: 800; color: var(--green); font-size: 18px; }
-.svc-num-v2 { color: var(--gray2); font-size: 17px; }
-.svc-time { color: var(--gray2); font-size: 17px; }
+.svc-id-tag { background: var(--green3); color: var(--green); padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 15px; text-align: center; display: inline-block; }
+.svc-name-main { font-weight: 700; font-size: 16px; margin-bottom: 4px; color: var(--text); line-height: 1.5; }
+.svc-type-tag { font-size: 14px; color: var(--gray2); }
+.svc-rate-v2 { font-weight: 800; color: var(--green); font-size: 16px; }
+.svc-num-v2 { color: var(--gray2); font-size: 15px; }
+.svc-time { color: var(--gray2); font-size: 15px; }
 
 /* ==========================================
    API PAGE
