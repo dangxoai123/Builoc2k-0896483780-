@@ -13,7 +13,7 @@ const https = require('https');
 const querystring = require('querystring');
 
 // Key reseller - giá DenyPanel đúng cho web con
-const SERVICES_API_KEY = '58788d220d60bd1d1110e7871f5871d3';
+const SERVICES_API_KEY = 'fa92015088b93cbede91594df8006018';
 
 // In-memory cache (10 phút)
 let _cache = null;
