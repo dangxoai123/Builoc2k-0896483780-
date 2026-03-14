@@ -1344,27 +1344,44 @@ function showPage(name, btn) {
 }
 
 function toggleSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('sidebarOverlay');
-  const isMobile = window.innerWidth <= 768;
-
-  if (isMobile) {
-    // Mobile: toggle slide-in drawer with overlay
-    const isOpen = sidebar.classList.contains('mob-open');
-    if (isOpen) {
-      sidebar.classList.remove('mob-open');
-      // Khi mở, sidebar cũng cần expanded để hiển thị text
-      sidebar.classList.remove('expanded');
-      if (overlay) overlay.classList.remove('show');
-    } else {
-      sidebar.classList.add('mob-open');
-      sidebar.classList.add('expanded');
-      if (overlay) overlay.classList.add('show');
-    }
-  } else {
-    // Desktop: expand/collapse width
-    sidebar.classList.toggle('expanded');
+  // Mobile: dùng drawer riêng
+  if (window.innerWidth <= 768) {
+    openMobileDrawer();
+    return;
   }
+  // Desktop: expand/collapse sidebar
+  const sidebar = document.getElementById('sidebar');
+  sidebar.classList.toggle('expanded');
+}
+
+function openMobileDrawer() {
+  const drawer = document.getElementById('mobileDrawer');
+  const overlay = document.getElementById('mobileDrawerOverlay');
+  if (!drawer) return;
+  drawer.style.display = 'flex';
+  overlay.style.display = 'block';
+  // Trigger animation
+  requestAnimationFrame(() => {
+    drawer.style.transform = 'translateX(0)';
+    drawer.style.boxShadow = '4px 0 40px rgba(0,0,0,0.7)';
+  });
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMobileDrawer() {
+  const drawer = document.getElementById('mobileDrawer');
+  const overlay = document.getElementById('mobileDrawerOverlay');
+  if (!drawer) return;
+  drawer.style.transform = 'translateX(-260px)';
+  drawer.style.boxShadow = 'none';
+  overlay.style.display = 'none';
+  document.body.style.overflow = '';
+  setTimeout(() => { drawer.style.display = 'none'; }, 300);
+}
+
+function mobileNav(page) {
+  closeMobileDrawer();
+  setTimeout(() => showPage(page, null), 80);
 }
 
 function logout() {
