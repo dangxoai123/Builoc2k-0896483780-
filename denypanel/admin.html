@@ -717,8 +717,8 @@ async function loadPricingTable() {
   const tbody = document.getElementById('pricingTableBody');
   tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:30px"><div class="spinner"></div> Đang tải...</td></tr>';
   try {
-    // Lấy dịch vụ từ proxy
-    const resp = await fetch('/api/proxy', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body:'action=services' });
+    // Lấy dịch vụ từ api/services
+    const resp = await fetch('/api/services');
     _servicesData = await resp.json();
     if (!Array.isArray(_servicesData)) throw new Error('Dữ liệu không hợp lệ');
     document.getElementById('statServices').textContent = _servicesData.length;
@@ -794,8 +794,22 @@ async function loadTransactions() {
     }
     tbody.innerHTML = snap.docs.map(d => {
       const tx = d.data();
-      const time = tx.createdAt?.toDate ? tx.createdAt.toDate().toLocaleString('vi-VN') : '—';
-      const typeLabel = { add:'<span style="color:var(--green)">➕ Cộng</span>', sub:'<span style="color:var(--red)">➖ Trừ</span>', set:'<span style="color:var(--blue)">✏️ Đặt</span>' }[tx.type] || tx.type;
+      // Handle nhiều dạng timestamp: Firestore Timestamp, milliseconds number, ISO string
+      let time = '—';
+      if (tx.createdAt) {
+        let dt = null;
+        if (typeof tx.createdAt.toDate === 'function') {
+          dt = tx.createdAt.toDate(); // Firestore Timestamp
+        } else if (typeof tx.createdAt === 'number') {
+          dt = new Date(tx.createdAt); // Unix ms
+        } else if (typeof tx.createdAt === 'string') {
+          dt = new Date(tx.createdAt); // ISO string
+        } else if (tx.createdAt._seconds) {
+          dt = new Date(tx.createdAt._seconds * 1000); // Firestore JSON
+        }
+        if (dt && !isNaN(dt)) time = dt.toLocaleString('vi-VN');
+      }
+      const typeLabel = { add:'<span style="color:var(--green)">➕ Cộng</span>', sub:'<span style="color:var(--red)">➖ Trừ</span>', set:'<span style="color:var(--blue)">✏️ Đặt</span>', deposit:'<span style="color:var(--blue)">💳 Nạp</span>' }[tx.type] || tx.type;
       return `<tr>
         <td style="font-size:11px;color:var(--gray)">${time}</td>
         <td style="font-size:12px">${tx.email||'—'}</td>

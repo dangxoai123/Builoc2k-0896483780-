@@ -840,5 +840,93 @@
 
 <script src="api.js"></script>
 <script src="dashboard.js"></script>
+
+<!-- ===== MOBILE BOTTOM NAV ===== -->
+<nav class="mobile-bottom-nav" id="mobileBottomNav">
+  <button class="mob-nav-btn active" id="mobnav-home" onclick="showPage('home',null);setMobActive('mobnav-home')">
+    <i class="fas fa-home"></i>
+    <span>Trang chủ</span>
+  </button>
+  <button class="mob-nav-btn" id="mobnav-services" onclick="showPage('services',null);setMobActive('mobnav-services')">
+    <i class="fas fa-th-list"></i>
+    <span>Dịch vụ</span>
+  </button>
+  <button class="mob-nav-btn" id="mobnav-order" onclick="showPage('order',null);setMobActive('mobnav-order')">
+    <i class="fas fa-plus-circle"></i>
+    <span>Đặt hàng</span>
+  </button>
+  <button class="mob-nav-btn" id="mobnav-funds" onclick="showPage('funds',null);setMobActive('mobnav-funds')">
+    <i class="fas fa-dollar-sign"></i>
+    <span>Nạp tiền</span>
+  </button>
+  <button class="mob-nav-btn" onclick="openMobileDrawer()">
+    <i class="fas fa-bars"></i>
+    <span>Menu</span>
+  </button>
+</nav>
+
+<!-- ===== MOBILE DRAWER ===== -->
+<div class="mob-drawer-overlay" id="mobDrawerOverlay" onclick="closeMobileDrawer()"></div>
+<div class="mob-drawer" id="mobDrawer">
+  <div class="mob-drawer-header">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:36px;height:36px;background:linear-gradient(135deg,#28cb69,#0fac4e);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff">≡</div>
+      <span style="font-size:16px;font-weight:800;color:#fff">Menu</span>
+    </div>
+    <button onclick="closeMobileDrawer()" style="background:none;border:none;color:#7d8590;font-size:20px;cursor:pointer;padding:4px"><i class="fas fa-times"></i></button>
+  </div>
+  <div class="mob-drawer-body">
+    <button class="mob-drawer-item" onclick="showPage('home',null);closeMobileDrawer();setMobActive('mobnav-home')">
+      <i class="fas fa-home"></i><span>Trang chủ</span>
+    </button>
+    <button class="mob-drawer-item" onclick="showPage('services',null);closeMobileDrawer();setMobActive('mobnav-services')">
+      <i class="fas fa-th-list"></i><span>Dịch vụ</span>
+    </button>
+    <button class="mob-drawer-item" onclick="showPage('order',null);closeMobileDrawer();setMobActive('mobnav-order')">
+      <i class="fas fa-plus-circle"></i><span>Đặt hàng mới</span>
+    </button>
+    <button class="mob-drawer-item" onclick="showPage('orders',null);closeMobileDrawer()">
+      <i class="fas fa-archive"></i><span>Đơn hàng</span>
+    </button>
+    <button class="mob-drawer-item" onclick="showPage('sub',null);closeMobileDrawer()">
+      <i class="fas fa-retweet"></i><span>Đặt Hàng Lớn</span>
+    </button>
+    <button class="mob-drawer-item" onclick="showPage('funds',null);closeMobileDrawer();setMobActive('mobnav-funds')">
+      <i class="fas fa-dollar-sign"></i><span>Nạp tiền</span>
+    </button>
+    <button class="mob-drawer-item" onclick="showPage('api',null);closeMobileDrawer()">
+      <i class="fas fa-code"></i><span>API</span>
+    </button>
+    <button class="mob-drawer-item" onclick="showPage('affiliate',null);closeMobileDrawer()">
+      <i class="fas fa-receipt"></i><span>Đại lý</span>
+    </button>
+    <button class="mob-drawer-item" onclick="showPage('profile',null);closeMobileDrawer()">
+      <i class="fas fa-user-circle"></i><span>Tài khoản</span>
+    </button>
+    <div style="border-top:1px solid rgba(255,255,255,0.06);margin:8px 0"></div>
+    <button class="mob-drawer-item" onclick="logoutUser()" style="color:#e74c3c">
+      <i class="fas fa-sign-out-alt"></i><span>Đăng xuất</span>
+    </button>
+  </div>
+</div>
+
+<script>
+function openMobileDrawer() {
+  document.getElementById('mobDrawer').classList.add('open');
+  document.getElementById('mobDrawerOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeMobileDrawer() {
+  document.getElementById('mobDrawer').classList.remove('open');
+  document.getElementById('mobDrawerOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function setMobActive(id) {
+  document.querySelectorAll('.mob-nav-btn').forEach(b => b.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+}
+</script>
 </body>
 </html>
+
