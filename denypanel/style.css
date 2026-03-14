@@ -1123,6 +1123,25 @@ footer {
   .navbar { padding: 0 20px; }
   .nav-center { display: none; }
   .btn-login { display: none; }
+  .mobile-menu .btn-login {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 28px;
+    border-radius: 50px;
+    background: transparent;
+    border: 2px solid rgba(255,255,255,0.3);
+    color: var(--white);
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: var(--transition);
+  }
+  .mobile-menu .btn-login:hover {
+    border-color: var(--green);
+    color: var(--green);
+  }
+
   .btn-register { display: none; }
   .hamburger { display: flex; }
   .hero { flex-direction: column; padding: 100px 30px 60px; text-align: center; }

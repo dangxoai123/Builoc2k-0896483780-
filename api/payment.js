@@ -48,16 +48,48 @@ async function handlePolling(req, res) {
 async function handleWebhook(req, res) {
   try {
     const body = req.body || {};
-    if (body.transferType !== 'in') return res.status(200).json({ skipped: 'not incoming' });
-    const content = body.content || '';
-    const amount  = parseFloat(body.transferAmount || 0);
-    const txId    = String(body.id || '');
-    if (!content || amount <= 0) return res.status(200).json({ skipped: 'empty' });
+    // Log toàn bộ webhook để debug (xem trong Vercel logs)
+    console.log('[webhook] received:', JSON.stringify(body));
+
+    // Bỏ qua nếu rõ ràng là giao dịch ra (out/debit)
+    // Sepay có thể gửi: 'in', 'credit', 'Cr', '' hoặc không có field
+    const tType = (body.transferType || body.type || '').toLowerCase();
+    if (tType === 'out' || tType === 'debit' || tType === 'dr') {
+      return res.status(200).json({ skipped: 'outgoing' });
+    }
+
+    // Amount: Sepay có thể dùng các field khác nhau tùy ngân hàng
+    const amount = parseFloat(
+      body.transferAmount || body.amount || body.value ||
+      body.transactionAmount || body.creditAmount || 0
+    );
+
+    // Content: nội dung chuyển khoản
+    const content = (
+      body.content || body.description || body.transaction_content ||
+      body.memo || body.remarks || body.addInfo || ''
+    );
+
+    const txId = String(body.id || body.transactionId || body.referenceCode || Date.now());
+
+    console.log(`[webhook] amount=${amount}, content="${content}", type="${tType}"`);
+
+    if (!content || amount <= 0) {
+      console.log('[webhook] skipped: empty content or zero amount');
+      return res.status(200).json({ skipped: 'empty' });
+    }
+
     const m = content.toUpperCase().match(/BUILOC[A-Z0-9]{6}/);
-    if (!m) return res.status(200).json({ skipped: 'no ref' });
+    if (!m) {
+      console.log('[webhook] skipped: no BUILOC ref in content');
+      return res.status(200).json({ skipped: 'no ref' });
+    }
+
     const result = await creditByRef(m[0], amount, txId, content);
+    console.log('[webhook] credit result:', JSON.stringify(result));
     return res.status(200).json({ success: true, amount, result });
   } catch(e) {
+    console.error('[webhook] error:', e.message);
     return res.status(500).json({ error: e.message });
   }
 }

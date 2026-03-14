@@ -728,7 +728,7 @@ function toggleOrderFilter() { showToastV2('Bộ lọc nâng cao sắp ra mắt!
 // ==========================================
 // Tài khoản nhận tiền (Sepay API Banking):
 const VCB_ACCOUNT   = '0896483780';   // Số TK MBBank
-const VCB_OWNER     = 'LE XUAN DANG';
+const VCB_OWNER     = 'BUI NGUYEN LOC';
 const VCB_BANK_CODE = 'MB';           // Mã ngân hàng VietQR của MBBank
 const REAL_ACCOUNT  = '0896483780';   // Số TK MBBank thực (dùng Sepay API)
 const DEPOSIT_TIMEOUT_MS = 15 * 60 * 1000; // 15 phút
