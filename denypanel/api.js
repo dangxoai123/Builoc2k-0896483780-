@@ -44,12 +44,15 @@ const MMOpanelAPI = {
 
     // Nếu chạy từ HTTP/HTTPS server (Firebase Hosting, localhost server...) → thử proxy
     try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 5000);
       const resp = await fetch(this.PROXY_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ action: 'balance', key: this.API_KEY }),
-        signal: AbortSignal.timeout(5000)
+        signal: controller.signal
       });
+      clearTimeout(timer);
       this._useProxy = resp.ok;
     } catch {
       this._useProxy = false;
@@ -155,9 +158,10 @@ const MMOpanelAPI = {
   /** Lấy danh sách tất cả dịch vụ - dùng /api/services (key reseller - giá đúng) */
   async getServices() {
     try {
-      // Gọi endpoint riêng /api/services - luôn dùng key reseller 58788d...
-      // Không qua proxy chung để tránh nhầm key
-      const resp = await fetch('/api/services', { signal: AbortSignal.timeout(15000) });
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 12000);
+      const resp = await fetch('/api/services', { signal: controller.signal });
+      clearTimeout(timer);
       if (resp.ok) {
         const data = await resp.json();
         if (Array.isArray(data) && data.length > 0) {
@@ -166,7 +170,7 @@ const MMOpanelAPI = {
         }
       }
     } catch (err) {
-      console.warn('[MMOpanel API] /api/services failed, trying proxy:', err.message);
+      console.warn('[MMOpanel API] /api/services failed, using demo:', err.message);
     }
 
     // Fallback: thử qua proxy chung
