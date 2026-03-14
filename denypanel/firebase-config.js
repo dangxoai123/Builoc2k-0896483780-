@@ -5,12 +5,12 @@
  * Sử dụng Firebase SDK v9+ (compat mode)
  */
 
-// Firebase Config (project: builoc2k-MMOpanel)
+// Firebase Config (project: builoc2k-denypanel)
 const firebaseConfig = {
   apiKey: "AIzaSyDA6SIIeT8jlzLMyp1r6WnefnsGQxMgygA",
-  authDomain: "builoc2k-MMOpanel.firebaseapp.com",
-  projectId: "builoc2k-MMOpanel",
-  storageBucket: "builoc2k-MMOpanel.firebasestorage.app",
+  authDomain: "builoc2k-denypanel.firebaseapp.com",
+  projectId: "builoc2k-denypanel",
+  storageBucket: "builoc2k-denypanel.firebasestorage.app",
   messagingSenderId: "1062694746960",
   appId: "1:1062694746960:web:59fad0e292a1fb137d0a55"
 };
