@@ -278,9 +278,16 @@
 
   <!-- PRICING PAGE -->
   <div class="admin-page" id="pg-pricing">
-    <div class="page-header">
-      <h1>💲 Quản lý Giá dịch vụ</h1>
-      <p>Điều chỉnh markup giá bán cho từng dịch vụ</p>
+    <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px">
+      <div>
+        <h1>💲 Quản lý Giá dịch vụ</h1>
+        <p>Điều chỉnh markup giá bán cho từng dịch vụ</p>
+      </div>
+      <!-- Currency Toggle -->
+      <div style="display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:4px">
+        <button id="btnUSD" onclick="setAdminCurrency('USD')" style="padding:7px 18px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;background:var(--blue);color:#fff;transition:.2s">$ USD</button>
+        <button id="btnVND" onclick="setAdminCurrency('VND')" style="padding:7px 18px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;background:none;color:var(--gray2);transition:.2s">₫ VND</button>
+      </div>
     </div>
     <div class="card">
       <div class="card-header">
@@ -734,13 +741,13 @@ function renderPricingTable(services) {
   tbody.innerHTML = services.map(s => {
     const markup = _markupData[s.service] !== undefined ? _markupData[s.service] : globalMark;
     const baseRate = parseFloat(s.rate);
-    const sellRate = (baseRate * (1 + markup/100)).toFixed(4);
+    const sellRate = baseRate * (1 + markup/100);
     return `<tr>
       <td style="font-size:11px;color:var(--gray)">#${s.service}</td>
       <td style="font-size:12px;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.name}</td>
-      <td style="color:var(--gray2);font-size:12px">$${baseRate}</td>
+      <td style="color:var(--gray2);font-size:12px">${fmtPrice(baseRate)}</td>
       <td><input type="number" class="price-input" id="mk_${s.service}" value="${markup}" min="0" max="1000" step="1" onchange="updateSellRate(${s.service},${baseRate},this.value)"></td>
-      <td style="color:var(--green);font-size:12px;font-weight:700" id="sell_${s.service}">$${sellRate}</td>
+      <td style="color:var(--green);font-size:12px;font-weight:700" id="sell_${s.service}">${fmtPrice(sellRate)}</td>
       <td><button class="btn btn-sm btn-blue" onclick="saveSingleMarkup(${s.service},${baseRate})"><i class="fas fa-save"></i></button></td>
     </tr>`;
   }).join('');
@@ -752,10 +759,30 @@ function filterPricing() {
   renderPricingTable(filtered);
 }
 
+let _adminCurrency = 'USD'; // 'USD' hoặc 'VND'
+
+function setAdminCurrency(cur) {
+  _adminCurrency = cur;
+  document.getElementById('btnUSD').style.cssText = cur === 'USD'
+    ? 'padding:7px 18px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;background:var(--blue);color:#fff;transition:.2s'
+    : 'padding:7px 18px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;background:none;color:var(--gray2);transition:.2s';
+  document.getElementById('btnVND').style.cssText = cur === 'VND'
+    ? 'padding:7px 18px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;background:var(--green);color:#000;transition:.2s'
+    : 'padding:7px 18px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;background:none;color:var(--gray2);transition:.2s';
+  renderPricingTable(_servicesData);
+}
+
+function fmtPrice(usd) {
+  if (_adminCurrency === 'VND') {
+    return Math.round(parseFloat(usd) * ADMIN_VND_RATE).toLocaleString('vi-VN') + ' ₫';
+  }
+  return '$' + parseFloat(usd).toFixed(4);
+}
+
 function updateSellRate(svcId, baseRate, markup) {
-  const sell = (parseFloat(baseRate) * (1 + parseFloat(markup)/100)).toFixed(4);
+  const sell = (parseFloat(baseRate) * (1 + parseFloat(markup)/100));
   const el = document.getElementById('sell_' + svcId);
-  if (el) el.textContent = '$' + sell;
+  if (el) el.textContent = fmtPrice(sell);
 }
 
 async function saveGlobalMarkup() {
@@ -786,27 +813,37 @@ async function saveAllMarkups() {
 // ==========================================
 async function loadTransactions() {
   try {
-    const snap = await db.collection('transactions').orderBy('createdAt','desc').limit(50).get();
+    // Không dùng orderBy vì deposit lưu createdAt là ISO string,
+    // admin.add lưu Firestore Timestamp → Firestore không sort được mix 2 kiểu
+    const snap = await db.collection('transactions').limit(100).get();
     const tbody = document.getElementById('txTableBody');
     if (!snap.docs.length) {
       tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:30px">Chưa có giao dịch nào.</td></tr>';
       return;
     }
-    tbody.innerHTML = snap.docs.map(d => {
-      const tx = d.data();
-      // Handle nhiều dạng timestamp: Firestore Timestamp, milliseconds number, ISO string
+
+    // Sort phía client: mới nhất lên đầu
+    const docs = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => {
+      function toMs(v) {
+        if (!v) return 0;
+        if (typeof v.toDate === 'function') return v.toDate().getTime();
+        if (typeof v === 'number') return v;
+        if (typeof v === 'string') return new Date(v).getTime() || 0;
+        if (v._seconds) return v._seconds * 1000;
+        return 0;
+      }
+      return toMs(b.createdAt) - toMs(a.createdAt);
+    });
+
+    tbody.innerHTML = docs.map(tx => {
+      // Handle nhiều dạng timestamp
       let time = '—';
       if (tx.createdAt) {
         let dt = null;
-        if (typeof tx.createdAt.toDate === 'function') {
-          dt = tx.createdAt.toDate(); // Firestore Timestamp
-        } else if (typeof tx.createdAt === 'number') {
-          dt = new Date(tx.createdAt); // Unix ms
-        } else if (typeof tx.createdAt === 'string') {
-          dt = new Date(tx.createdAt); // ISO string
-        } else if (tx.createdAt._seconds) {
-          dt = new Date(tx.createdAt._seconds * 1000); // Firestore JSON
-        }
+        if (typeof tx.createdAt.toDate === 'function') dt = tx.createdAt.toDate();
+        else if (typeof tx.createdAt === 'number') dt = new Date(tx.createdAt);
+        else if (typeof tx.createdAt === 'string') dt = new Date(tx.createdAt);
+        else if (tx.createdAt._seconds) dt = new Date(tx.createdAt._seconds * 1000);
         if (dt && !isNaN(dt)) time = dt.toLocaleString('vi-VN');
       }
       const typeLabel = { add:'<span style="color:var(--green)">➕ Cộng</span>', sub:'<span style="color:var(--red)">➖ Trừ</span>', set:'<span style="color:var(--blue)">✏️ Đặt</span>', deposit:'<span style="color:var(--blue)">💳 Nạp</span>' }[tx.type] || tx.type;
@@ -815,9 +852,10 @@ async function loadTransactions() {
         <td style="font-size:12px">${tx.email||'—'}</td>
         <td>${typeLabel}</td>
         <td style="font-weight:700">${parseFloat(tx.amount||0).toLocaleString('en-US',{maximumFractionDigits:0})} ₫</td>
-        <td style="font-size:12px;color:var(--gray)">${tx.note||'—'}</td>
-        <td style="font-size:11px;color:var(--gray)">${tx.adminUid?.slice(0,8)||'—'}</td>
+        <td style="font-size:12px;color:var(--gray)">${tx.note||tx.description||'—'}</td>
+        <td style="font-size:11px;color:var(--gray)">${tx.adminUid?.slice(0,8)||tx.gateway||'—'}</td>
       </tr>`;
+
     }).join('');
   } catch(e) { console.error(e); }
 }
