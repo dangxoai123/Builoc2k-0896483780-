@@ -12,6 +12,52 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
+<style>
+  /* Field hint below input */
+  .field-hint { font-size:11px; margin-top:5px; display:none; align-items:center; gap:5px; }
+  .field-hint.show { display:flex; }
+  .field-hint.ok   { color:#00e676; }
+  .field-hint.err  { color:#ff4444; }
+  .field-hint.warn { color:#ffd600; }
+
+  /* Loading spinner inside input */
+  .input-wrap { position:relative; }
+  .input-spin {
+    position:absolute; right:14px; top:50%; transform:translateY(-50%);
+    display:none; width:14px; height:14px;
+    border:2px solid #2a2a38; border-top-color:#00e676;
+    border-radius:50%; animation:ispin .6s linear infinite;
+  }
+  .input-icon {
+    position:absolute; right:14px; top:50%; transform:translateY(-50%);
+    display:none; font-size:13px;
+  }
+  @keyframes ispin { to { transform:translateY(-50%) rotate(360deg); } }
+
+  /* Rules checklist */
+  .rules-list { margin-top:7px; font-size:11px; padding-left:0; list-style:none; display:none; }
+  .rules-list.show { display:block; }
+  .rules-list li { margin-bottom:4px; color:#666; }
+  .rules-list li::before { content:'○ '; }
+  .rules-list li.pass { color:#00e676; }
+  .rules-list li.pass::before { content:'✅ '; }
+
+  /* Password strength */
+  .pw-wrap { margin-top:7px; display:none; }
+  .pw-wrap.show { display:block; }
+  .pw-track { height:4px; border-radius:2px; background:#1a1a24; }
+  .pw-fill  { height:100%; width:0; border-radius:2px; transition:.3s; }
+  .pw-txt   { font-size:11px; margin-top:4px; }
+
+  /* Confirm match line */
+  .cfm-line { font-size:11px; margin-top:5px; display:none; align-items:center; gap:5px; }
+  .cfm-line.show { display:flex; }
+
+  /* Input border states */
+  .form-input.ok   { border-color:#00e676 !important; }
+  .form-input.err  { border-color:#ff4444 !important; }
+  .form-input.warn { border-color:#ffd600 !important; }
+</style>
 </head>
 <body class="auth-body">
 
@@ -27,87 +73,128 @@
   <div class="auth-left">
     <div class="auth-illustration">
       <div class="social-card">
-        <div class="social-avatar">👨‍💻</div>
+        <div class="social-avatar">&#x1F468;&#x200D;&#x1F4BB;</div>
         <div>
           <div class="social-name">Finn Sword</div>
-          <div class="social-user">@finnsword ✓</div>
+          <div class="social-user">@finnsword &#x2713;</div>
         </div>
         <button class="follow-btn">Follow</button>
       </div>
-      <div class="social-img"><div class="social-img-placeholder">📊</div></div>
+      <div class="social-img"><div class="social-img-placeholder">&#x1F4CA;</div></div>
       <div class="followers-badge">
-        <div class="avatar-sm">🧑</div>
+        <div class="avatar-sm">&#x1F9D1;</div>
         <span>+1000 New Followers!</span>
       </div>
     </div>
-    <h2 class="auth-tagline">Phát triển <span class="highlight" style="font-family:'Dancing Script',cursive">mạng xã<br>hội.</span></h2>
-    <a href="services.html" class="btn-svc-auth">Dịch vụ <i class="fas fa-arrow-up-right"></i></a>
+    <h2 class="auth-tagline">Ph&#xE1;t tri&#x1EC3;n <span class="highlight" style="font-family:'Dancing Script',cursive">m&#x1EA1;ng x&#xE3;<br>h&#x1ED9;i.</span></h2>
+    <a href="services.html" class="btn-svc-auth">D&#x1ECB;ch v&#x1EE5; <i class="fas fa-arrow-up-right"></i></a>
   </div>
 
   <div class="auth-right">
     <div class="auth-form-box">
-      <h1 class="auth-title">Đăng kí</h1>
-      <p class="auth-subtitle" style="display:none"></p>
+      <h1 class="auth-title">&#x110;&#x103;ng k&#xED;</h1>
 
       <div id="signupError" class="auth-error" style="display:none"></div>
       <div id="signupSuccess" class="auth-success" style="display:none"></div>
 
-      <form id="signupForm" onsubmit="handleSignup(event)">
+      <form id="signupForm" onsubmit="handleSignup(event)" autocomplete="off">
+
+        <!-- USERNAME -->
         <div class="form-group">
-          <label>Username</label>
-          <input type="text" id="regUsername" class="form-input" placeholder="" required minlength="3">
+          <label>Username <small style="color:#888;font-weight:400">(3&#x2013;20 k&#xFD; t&#x1EF1;, ch&#x1EEF;/s&#x1ED1;/_)</small></label>
+          <div class="input-wrap">
+            <input type="text" id="regUsername" class="form-input"
+              placeholder="vd: builoc_2k"
+              required minlength="3" maxlength="20"
+              autocomplete="off"
+              oninput="onUserInput()"
+              onfocus="document.getElementById('uRules').classList.add('show')">
+            <div class="input-spin" id="uSpin"></div>
+            <div class="input-icon" id="uIcon"></div>
+          </div>
+          <ul class="rules-list" id="uRules">
+            <li id="rl-len">T&#x1ED1;i thi&#x1EC3;u 3 k&#xFD; t&#x1EF1;</li>
+            <li id="rl-chars">Ch&#x1EC9; d&#xF9;ng ch&#x1EEF; c&#xE1;i, s&#x1ED1;, v&#xE0; d&#x1EA5;u g&#x1EA1;ch d&#x01B0;&#x1EDB;i (_)</li>
+            <li id="rl-start">B&#x1EAF;t &#x111;&#x1EA7;u b&#x1EB1;ng ch&#x1EEF; ho&#x1EB7;c s&#x1ED1;</li>
+            <li id="rl-avail">T&#xEA;n t&#xE0;i kho&#x1EA3;n ch&#x01B0;a &#x111;&#x01B0;&#x1EE3;c d&#xF9;ng</li>
+          </ul>
+          <div class="field-hint" id="uHint"></div>
         </div>
+
+        <!-- EMAIL -->
         <div class="form-group">
           <label>Email</label>
-          <input type="email" id="regEmail" class="form-input" placeholder="" required>
+          <div class="input-wrap">
+            <input type="email" id="regEmail" class="form-input"
+              placeholder="example@gmail.com"
+              required autocomplete="off"
+              oninput="onEmailInput()">
+            <div class="input-icon" id="eIcon"></div>
+          </div>
+          <div class="field-hint" id="eHint"></div>
         </div>
+
+        <!-- PASSWORD -->
         <div class="form-group">
           <label>Password</label>
           <div class="input-password">
-            <input type="password" id="regPassword" class="form-input" placeholder="" required minlength="6">
+            <input type="password" id="regPassword" class="form-input"
+              placeholder="T&#x1ED1;i thi&#x1EC3;u 6 k&#xFD; t&#x1EF1;"
+              required minlength="6"
+              oninput="onPwInput()">
             <button type="button" class="eye-btn" onclick="togglePass('regPassword',this)"><i class="fas fa-eye"></i></button>
           </div>
+          <div class="pw-wrap" id="pwWrap">
+            <div class="pw-track"><div class="pw-fill" id="pwFill"></div></div>
+            <div class="pw-txt" id="pwTxt"></div>
+          </div>
         </div>
+
+        <!-- CONFIRM PASSWORD -->
         <div class="form-group">
           <label>Confirm password</label>
           <div class="input-password">
-            <input type="password" id="regConfirm" class="form-input" placeholder="" required>
+            <input type="password" id="regConfirm" class="form-input"
+              placeholder=""
+              required
+              oninput="onCfmInput()">
             <button type="button" class="eye-btn" onclick="togglePass('regConfirm',this)"><i class="fas fa-eye"></i></button>
           </div>
+          <div class="cfm-line" id="cfmLine"></div>
         </div>
 
         <div class="captcha-box">
           <input type="checkbox" id="captchaCheck">
-          <label for="captchaCheck">Tôi là con người</label>
+          <label for="captchaCheck">T&#xF4;i l&#xE0; con ng&#x01B0;&#x1EDD;i</label>
           <div style="margin-left:auto;font-size:12px;color:var(--gray);text-align:right">
             <div style="font-weight:700;color:var(--white)">hCaptcha</div>
-            Riêng tư · Điều kiện
+            Ri&#xEA;ng t&#x01B0; &middot; &#x110;i&#x1EC1;u ki&#x1EC7;n
           </div>
         </div>
 
         <label class="check-label" style="margin-bottom:20px">
           <input type="checkbox" id="agreeTerms">
-          Tôi đồng ý với <a href="terms.html" class="auth-link">Điều khoản dịch vụ</a>
+          T&#xF4;i &#x111;&#x1ED3;ng &#xFD; v&#x1EDB;i <a href="terms.html" class="auth-link">&#x110;i&#x1EC1;u kho&#x1EA3;n d&#x1ECB;ch v&#x1EE5;</a>
         </label>
 
         <button type="submit" class="btn-auth" id="signupBtn">
-          <span>Đăng Ký</span>
+          <span>&#x110;&#x103;ng K&#xFD;</span>
         </button>
       </form>
 
-      <p class="auth-switch">Đã có tài khoản? <a href="login.html" class="auth-link">Đăng nhập</a></p>
+      <p class="auth-switch">&#x110;&#xE3; c&#xF3; t&#xE0;i kho&#x1EA3;n? <a href="login.html" class="auth-link">&#x110;&#x103;ng nh&#x1EAD;p</a></p>
     </div>
   </div>
 </div>
 
 <script>
-// Nếu đã đăng nhập → dashboard
-auth.onAuthStateChanged(user => {
+// Redirect if already logged in
+auth.onAuthStateChanged(function(user) {
   if (user) window.location.href = 'dashboard.html';
 });
 
 function togglePass(id, btn) {
-  const input = document.getElementById(id);
+  var input = document.getElementById(id);
   if (input.type === 'password') {
     input.type = 'text';
     btn.innerHTML = '<i class="fas fa-eye-slash"></i>';
@@ -117,52 +204,226 @@ function togglePass(id, btn) {
   }
 }
 
+// ==========================================
+// USERNAME - LIVE VALIDATION + DUPLICATE CHECK
+// ==========================================
+var _uTimer = null;
+var _uOk = false; // true when username passed all checks
+
+function setRule(id, pass) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.className = pass ? 'pass' : '';
+}
+
+function showHint(elId, msg, cls) {
+  var el = document.getElementById(elId);
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'field-hint show ' + cls;
+}
+
+function hideHint(elId) {
+  var el = document.getElementById(elId);
+  if (el) el.className = 'field-hint';
+}
+
+function onUserInput() {
+  var val = document.getElementById('regUsername').value;
+  var input = document.getElementById('regUsername');
+  var spin = document.getElementById('uSpin');
+  var icon = document.getElementById('uIcon');
+
+  _uOk = false;
+  clearTimeout(_uTimer);
+  spin.style.display = 'none';
+  icon.style.display = 'none';
+  hideHint('uHint');
+
+  var lenOk   = val.length >= 3 && val.length <= 20;
+  var charsOk = /^[a-zA-Z0-9_]+$/.test(val);
+  var startOk = /^[a-zA-Z0-9]/.test(val);
+
+  setRule('rl-len',   lenOk);
+  setRule('rl-chars', val.length === 0 || charsOk);
+  setRule('rl-start', val.length === 0 || startOk);
+  setRule('rl-avail', false);
+
+  // Reset border
+  input.className = 'form-input';
+
+  if (!val) return;
+
+  if (!lenOk || !charsOk || !startOk) {
+    input.className = 'form-input err';
+    return;
+  }
+
+  // Format OK => debounce 600ms then check Firestore
+  spin.style.display = 'block';
+  _uTimer = setTimeout(async function() {
+    try {
+      var exists = await checkUsernameExists(val);
+      spin.style.display = 'none';
+      if (exists) {
+        _uOk = false;
+        input.className = 'form-input err';
+        icon.textContent = '❌';
+        icon.style.display = 'block';
+        setRule('rl-avail', false);
+        showHint('uHint', '⚠️ Username "' + val + '" đã tồn tại! Hãy chọn tên khác.', 'err');
+      } else {
+        _uOk = true;
+        input.className = 'form-input ok';
+        icon.textContent = '✅';
+        icon.style.display = 'block';
+        setRule('rl-avail', true);
+        showHint('uHint', '✅ Username "' + val + '" có thể sử dụng!', 'ok');
+      }
+    } catch(e) {
+      spin.style.display = 'none';
+      _uOk = true; // allow register, will fail at server if dupe
+      showHint('uHint', '⚠️ Không kiểm tra được, sẽ xác nhận khi đăng ký', 'warn');
+    }
+  }, 600);
+}
+
+// ==========================================
+// EMAIL
+// ==========================================
+function onEmailInput() {
+  var val = document.getElementById('regEmail').value.trim();
+  var input = document.getElementById('regEmail');
+  var icon = document.getElementById('eIcon');
+  var re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  icon.style.display = 'none';
+  hideHint('eHint');
+  input.className = 'form-input';
+
+  if (!val) return;
+  if (re.test(val)) {
+    input.className = 'form-input ok';
+    icon.textContent = '✅'; icon.style.display = 'block';
+  } else {
+    input.className = 'form-input err';
+    icon.textContent = '❌'; icon.style.display = 'block';
+    showHint('eHint', '❌ Email không đúng định dạng', 'err');
+  }
+}
+
+// ==========================================
+// PASSWORD STRENGTH
+// ==========================================
+function onPwInput() {
+  var val = document.getElementById('regPassword').value;
+  var wrap = document.getElementById('pwWrap');
+  var fill = document.getElementById('pwFill');
+  var txt  = document.getElementById('pwTxt');
+  var input = document.getElementById('regPassword');
+
+  if (!val) { wrap.className = 'pw-wrap'; input.className = 'form-input'; onCfmInput(); return; }
+  wrap.className = 'pw-wrap show';
+
+  var score = 0;
+  if (val.length >= 6)  score++;
+  if (val.length >= 10) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+
+  var levels = [
+    { pct:'20%', color:'#ff4444', label:'😟 Rất yếu' },
+    { pct:'40%', color:'#ff9600', label:'😐 Yếu' },
+    { pct:'60%', color:'#ffd600', label:'🙂 Trung bình' },
+    { pct:'80%', color:'#00b0ff', label:'😎 Mạnh' },
+    { pct:'100%',color:'#00e676', label:'🔒 Rất mạnh' },
+  ];
+  var lv = levels[Math.max(0, Math.min(score - 1, 4))];
+  fill.style.width = lv.pct;
+  fill.style.background = lv.color;
+  txt.textContent = lv.label;
+  txt.style.color = lv.color;
+
+  input.className = 'form-input ' + (score >= 3 ? 'ok' : 'warn');
+  onCfmInput();
+}
+
+// ==========================================
+// CONFIRM PASSWORD
+// ==========================================
+function onCfmInput() {
+  var pw  = document.getElementById('regPassword').value;
+  var cfm = document.getElementById('regConfirm').value;
+  var line  = document.getElementById('cfmLine');
+  var input = document.getElementById('regConfirm');
+
+  if (!cfm) { line.className = 'cfm-line'; input.className = 'form-input'; return; }
+  line.className = 'cfm-line show';
+
+  if (pw === cfm) {
+    line.innerHTML = '<span style="color:#00e676">✅ Mật khẩu khớp</span>';
+    input.className = 'form-input ok';
+  } else {
+    line.innerHTML = '<span style="color:#ff4444">❌ Mật khẩu không khớp</span>';
+    input.className = 'form-input err';
+  }
+}
+
+// ==========================================
+// SUBMIT
+// ==========================================
 async function handleSignup(e) {
   e.preventDefault();
-  const username = document.getElementById('regUsername').value.trim();
-  const email = document.getElementById('regEmail').value.trim();
-  const password = document.getElementById('regPassword').value;
-  const confirm = document.getElementById('regConfirm').value;
-  const captcha = document.getElementById('captchaCheck').checked;
-  const terms = document.getElementById('agreeTerms').checked;
-  const btn = document.getElementById('signupBtn');
-  const errorBox = document.getElementById('signupError');
-  const successBox = document.getElementById('signupSuccess');
+  var username = document.getElementById('regUsername').value.trim();
+  var email    = document.getElementById('regEmail').value.trim();
+  var password = document.getElementById('regPassword').value;
+  var confirm  = document.getElementById('regConfirm').value;
+  var captcha  = document.getElementById('captchaCheck').checked;
+  var terms    = document.getElementById('agreeTerms').checked;
+  var btn      = document.getElementById('signupBtn');
+  var errBox   = document.getElementById('signupError');
+  var okBox    = document.getElementById('signupSuccess');
 
-  errorBox.style.display = 'none';
-  successBox.style.display = 'none';
+  errBox.style.display = 'none';
+  okBox.style.display  = 'none';
 
-  // Validation
-  if (username.length < 3) {
-    errorBox.textContent = 'Username phải có ít nhất 3 ký tự!';
-    errorBox.style.display = 'block'; return;
+  function showErr(msg) {
+    errBox.textContent = msg;
+    errBox.style.display = 'block';
+    btn.innerHTML = '<span>Đăng Ký</span>';
+    btn.disabled = false;
   }
-  if (password !== confirm) {
-    errorBox.textContent = 'Mật khẩu xác nhận không khớp!';
-    errorBox.style.display = 'block'; return;
-  }
-  if (!captcha) {
-    errorBox.textContent = 'Vui lòng xác nhận bạn là con người!';
-    errorBox.style.display = 'block'; return;
-  }
-  if (!terms) {
-    errorBox.textContent = 'Vui lòng đồng ý với điều khoản dịch vụ!';
-    errorBox.style.display = 'block'; return;
-  }
+
+  // --- Validate ---
+  if (username.length < 3)              return showErr('❌ Username phải có ít nhất 3 ký tự!');
+  if (username.length > 20)             return showErr('❌ Username không được quá 20 ký tự!');
+  if (!/^[a-zA-Z0-9_]+$/.test(username)) return showErr('❌ Username chỉ được dùng chữ cái, số và dấu gạch dưới (_)!');
+  if (!/^[a-zA-Z0-9]/.test(username))  return showErr('❌ Username phải bắt đầu bằng chữ hoặc số!');
+  if (password !== confirm)             return showErr('❌ Mật khẩu xác nhận không khớp!');
+  if (password.length < 6)              return showErr('❌ Mật khẩu tối thiểu 6 ký tự!');
+  if (!captcha)  return showErr('⚠️ Vui lòng xác nhận bạn là con người!');
+  if (!terms)    return showErr('⚠️ Vui lòng đồng ý với điều khoản dịch vụ!');
+
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang kiểm tra username...';
+  btn.disabled = true;
+
+  // --- Final duplicate check before submit ---
+  try {
+    var exists = await checkUsernameExists(username);
+    if (exists) return showErr('❌ Username "' + username + '" đã có người dùng! Vui lòng chọn tên khác.');
+  } catch(err2) { /* network issue, proceed */ }
 
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tạo tài khoản...';
-  btn.disabled = true;
 
   try {
     await registerUser(email, password, username);
-    successBox.textContent = '✅ Tạo tài khoản thành công! Đang chuyển hướng...';
-    successBox.style.display = 'block';
-    setTimeout(() => window.location.href = 'dashboard.html', 1500);
+    okBox.textContent = '✅ Tạo tài khoản thành công! Đang chuyển hướng...';
+    okBox.style.display = 'block';
+    btn.innerHTML = '✅ Thành công!';
+    setTimeout(function() { window.location.href = 'dashboard.html'; }, 1500);
   } catch (err) {
-    errorBox.textContent = getAuthErrorMsg(err.code);
-    errorBox.style.display = 'block';
-    btn.innerHTML = '<span>Đăng Ký</span>';
-    btn.disabled = false;
+    showErr(getAuthErrorMsg(err.code));
   }
 }
 </script>

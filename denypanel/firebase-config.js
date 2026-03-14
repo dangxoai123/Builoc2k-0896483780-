@@ -38,6 +38,7 @@ async function registerUser(email, password, username) {
   // Lưu thông tin user vào Firestore
   await db.collection('users').doc(uid).set({
     username: username,
+    usernameLower: username.toLowerCase(), // dùng để check trùng không phân biệt hoa/thường
     email: email,
     balance: 0,
     currency: 'VND',
@@ -65,6 +66,26 @@ async function getUserProfile(uid) {
   // source:'server' để bypass cache, luôn lấy data mới nhất từ Firestore
   const doc = await db.collection('users').doc(uid).get({ source: 'server' });
   return doc.exists ? doc.data() : null;
+}
+
+/**
+ * Kiểm tra xem username đã tồn tại chưa (không phân biệt hoa/thường)
+ * @param {string} username
+ * @returns {Promise<boolean>} true nếu đã có người dùng
+ */
+async function checkUsernameExists(username) {
+  if (!username) return false;
+  const lower = username.toLowerCase();
+  // Check exact match trước (nhanh)
+  const exact = await db.collection('users')
+    .where('username', '==', username)
+    .limit(1).get();
+  if (!exact.empty) return true;
+  // Check lowercase (nếu có lưu field usernameLower)
+  const lowerSnap = await db.collection('users')
+    .where('usernameLower', '==', lower)
+    .limit(1).get();
+  return !lowerSnap.empty;
 }
 
 /** Cập nhật số dư user trong Firestore */
