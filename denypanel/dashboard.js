@@ -1204,7 +1204,27 @@ function showPage(name, btn) {
 }
 
 function toggleSidebar() {
-  document.getElementById('sidebar')?.classList.toggle('expanded');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const isMobile = window.innerWidth <= 768;
+
+  if (isMobile) {
+    // Mobile: toggle slide-in drawer with overlay
+    const isOpen = sidebar.classList.contains('mob-open');
+    if (isOpen) {
+      sidebar.classList.remove('mob-open');
+      // Khi mở, sidebar cũng cần expanded để hiển thị text
+      sidebar.classList.remove('expanded');
+      if (overlay) overlay.classList.remove('show');
+    } else {
+      sidebar.classList.add('mob-open');
+      sidebar.classList.add('expanded');
+      if (overlay) overlay.classList.add('show');
+    }
+  } else {
+    // Desktop: expand/collapse width
+    sidebar.classList.toggle('expanded');
+  }
 }
 
 function logout() {
@@ -1480,4 +1500,20 @@ document.addEventListener('click', (e) => {
       document.getElementById(id)?.classList.remove('rotated');
     });
   }
+});
+
+// Auto-close mobile sidebar when a sidebar nav item is clicked
+document.addEventListener('DOMContentLoaded', function() {
+  const sidebar = document.getElementById('sidebar');
+  if (!sidebar) return;
+  sidebar.querySelectorAll('.sidebar-item').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      if (window.innerWidth <= 768 && sidebar.classList.contains('mob-open')) {
+        sidebar.classList.remove('mob-open');
+        sidebar.classList.remove('expanded');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (overlay) overlay.classList.remove('show');
+      }
+    });
+  });
 });

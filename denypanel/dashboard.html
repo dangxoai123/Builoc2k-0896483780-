@@ -13,6 +13,7 @@
 <script src="firebase-config.js"></script>
 </head>
 <body>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 <div class="layout">
 
   <!-- ===== SIDEBAR ===== -->
@@ -514,20 +515,24 @@
       <div class="page" id="page-services">
         <div class="services-filter-row">
           <div class="platform-scroll" id="platformBtns">
-            <button class="plat-btn active" style="background:#555" onclick="filterSvcPage('all',this)" title="Tất cả"><i class="fas fa-th" style="color:white;font-size:14px"></i></button>
-            <button class="plat-btn" style="background:#e1306c" onclick="filterSvcPage('Instagram',this)" title="Instagram">📷</button>
-            <button class="plat-btn" style="background:#010101" onclick="filterSvcPage('TikTok',this)" title="TikTok">🎵</button>
-            <button class="plat-btn" style="background:#1da1f2" onclick="filterSvcPage('Twitter',this)" title="Twitter">🐦</button>
-            <button class="plat-btn" style="background:#ff0000" onclick="filterSvcPage('Youtube',this)" title="YouTube">▶</button>
-            <button class="plat-btn" style="background:#229ed9" onclick="filterSvcPage('Telegram',this)" title="Telegram">✈</button>
-            <button class="plat-btn" style="background:#1877f2" onclick="filterSvcPage('Facebook',this)" title="Facebook">f</button>
-            <button class="plat-btn" style="background:#1db954" onclick="filterSvcPage('Spotify',this)" title="Spotify">🎵</button>
-            <button class="plat-btn" style="background:#5865f2" onclick="filterSvcPage('Discord',this)" title="Discord">👾</button>
-            <button class="plat-btn" style="background:#ff4500" onclick="filterSvcPage('Reddit',this)" title="Reddit">👽</button>
-            <button class="plat-btn" style="background:#fffc00" onclick="filterSvcPage('Snapchat',this)" title="Snapchat">👻</button>
-            <button class="plat-btn" style="background:#0088cc" onclick="filterSvcPage('Twitch',this)" title="Twitch">🎮</button>
-            <button class="plat-btn" style="background:#ff6600" onclick="filterSvcPage('SoundCloud',this)" title="SoundCloud">☁</button>
-            <button class="plat-btn" style="background:#e60023" onclick="filterSvcPage('Pinterest',this)" title="Pinterest">📌</button>
+            <button class="plat-btn active" style="background:#3a3f50" onclick="filterSvcPage('all',this)" title="Tất cả"><i class="fas fa-th" style="color:white;font-size:14px"></i></button>
+            <button class="plat-btn" style="background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888)" onclick="filterSvcPage('Instagram',this)" title="Instagram"><i class="fab fa-instagram" style="color:white;font-size:18px"></i></button>
+            <button class="plat-btn" style="background:#010101;border:1px solid #444" onclick="filterSvcPage('TikTok',this)" title="TikTok"><i class="fab fa-tiktok" style="color:white;font-size:16px"></i></button>
+            <button class="plat-btn" style="background:#000000;border:1px solid #333" onclick="filterSvcPage('Twitter',this)" title="Twitter / X"><i class="fab fa-x-twitter" style="color:white;font-size:16px"></i></button>
+            <button class="plat-btn" style="background:#ff0000" onclick="filterSvcPage('Youtube',this)" title="YouTube"><i class="fab fa-youtube" style="color:white;font-size:18px"></i></button>
+            <button class="plat-btn" style="background:#229ed9" onclick="filterSvcPage('Telegram',this)" title="Telegram"><i class="fab fa-telegram" style="color:white;font-size:18px"></i></button>
+            <button class="plat-btn" style="background:#1877f2" onclick="filterSvcPage('Facebook',this)" title="Facebook"><i class="fab fa-facebook-f" style="color:white;font-size:18px"></i></button>
+            <button class="plat-btn" style="background:#1db954" onclick="filterSvcPage('Spotify',this)" title="Spotify"><i class="fab fa-spotify" style="color:white;font-size:18px"></i></button>
+            <button class="plat-btn" style="background:#5865f2" onclick="filterSvcPage('Discord',this)" title="Discord"><i class="fab fa-discord" style="color:white;font-size:18px"></i></button>
+            <button class="plat-btn" style="background:#ff4500" onclick="filterSvcPage('Reddit',this)" title="Reddit"><i class="fab fa-reddit-alien" style="color:white;font-size:18px"></i></button>
+            <button class="plat-btn" style="background:#fffc00" onclick="filterSvcPage('Snapchat',this)" title="Snapchat"><i class="fab fa-snapchat" style="color:#000;font-size:18px"></i></button>
+            <button class="plat-btn" style="background:#9146ff" onclick="filterSvcPage('Twitch',this)" title="Twitch"><i class="fab fa-twitch" style="color:white;font-size:18px"></i></button>
+            <button class="plat-btn" style="background:#ff5500" onclick="filterSvcPage('SoundCloud',this)" title="SoundCloud"><i class="fab fa-soundcloud" style="color:white;font-size:18px"></i></button>
+            <button class="plat-btn" style="background:#e60023" onclick="filterSvcPage('Pinterest',this)" title="Pinterest"><i class="fab fa-pinterest-p" style="color:white;font-size:18px"></i></button>
+            <button class="plat-btn" style="background:#0077b5" onclick="filterSvcPage('LinkedIn',this)" title="LinkedIn"><i class="fab fa-linkedin-in" style="color:white;font-size:18px"></i></button>
+            <button class="plat-btn" style="background:#35465d" onclick="filterSvcPage('Tumblr',this)" title="Tumblr"><i class="fab fa-tumblr" style="color:white;font-size:18px"></i></button>
+            <button class="plat-btn" style="background:#1ab7ea" onclick="filterSvcPage('Vimeo',this)" title="Vimeo"><i class="fab fa-vimeo-v" style="color:white;font-size:18px"></i></button>
+            <button class="plat-btn" style="background:#e4405f" onclick="filterSvcPage('Thread',this)" title="Threads"><i class="fab fa-threads" style="color:white;font-size:18px"></i></button>
           </div>
           <div class="svc-search-box">
             <i class="fas fa-search"></i>
@@ -694,7 +699,7 @@
            PROFILE
       ============================ -->
       <div class="page" id="page-profile">
-        <div style="display:grid;grid-template-columns:280px 1fr;gap:20px">
+        <div class="profile-layout">
           <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:28px;text-align:center;height:fit-content">
             <div style="width:80px;height:80px;background:linear-gradient(135deg,var(--green),var(--green2));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:36px;margin:0 auto 16px;box-shadow:0 8px 25px rgba(46,204,113,0.3)">🧑</div>
             <div style="font-size:18px;font-weight:800;margin-bottom:4px" id="profileNameDisplay">dangxoai</div>
