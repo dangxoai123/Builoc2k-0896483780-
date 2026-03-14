@@ -6,8 +6,8 @@
 
 const https = require('https');
 
-const SEPAY_TOKEN         = 'WW6NPUYVK0DSVDH5N2C8T9OAOAUMLIK4GVCJ5AE2SYMTTJIPFLCW4BKED3UEZBMR';
-const REAL_ACCOUNT        = '8837755253';
+const SEPAY_TOKEN         = '1JSSV8HTJJNLKHWBAMKQG4YEWA2FPVA243UKLOYEPPRUMIL78UCBOW3EQGDGIRAX';
+const REAL_ACCOUNT        = '0896483780';
 // Tỷ giá nạp tiền (phải khớp với tỷ giá hiển thị trong dashboard để không bị mất tiền)
 // Xem api/rate.js FALLBACK_RATE = 26294.5
 const VND_DEPOSIT_RATE    = 26294.5; // 1 USD = 26,294.5 VND
@@ -150,7 +150,7 @@ async function creditByRef(ref, amount, txId, description) {
         createdAt:     { stringValue: new Date().toISOString() },
         balanceBefore: { doubleValue: oldBal },
         balanceAfter:  { doubleValue: newBal },
-        gateway:       { stringValue: 'Sepay/BIDV' },
+        gateway:       { stringValue: 'Sepay/MBBank' },
       }})
     );
 

@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ==========================================
  * DASHBOARD V2 - LOGIC
  * Tích hợp với DenyPanel API thực
@@ -727,10 +727,10 @@ function toggleOrderFilter() { showToastV2('Bộ lọc nâng cao sắp ra mắt!
 // ADD FUNDS - VCB QR Auto Deposit
 // ==========================================
 // Tài khoản nhận tiền (Sepay API Banking):
-const VCB_ACCOUNT   = '96247NDQTE';   // Số TK ảo BIDV (VA - Virtual Account Sepay)
+const VCB_ACCOUNT   = '0896483780';   // Số TK MBBank
 const VCB_OWNER     = 'LE XUAN DANG';
-const VCB_BANK_CODE = 'BIDV';          // Mã ngân hàng VietQR
-const REAL_ACCOUNT  = '8837755253';   // Số TK BIDV thực (dùng Sepay API)
+const VCB_BANK_CODE = 'MB';           // Mã ngân hàng VietQR của MBBank
+const REAL_ACCOUNT  = '0896483780';   // Số TK MBBank thực (dùng Sepay API)
 const DEPOSIT_TIMEOUT_MS = 15 * 60 * 1000; // 15 phút
 const POLL_INTERVAL_MS   = 20 * 1000;       // Poll mỗi 20 giây
 
