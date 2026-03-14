@@ -826,7 +826,7 @@ button { cursor: pointer; font-family: 'Poppins', sans-serif; }
 
 .svc-table-header {
   display: grid;
-  grid-template-columns: 30px 80px 1fr 130px 80px 100px 130px;
+  grid-template-columns: 30px 80px 1fr 130px 80px 100px 130px auto;
   gap: 8px;
   padding: 10px 16px;
   font-size: 12px;
