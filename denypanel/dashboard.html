@@ -271,9 +271,9 @@
           <!-- Left: Form -->
           <div class="order-main-card">
             <div class="order-tabs">
-              <button class="order-tab active"><i class="fas fa-plus-square"></i> Đặt hàng</button>
-              <button class="order-tab"><i class="fas fa-heart"></i> Yêu thích</button>
-              <button class="order-tab"><i class="fas fa-shopping-basket"></i> Đặt Hàng Lớn</button>
+              <button class="order-tab active" id="orderTab-order" onclick="switchOrderTab('order',this)"><i class="fas fa-plus-square"></i> Đặt hàng</button>
+              <button class="order-tab" id="orderTab-fav" onclick="switchOrderTab('fav',this)"><i class="fas fa-heart"></i> Yêu thích</button>
+              <button class="order-tab" id="orderTab-sub" onclick="showPage('sub',null)"><i class="fas fa-shopping-basket"></i> Đặt Hàng Lớn</button>
             </div>
             <div class="order-search-bar">
               <input class="order-search-input" placeholder="Tìm kiếm theo ID dịch vụ" id="orderPageSearch" oninput="filterOrderSearch()">

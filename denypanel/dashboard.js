@@ -1059,6 +1059,65 @@ function renderHomeFavorites() {
   parent.appendChild(wrap);
 }
 
+function switchOrderTab(tab, btn) {
+  document.querySelectorAll('#page-order .order-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  const formBody = document.querySelector('#page-order .order-form-body');
+  const searchBar = document.getElementById('orderPageSearch')?.parentElement;
+
+  if (tab === 'order') {
+    if (formBody) formBody.style.display = '';
+    if (searchBar) searchBar.style.display = '';
+    document.getElementById('orderFavList')?.remove();
+  } else if (tab === 'fav') {
+    if (formBody) formBody.style.display = 'none';
+    if (searchBar) searchBar.style.display = 'none';
+    renderOrderFavorites();
+  }
+}
+
+function renderOrderFavorites() {
+  document.getElementById('orderFavList')?.remove();
+  const formBody = document.querySelector('#page-order .order-form-body');
+  if (!formBody) return;
+  const parent = formBody.parentElement;
+
+  const favIds = getFavs();
+  const favSvcs = allServicesData.filter(s => favIds.includes(s.service));
+
+  const wrap = document.createElement('div');
+  wrap.id = 'orderFavList';
+  wrap.style.cssText = 'padding:16px;display:flex;flex-direction:column;gap:10px';
+
+  if (!favSvcs.length) {
+    wrap.innerHTML = `<div style="text-align:center;padding:48px;color:var(--gray2)">
+      <i class="fas fa-heart" style="font-size:36px;color:var(--green);margin-bottom:16px;display:block"></i>
+      <div style="font-size:14px">Bạn chưa thêm dịch vụ yêu thích nào.<br>Nhấn biểu tượng ❤ ở trang Dịch vụ để lưu.</div>
+    </div>`;
+    parent.appendChild(wrap);
+    return;
+  }
+
+  favSvcs.forEach(s => {
+    const div = document.createElement('div');
+    div.style.cssText = 'background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.2s';
+    div.onmouseenter = () => div.style.borderColor = 'var(--green)';
+    div.onmouseleave = () => div.style.borderColor = 'var(--border)';
+    div.onclick = () => buyNowSvc(s.service);
+    div.innerHTML = `
+      <span class="svc-id-tag" style="font-size:12px;flex-shrink:0">${s.service}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.name)}</div>
+        <div style="font-size:12px;color:var(--green);font-weight:800;margin-top:2px">${formatRate(s.rate)}<span style="color:var(--gray);font-size:10px;font-weight:400">/1k</span></div>
+      </div>
+      <button class="btn-dat-hang" style="padding:6px 14px;font-size:12px;border-radius:8px;box-shadow:none;flex-shrink:0" onclick="event.stopPropagation();buyNowSvc(${s.service})">Mua ngay</button>
+    `;
+    wrap.appendChild(div);
+  });
+  parent.appendChild(wrap);
+}
+
 // ==========================================
 // SERVICE DETAIL MODAL
 // ==========================================
