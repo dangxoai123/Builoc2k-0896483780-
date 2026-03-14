@@ -958,7 +958,7 @@ function renderSvcPage() {
         avg_time: avgTime, type: s.type
       }));
       html += `
-        <div class="svc-service-row" style="grid-template-columns:30px 80px 1fr 130px 80px 100px 130px auto">
+        <div class="svc-service-row">
           <div><button class="fav-btn ${getFavs().includes(s.service) ? 'active' : ''}" onclick="toggleFavSvc(${s.service},this)" title="Yêu thích"><i class="fas fa-heart"></i></button></div>
           <div><span class="svc-id-tag">${s.service}</span></div>
           <div>
