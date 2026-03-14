@@ -1,20 +1,20 @@
 /**
  * ==========================================
- * DENYPANEL API INTEGRATION - FULL VERSION
- * Web con (reseller panel) kết nối tới DenyPanel
+ * MMOpanel API INTEGRATION - FULL VERSION
+ * Web con (reseller panel) kết nối tới MMOpanel
  * ==========================================
  * Cách hoạt động:
- *   Browser → proxy.php (trên server bạn) → denypanel.com/api/v2
+ *   Browser → proxy.php (trên server bạn) → MMOpanel.com/api/v2
  * Nếu không có PHP server (chạy local file://), dùng demo mode.
  * ==========================================
  */
 
-const DenyPanelAPI = {
-  // API Key của tài khoản trên DenyPanel
+const MMOpanelAPI = {
+  // API Key của tài khoản trên MMOpanel
   API_KEY: '2a6149e2e8ff0be95ded16a8e408e2d6',
 
-  // API endpoint thực của DenyPanel (KHÔNG gọi trực tiếp - sẽ bị CORS)
-  API_URL: 'https://denypanel.com/api/v2',
+  // API endpoint thực của MMOpanel (KHÔNG gọi trực tiếp - sẽ bị CORS)
+  API_URL: 'https://MMOpanel.com/api/v2',
 
   // Vercel Serverless Function endpoint
   // Khi deploy lên Vercel → /api/proxy tự route đến api/proxy.js
@@ -36,8 +36,8 @@ const DenyPanelAPI = {
 
     // Nếu chạy từ file:// → không có server → demo mode
     if (window.location.protocol === 'file:') {
-      console.warn('[DenyPanel API] ❌ Chạy local file:// - dùng DEMO mode');
-      console.warn('[DenyPanel API] Deploy lên Firebase Hosting để kết nối API thực!');
+      console.warn('[MMOpanel API] ❌ Chạy local file:// - dùng DEMO mode');
+      console.warn('[MMOpanel API] Deploy lên Firebase Hosting để kết nối API thực!');
       this._useProxy = false;
       return false;
     }
@@ -56,16 +56,16 @@ const DenyPanelAPI = {
     }
 
     if (this._useProxy) {
-      console.log('[DenyPanel API] ✅ Firebase Function proxy đang hoạt động!');
+      console.log('[MMOpanel API] ✅ Firebase Function proxy đang hoạt động!');
     } else {
-      console.warn('[DenyPanel API] ❌ Không tìm thấy proxy - kiểm tra Firebase deploy');
+      console.warn('[MMOpanel API] ❌ Không tìm thấy proxy - kiểm tra Firebase deploy');
     }
     return this._useProxy;
   },
 
   /**
-   * Gọi API DenyPanel qua proxy.php (bypass CORS)
-   * Browser → proxy.php → denypanel.com/api/v2 → trả kết quả về
+   * Gọi API MMOpanel qua proxy.php (bypass CORS)
+   * Browser → proxy.php → MMOpanel.com/api/v2 → trả kết quả về
    */
   async call(params) {
     // Thử dùng proxy trước
@@ -73,7 +73,7 @@ const DenyPanelAPI = {
 
     if (proxyAvail) {
       try {
-        // Gọi qua proxy.php - proxy sẽ tự thêm API key và forward đến DenyPanel
+        // Gọi qua proxy.php - proxy sẽ tự thêm API key và forward đến MMOpanel
         const body = new URLSearchParams();
         for (const [k, v] of Object.entries(params)) {
           if (v !== undefined && v !== null && v !== '') {
@@ -90,29 +90,29 @@ const DenyPanelAPI = {
 
         if (!response.ok) throw new Error(`Proxy HTTP ${response.status}`);
         const data = await response.json();
-        console.log(`[DenyPanel API] action=${params.action}`, data);
+        console.log(`[MMOpanel API] action=${params.action}`, data);
 
         if (data && data.error) {
           return { success: false, error: data.error, data };
         }
         return { success: true, data };
       } catch (err) {
-        console.warn('[DenyPanel API] Proxy error:', err.message);
+        console.warn('[MMOpanel API] Proxy error:', err.message);
         return { success: false, error: err.message, demo: true };
       }
     }
 
     // Không có proxy → demo mode
-    console.warn('[DenyPanel API] No proxy available - using DEMO mode');
+    console.warn('[MMOpanel API] No proxy available - using DEMO mode');
     return { success: false, error: 'No proxy server', demo: true };
   },
 
   // ==========================================
-  // EXCHANGE RATE - TỶ GIÁ THỰC TỪ DENYPANEL
+  // EXCHANGE RATE - TỶ GIÁ THỰC TỪ MMOpanel
   // ==========================================
 
   /**
-   * Lấy tỷ giá VND/USD thực từ DenyPanel (qua /api/rate)
+   * Lấy tỷ giá VND/USD thực từ MMOpanel (qua /api/rate)
    * Cache 5 phút trong sessionStorage
    */
   async getExchangeRate() {
@@ -137,14 +137,14 @@ const DenyPanelAPI = {
       if (data.rate && data.rate > 20000) {
         sessionStorage.setItem(CACHE_KEY, data.rate);
         sessionStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
-        console.log(`[DenyPanel API] Tỷ giá VND: 1 USD = ${data.rate.toFixed(2)} ₫ (nguồn: ${data.source})`);
+        console.log(`[MMOpanel API] Tỷ giá VND: 1 USD = ${data.rate.toFixed(2)} ₫ (nguồn: ${data.source})`);
         return data.rate;
       }
 
       throw new Error('Invalid rate');
     } catch (err) {
-      console.warn('[DenyPanel API] Không lấy được tỷ giá, dùng fallback:', err.message);
-      return 26294.5; // Fallback: tỷ giá DenyPanel thực (~26,294 VND/USD)
+      console.warn('[MMOpanel API] Không lấy được tỷ giá, dùng fallback:', err.message);
+      return 26294.5; // Fallback: tỷ giá MMOpanel thực (~26,294 VND/USD)
     }
   },
 
@@ -161,12 +161,12 @@ const DenyPanelAPI = {
       if (resp.ok) {
         const data = await resp.json();
         if (Array.isArray(data) && data.length > 0) {
-          console.log(`[DenyPanel API] ✅ Loaded ${data.length} services from /api/services`);
+          console.log(`[MMOpanel API] ✅ Loaded ${data.length} services from /api/services`);
           return data;
         }
       }
     } catch (err) {
-      console.warn('[DenyPanel API] /api/services failed, trying proxy:', err.message);
+      console.warn('[MMOpanel API] /api/services failed, trying proxy:', err.message);
     }
 
     // Fallback: thử qua proxy chung
@@ -176,7 +176,7 @@ const DenyPanelAPI = {
         return result.data;
       }
     } catch (err) {
-      console.warn('[DenyPanel API] proxy fallback failed:', err.message);
+      console.warn('[MMOpanel API] proxy fallback failed:', err.message);
     }
 
     return this.getDemoServices();
@@ -323,17 +323,17 @@ const DenyPanelAPI = {
   async order(params) {
     const result = await this.call({ action: 'add', ...params });
 
-    // Proxy hoạt động, DenyPanel trả về kết quả
+    // Proxy hoạt động, MMOpanel trả về kết quả
     if (result.success && result.data) {
       if (result.data.order) {
         // Thành công - có order ID
         return { success: true, orderId: result.data.order };
       } else if (result.data.error) {
-        // DenyPanel trả về lỗi (vd: "Service not found", "Insufficient balance")
+        // MMOpanel trả về lỗi (vd: "Service not found", "Insufficient balance")
         return { success: false, error: result.data.error };
       }
       // Phản hồi không có order ID và không có error - coi như lỗi
-      return { success: false, error: 'Phản hồi không hợp lệ từ DenyPanel' };
+      return { success: false, error: 'Phản hồi không hợp lệ từ MMOpanel' };
     }
 
     // Proxy có lỗi nhưng không phải demo mode - hiện lỗi thật
@@ -448,7 +448,7 @@ const DenyPanelAPI = {
   // ==========================================
 
   /**
-   * Demo services data - Đầy đủ 72 categories từ DenyPanel thực (trích xuất 13/03/2026)
+   * Demo services data - Đầy đủ 72 categories từ MMOpanel thực (trích xuất 13/03/2026)
    */
   getDemoServices() {
     return [

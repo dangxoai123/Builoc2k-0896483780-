@@ -1,7 +1,7 @@
 /**
  * ==========================================
  * DASHBOARD V2 - LOGIC
- * Tích hợp với DenyPanel API thực
+ * Tích hợp với MMOpanel API thực
  * ==========================================
  */
 
@@ -10,8 +10,8 @@
  * CURRENCY SWITCHER - USD ↔ VND
  * ==========================================
  */
-// Tỷ giá USD → VND (sẽ được cập nhật thực từ DenyPanel khi load trang)
-let VND_RATE = 26294.5; // Tỷ giá DenyPanel thực (cập nhật động từ /api/rate)
+// Tỷ giá USD → VND (sẽ được cập nhật thực từ MMOpanel khi load trang)
+let VND_RATE = 26294.5; // Tỷ giá MMOpanel thực (cập nhật động từ /api/rate)
 
 /** Lấy đơn vị tiền hiện tại từ localStorage */
 function getCurrency() {
@@ -36,12 +36,12 @@ function formatMoney(usdAmount) {
   return '$' + amount.toFixed(2);
 }
 
-/** Format giá dịch vụ /1000 đơn vị (giống DenyPanel: 73617.60 ₫) */
+/** Format giá dịch vụ /1000 đơn vị (giống MMOpanel: 73617.60 ₫) */
 function formatRate(usdRate) {
   const rate = parseFloat(usdRate || 0);
   if (getCurrency() === 'VND') {
     const vnd = rate * VND_RATE;
-    // Giống DenyPanel: không dùng dấu phân cách nghìn, 2 chữ số thập phân
+    // Giống MMOpanel: không dùng dấu phân cách nghìn, 2 chữ số thập phân
     return vnd.toFixed(2) + ' ₫';
   }
   return '$' + rate;
@@ -153,13 +153,13 @@ async function initDashboard() {
   if (avatarBtn) avatarBtn.textContent = name[0]?.toUpperCase() || 'D';
 
   // Affiliate link
-  safeSet('affLinkV2', `https://denypanel.com/ref/${name}`, 'textContent');
+  safeSet('affLinkV2', `https://MMOpanel.com/ref/${name}`, 'textContent');
 
   // Show home page
   showPage('home', document.getElementById('sb-home'));
 
   // Load data in order
-  VND_RATE = await DenyPanelAPI.getExchangeRate();
+  VND_RATE = await MMOpanelAPI.getExchangeRate();
 
   await refreshBalance();
   await loadAllServices();
@@ -182,7 +182,7 @@ async function initDashboard() {
 }
 
 // ==========================================
-// BALANCE - Quản lý số dư web con (độc lập với DenyPanel)
+// BALANCE - Quản lý số dư web con (độc lập với MMOpanel)
 // ==========================================
 async function refreshBalance() {
   // Lấy số dư từ Firestore (do admin quản lý)
@@ -252,7 +252,7 @@ let currentSvcFilter = 'all';
 async function loadAllServices() {
   // Load descriptions cùng lúc với services (parallel)
   const [services] = await Promise.all([
-    DenyPanelAPI.getServices(),
+    MMOpanelAPI.getServices(),
     loadSvcDescriptions()
   ]);
   allServicesData = services;
@@ -263,7 +263,7 @@ async function loadAllServices() {
 
 
 // ==========================================
-// PLATFORM ICON MAPPING (Exact match DenyPanel)
+// PLATFORM ICON MAPPING (Exact match MMOpanel)
 // ==========================================
 function getPlatformIcon(category) {
   const cat = (category || '').toLowerCase();
@@ -500,7 +500,7 @@ async function _placeOrder(prefix) {
 
   let result;
   try {
-    result = await DenyPanelAPI.addOrder(opt.value, link, qty);
+    result = await MMOpanelAPI.addOrder(opt.value, link, qty);
   } catch(apiErr) {
     console.error('[PlaceOrder] API error:', apiErr);
     showMsg(msgBox, `❌ Lỗi kết nối API: ${apiErr.message}`, 'err');
@@ -554,7 +554,7 @@ async function _placeOrder(prefix) {
 
     } catch(saveErr) {
       console.error('[PlaceOrder] Firestore save error:', saveErr);
-      // Đơn đã được đặt thành công trên DenyPanel nhưng lỗi khi lưu nội bộ
+      // Đơn đã được đặt thành công trên MMOpanel nhưng lỗi khi lưu nội bộ
       showMsg(msgBox,
         `⚠️ Đặt hàng OK trên hệ thống (ID: #${result.orderId}) nhưng lỗi lưu cục bộ: ${saveErr.message}<br>Vui lòng chụp màn hình và liên hệ admin.`,
         'err'
@@ -654,8 +654,8 @@ function renderOrdersPage(ordersIn) {
     </div>`;
 }
 
-// Map trạng thái DenyPanel → code nội bộ
-function mapDenyPanelStatus(raw) {
+// Map trạng thái MMOpanel → code nội bộ
+function mapMMOpanelStatus(raw) {
   const s = (raw || '').toLowerCase().trim();
   if (s === 'completed') return 'completed';
   if (s === 'canceled' || s === 'cancelled') return 'canceled';
@@ -671,10 +671,10 @@ async function checkOrderById(orderId) {
   showToastV2('🔄 Đang đồng bộ trạng thái...', 'info');
 
   try {
-    const result = await DenyPanelAPI.getOrderStatus(orderId);
+    const result = await MMOpanelAPI.getOrderStatus(orderId);
     if (!result.success) { showToastV2('❌ Không lấy được trạng thái', 'err'); return; }
 
-    const newStatus = mapDenyPanelStatus(result.status);
+    const newStatus = mapMMOpanelStatus(result.status);
     const remains = parseInt(result.remains) || 0;
 
     // Cập nhật Firestore
@@ -1069,7 +1069,7 @@ function openSvcDetailModal(dataStr) {
     const s = JSON.parse(decodeURIComponent(dataStr));
     _currentModalSvc = s;
 
-    // Lấy description từ file JSON đã scrape từ denypanel.com
+    // Lấy description từ file JSON đã scrape từ MMOpanel.com
     const rawDesc = svcDescriptions[String(s.id)] || "";
 
     // Parse Speed, Refill, Quality, Link, StartTime từ description text
@@ -1207,9 +1207,9 @@ async function testApiCall() {
   try {
     let result;
     if (action === 'balance') {
-      result = await DenyPanelAPI.getBalance();
+      result = await MMOpanelAPI.getBalance();
     } else {
-      result = await DenyPanelAPI.getServices();
+      result = await MMOpanelAPI.getServices();
       if (Array.isArray(result)) result = result.slice(0, 3);
     }
     resultDiv.textContent = JSON.stringify(result, null, 2);
@@ -1411,7 +1411,7 @@ function toggleTheme() { showToastV2('Dark mode mặc định 🌙', 'info'); }
 setInterval(refreshBalance, 60000);
 
 // ==========================================
-// CUSTOM ICON DROPDOWN (giống Select2 DenyPanel)
+// CUSTOM ICON DROPDOWN (giống Select2 MMOpanel)
 // ==========================================
 function getCsiClass(category) {
   const cat = (category || '').toLowerCase();

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dịch vụ - Denypanel</title>
+<title>Dịch vụ - MMOpanel</title>
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
@@ -82,7 +82,7 @@
 </head>
 <body>
 <nav class="navbar">
-  <div class="nav-logo"><div class="logo-icon">📡</div>Denypanel<div class="nav-globe">🌐</div></div>
+  <div class="nav-logo"><div class="logo-icon">📡</div>MMOpanel<div class="nav-globe">🌐</div></div>
   <div class="nav-center">
     <a href="services.html" class="nav-link active">Dịch vụ</a>
     <a href="terms.html" class="nav-link">Điều khoản</a>
@@ -143,13 +143,13 @@
 
 <footer>
   <div class="footer-inner">
-    <div class="footer-logo"><div class="logo-icon">📡</div>Denypanel</div>
+    <div class="footer-logo"><div class="logo-icon">📡</div>MMOpanel</div>
     <div class="footer-links">
       <a href="#" class="footer-link">Blog</a>
       <a href="terms.html" class="footer-link">Điều khoản</a>
       <a href="api.html" class="footer-link">API</a>
     </div>
-    <div class="footer-copyright">© 2024 Denypanel. All rights reserved.</div>
+    <div class="footer-copyright">© 2024 MMOpanel. All rights reserved.</div>
   </div>
 </footer>
 
@@ -159,10 +159,10 @@
 <script>
 /**
  * services.html - Public services listing
- * Prices are fetched LIVE from DenyPanel API via api.js
- * VND_RATE = 27,000 (official DenyPanel exchange rate)
+ * Prices are fetched LIVE from MMOpanel API via api.js
+ * VND_RATE = 27,000 (official MMOpanel exchange rate)
  */
-const VND_RATE = 26294.5; // Tỷ giá thực DenyPanel (~26,294 VND/USD)
+const VND_RATE = 26294.5; // Tỷ giá thực MMOpanel (~26,294 VND/USD)
 let currentFilter = 'all';
 let svcData = [];
 let currentCur = localStorage.getItem('svc_currency') || 'USD';
@@ -190,7 +190,7 @@ function setCur(c) {
 }
 
 async function init() {
-  svcData = await DenyPanelAPI.getServices();
+  svcData = await MMOpanelAPI.getServices();
   // Apply stored preference
   document.getElementById('curUSD').classList.toggle('active', currentCur === 'USD');
   document.getElementById('curVND').classList.toggle('active', currentCur === 'VND');

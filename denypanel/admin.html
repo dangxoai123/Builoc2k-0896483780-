@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Panel - Denypanel</title>
+<title>Admin Panel - MMOpanel</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -1116,7 +1116,7 @@ async function adminSyncOrder(uid, docId, orderId) {
   if (!orderId) return;
   showToast('🔄 Đang đồng bộ #' + orderId + '...');
   try {
-    // Gọi DenyPanel API qua proxy
+    // Gọi MMOpanel API qua proxy
     const resp = await fetch('/api/proxy', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

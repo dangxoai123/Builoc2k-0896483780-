@@ -1,5 +1,5 @@
 /* ==========================================
-   DASHBOARD - GIỐNG Y HỆT DENYPANEL.COM
+   DASHBOARD - GIỐNG Y HỆT MMOpanel.COM
    Font: Poppins | Radius: 15px
    ========================================== */
 
@@ -8,7 +8,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 :root {
-  /* === EXACT DENYPANEL.COM COLORS === */
+  /* === EXACT MMOpanel.COM COLORS === */
   --bg: #0d1117;           /* body background */
   --bg2: #161b22;          /* sidebar, navbar, cards */
   --bg3: #0d1117;          /* inputs, secondary bg */
@@ -27,13 +27,13 @@
   --white: #ffffff;
   --text: #e6edf3;         /* main text */
   --gray: #7d8590;         /* muted text */
-  --gray2: #bfd5fd;        /* secondary muted text (DenyPanel specific) */
+  --gray2: #bfd5fd;        /* secondary muted text (MMOpanel specific) */
   --gray3: #cdd9e5;
 
   --border: #111620;       /* subtle border */
   --border2: rgba(255,255,255,0.06);
 
-  --radius: 15px;          /* DenyPanel uses 15px everywhere */
+  --radius: 15px;          /* MMOpanel uses 15px everywhere */
   --radius-sm: 10px;
   --sidebar-w: 64px;
   --sidebar-w-open: 240px;
@@ -1017,7 +1017,7 @@ button { cursor: pointer; font-family: 'Poppins', sans-serif; }
 .data-table-v2 tr:last-child td { border-bottom: none; }
 
 /* ==========================================
-   STATUS PILLS — EXACT DENYPANEL COLORS
+   STATUS PILLS — EXACT MMOpanel COLORS
    ========================================== */
 .status-pill { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
 .status-pill.pending    { background: rgba(241,196,15,0.15); color: #f1c40f; }
@@ -1109,7 +1109,7 @@ button { cursor: pointer; font-family: 'Poppins', sans-serif; }
 }
 
 /* ==========================================
-   CUSTOM ICON DROPDOWN (like Select2 DenyPanel)
+   CUSTOM ICON DROPDOWN (like Select2 MMOpanel)
    ========================================== */
 .custom-select-wrap {
   position: relative;
