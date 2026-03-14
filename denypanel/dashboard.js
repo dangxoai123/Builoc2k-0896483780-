@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ==========================================
  * DASHBOARD V2 - LOGIC
  * Tích hợp với DenyPanel API thực
@@ -972,18 +972,56 @@ function openSvcDetailModal(dataStr) {
   try {
     const s = JSON.parse(decodeURIComponent(dataStr));
     _currentModalSvc = s;
-    safeSet('modalSvcId', s.id);
-    safeSet('modalSvcName', s.name);
-    safeSet('modalSvcRate', formatRate(s.rate) + ' /1k');
-    safeSet('modalSvcMin', Number(s.min).toLocaleString());
-    safeSet('modalSvcMax', Number(s.max).toLocaleString());
-    safeSet('modalSvcSpeed', '5k/Ngày');
-    safeSet('modalSvcRefill', s.refill);
-    safeSet('modalSvcQuality', 'Rất Tốt');
-    const desc = `Speed: 5k/Ngày\nRefill: ${s.refill}\nQuality: Rất Tốt\nLink: URL\n\n${s.name}\nGiá: ${formatRate(s.rate)} / 1000 đơn vị  ($${s.rate} USD)\nTối thiểu: ${s.min} | Tối đa: ${s.max}`;
-    safeSet('modalSvcDesc', desc);
-    const modal = document.getElementById('svcDetailModal');
-    if (modal) { modal.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+
+    function extractSpeed(name) {
+      const m = name.match(/T.c ..\s+([\d\-k.\/ ]+(?:\/(?:Ng.y|h|gi..?|ph.t))?)/i)
+               || name.match(/([\d]+[-][\d]+[k]?\/(?:Ng.y|h|gi..?|ph.t))/i)
+               || name.match(/([\d]+[k]?\/(?:Ng.y|h|gi..?|ph.t))/i);
+      if (m) return m[1].trim();
+      if (/24\/7/i.test(name)) return "5k/Ng\u00e0y";
+      return "\u0110ang t\u00ednh to\u00e1n";
+    }
+
+    function extractWarranty(name, refillFlag) {
+      if (/v\u0129nh vi\u1ec5n/i.test(name)) return "V\u0129nh vi\u1ec5n \u267e\ufe0f";
+      const m = name.match(/b\u1ea3o h\u00e0nh\s+(\d+\s*ng\u00e0y)/i);
+      if (m) return m[1];
+      if (/kh\u00f4ng b\u1ea3o h\u00e0nh/i.test(name)) return "Kh\u00f4ng b\u1ea3o h\u00e0nh";
+      return refillFlag ? "30 Ng\u00e0y" : "Kh\u00f4ng b\u1ea3o h\u00e0nh";
+    }
+
+    function extractStartTime(name) {
+      const m = name.match(/b\u1eaft \u0111\u1ea7u sau\s+([^|!\n(,]+)/i);
+      return m ? m[1].trim().replace(/[-\u2013]\s*$/, "").trim() : null;
+    }
+
+    const speed     = extractSpeed(s.name);
+    const warranty  = extractWarranty(s.name, s.refill);
+    const startTime = extractStartTime(s.name);
+    const parts     = s.name.split(/\s*[|]\s*/);
+    const descText  = parts.length > 1 ? parts.slice(1).join(" | ").trim() : s.name;
+
+    safeSet("modalSvcId", s.id);
+    safeSet("modalSvcName", s.name);
+    safeSet("modalSvcRate", formatRate(s.rate) + " /1k");
+    safeSet("modalSvcMin", Number(s.min).toLocaleString());
+    safeSet("modalSvcMax", Number(s.max).toLocaleString());
+    safeSet("modalSvcSpeed", speed);
+    safeSet("modalSvcRefill", warranty);
+    safeSet("modalSvcQuality", "R\u1ea5t T\u1ed1t");
+    safeSet("modalSvcLink", "https://...");
+
+    let descHtml = "";
+    if (startTime) {
+      descHtml += "<div style=\"padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:baseline\"><span style=\"font-size:14px;color:#bfd5fd;font-weight:600;min-width:90px\">Start Time:</span><span style=\"font-size:14px;color:#e6edf3;font-weight:700\">" + startTime + "</span></div>";
+    }
+    descHtml += "<div style=\"padding:16px 0\"><p style=\"font-size:13px;color:#bfd5fd;line-height:1.9\">" + esc(descText) + "</p></div>";
+
+    const descEl = document.getElementById("modalSvcDesc");
+    if (descEl) descEl.innerHTML = descHtml;
+
+    const modal = document.getElementById("svcDetailModal");
+    if (modal) { modal.style.display = "flex"; document.body.style.overflow = "hidden"; }
   } catch(e) { console.error(e); }
 }
 
