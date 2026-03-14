@@ -2,46 +2,71 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ==========================================
+    // USERS collection
+    // ==========================================
+    match /users/{userId} {
+      // Chỉ chủ tài khoản hoặc admin mới đọc được
+      allow read: if request.auth != null &&
+        (request.auth.uid == userId || isAdmin());
+
+      // Chỉ chủ tài khoản tự cập nhật — nhưng không được tự nâng quyền admin
+      allow update: if request.auth != null &&
+        request.auth.uid == userId &&
+        !('role' in request.resource.data) &&
+        !('balance' in request.resource.data.diff(resource.data).affectedKeys());
+
+      // Chỉ admin mới update balance và role
+      allow write: if request.auth != null && isAdmin();
+
+      // Không ai được tự xóa tài khoản
+      allow delete: if false;
+
+      // ==========================================
+      // ORDERS sub-collection (cô lập theo user)
+      // ==========================================
+      match /orders/{orderId} {
+        // Chỉ chủ tài khoản hoặc admin đọc được
+        allow read: if request.auth != null &&
+          (request.auth.uid == userId || isAdmin());
+
+        // Chỉ chủ tài khoản tạo/cập nhật đơn của mình
+        allow create, update: if request.auth != null &&
+          request.auth.uid == userId;
+
+        // Không xóa đơn
+        allow delete: if false;
+      }
+
+      // ==========================================
+      // TRANSACTIONS sub-collection
+      // ==========================================
+      match /transactions/{txId} {
+        allow read: if request.auth != null &&
+          (request.auth.uid == userId || isAdmin());
+        allow create: if request.auth != null &&
+          request.auth.uid == userId;
+        allow update, delete: if false;
+      }
+    }
+
+    // ==========================================
+    // SETTINGS (public config, chỉ đọc)
+    // ==========================================
+    match /settings/{doc} {
+      allow read: if true;
+      allow write: if request.auth != null && isAdmin();
+    }
+
+    // Từ chối tất cả còn lại
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper: kiểm tra admin
     function isAdmin() {
       return request.auth != null &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-    }
-
-    // Users collection
-    match /users/{uid} {
-      // Cho phép đọc luôn (server payment cần đọc balance)
-      allow read: if true;
-      allow create: if request.auth != null && request.auth.uid == uid;
-      // Admin/user tự sửa, HOẶC server chỉ update field balance
-      allow update: if request.auth != null && (isAdmin() || request.auth.uid == uid)
-                    || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['balance']);
-    }
-
-    // Pending deposits — server cần đọc/ghi để xử lý nạp tiền
-    match /pending_deposits/{ref} {
-      allow create: if request.auth != null;
-      allow read:   if true;
-      allow update: if true;
-    }
-
-    // Transactions — server ghi log, admin/owner xem
-    match /transactions/{txId} {
-      allow read:   if true; // admin gate bảo vệ trang, không cần Firebase Auth ở đây
-      allow create: if true;
-    }
-
-    // Orders subcollection — user tự đọc/ghi orders của mình, admin đọc tất cả
-    match /users/{uid}/orders/{orderId} {
-      allow read:   if true; // admin gate bảo vệ trang admin; user dashboard cũng cần đọc
-      allow create: if request.auth != null && request.auth.uid == uid;
-      allow update: if request.auth != null && (request.auth.uid == uid || isAdmin());
-      allow delete: if request.auth != null && isAdmin();
-    }
-
-    // Settings
-    match /settings/{doc} {
-      allow read:  if true; // admin gate bảo vệ, không cần Firebase Auth để đọc
-      allow write: if isAdmin();
     }
   }
 }

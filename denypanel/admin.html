@@ -642,19 +642,22 @@ function renderUsersTable(users) {
   tbody.innerHTML = users.map(u => {
     const bal = parseFloat(u.balance || 0);
     const createdAt = u.createdAt?.toDate ? u.createdAt.toDate().toLocaleDateString('vi-VN') : '—';
+    const safeUsername = escapeHtml(u.username || '—');
+    const safeEmail = escapeHtml(u.email || '—');
+    const safeUid = escapeHtml(u.uid);
+    const safeRole = u.role === 'admin' ? 'admin' : 'user';
     return `<tr>
-      <td><strong>${u.username || '—'}</strong></td>
-      <td style="font-size:12px;color:var(--gray2)">${u.email || '—'}</td>
+      <td><strong>${safeUsername}</strong></td>
+      <td style="font-size:12px;color:var(--gray2)">${safeEmail}</td>
       <td><span class="balance-positive">${fmtBal(u.balance)}</span></td>
-
       <td>${u.totalOrders || 0}</td>
-      <td><span class="badge ${u.role==='admin'?'admin':'user'}">${u.role==='admin'?'👑 Admin':'👤 User'}</span></td>
-      <td style="font-size:11px;color:var(--gray)">${createdAt}</td>
+      <td><span class="badge ${safeRole === 'admin' ? 'admin' : 'user'}">${safeRole === 'admin' ? '👑 Admin' : '👤 User'}</span></td>
+      <td style="font-size:11px;color:var(--gray)">${escapeHtml(createdAt)}</td>
       <td>
         <div style="display:flex;gap:6px">
-          <button class="btn btn-green btn-sm" onclick="openBalanceModal('${u.uid}','${u.email}',${bal},'${u.username||''}')">💰</button>
-          <button class="btn btn-ghost btn-sm" onclick="openUserModal('${u.uid}','${u.email}','${u.username||''}','${u.role||'user'}')">⚙️</button>
-          <button class="btn btn-blue btn-sm" onclick="viewUserOrders('${u.uid}','${u.username||u.email}')">📦</button>
+          <button class="btn btn-green btn-sm" onclick="openBalanceModal('${safeUid}','${safeEmail}',${bal},'${safeUsername}')">💰</button>
+          <button class="btn btn-ghost btn-sm" onclick="openUserModal('${safeUid}','${safeEmail}','${safeUsername}','${safeRole}')">⚙️</button>
+          <button class="btn btn-blue btn-sm" onclick="viewUserOrders('${safeUid}','${safeUsername}')">📦</button>
         </div>
       </td>
     </tr>`;

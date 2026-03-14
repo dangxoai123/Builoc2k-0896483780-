@@ -621,7 +621,7 @@ function renderOrdersPage(ordersIn) {
     container.innerHTML = `
       <div class="empty-orders-box">
         <p style="font-size:50px;margin-bottom:16px">📭</p>
-        <p>Xin chào <strong>${_userProfile?.username || 'bạn'}</strong>, ${search || statusFilter ? 'không tìm thấy đơn hàng phù hợp.' : 'bạn chưa từng đặt hàng trước đây.'}<br>
+        <p>Xin chào <strong>${escapeHtml(_userProfile?.username || 'bạn')}</strong>, ${search || statusFilter ? 'không tìm thấy đơn hàng phù hợp.' : 'bạn chưa từng đặt hàng trước đây.'}<br>
         ${!search && !statusFilter ? 'Bạn có thể thêm số dư và đặt bất kỳ dịch vụ nào trên trang <strong>Đơn đặt hàng mới.</strong>' : ''}</p>
         ${!search && !statusFilter ? '<br><button class="btn-dat-hang" style="display:inline-flex;padding:12px 28px" onclick="showPage(\'funds\',null)"><i class="fas fa-wallet"></i> Nạp tiền</button>' : ''}
       </div>`;
@@ -637,18 +637,23 @@ function renderOrdersPage(ordersIn) {
           </tr>
         </thead>
         <tbody>
-          ${filtered.map(o => `
+          ${filtered.map(o => {
+            const safeId = parseInt(o.orderId||o.id) || 0;
+            const safeName = escapeHtml(o.serviceName);
+            const safeLink = escapeHtml(o.link);
+            const safeStatus = escapeHtml(o.status);
+            return `
             <tr>
-              <td><span style="background:var(--green3);color:var(--green);padding:3px 8px;border-radius:6px;font-weight:700;font-size:12px">#${o.orderId||o.id}</span></td>
-              <td style="max-width:200px;font-size:12px">${o.serviceName}</td>
-              <td style="max-width:150px"><a href="${o.link}" target="_blank" style="color:var(--indigo);font-size:12px;white-space:nowrap;overflow:hidden;display:block;text-overflow:ellipsis;max-width:150px">${o.link}</a></td>
+              <td><span style="background:var(--green3);color:var(--green);padding:3px 8px;border-radius:6px;font-weight:700;font-size:12px">#${safeId}</span></td>
+              <td style="max-width:200px;font-size:12px">${safeName}</td>
+              <td style="max-width:150px"><a href="${safeLink}" target="_blank" rel="noopener noreferrer" style="color:var(--indigo);font-size:12px;white-space:nowrap;overflow:hidden;display:block;text-overflow:ellipsis;max-width:150px">${safeLink}</a></td>
               <td>${Number(o.quantity).toLocaleString()}</td>
               <td style="color:var(--gray2)">${o.remains !== undefined ? Number(o.remains).toLocaleString() : '--'}</td>
               <td style="color:var(--green);font-weight:700">${formatMoney(o.charge||0)}</td>
-              <td><span class="status-pill ${o.status}">${getStatusLabel(o.status)}</span></td>
-              <td><button onclick="checkOrderById(${o.orderId||o.id})" style="background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--gray2);cursor:pointer;font-size:11px"><i class="fas fa-sync-alt"></i></button></td>
-            </tr>
-          `).join('')}
+              <td><span class="status-pill ${safeStatus}">${getStatusLabel(o.status)}</span></td>
+              <td><button onclick="checkOrderById(${safeId})" style="background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--gray2);cursor:pointer;font-size:11px"><i class="fas fa-sync-alt"></i></button></td>
+            </tr>`;
+          }).join('')}
         </tbody>
       </table>
     </div>`;

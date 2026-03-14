@@ -150,3 +150,19 @@ function getAuthErrorMsg(code) {
   };
   return map[code] || 'Lỗi: ' + code;
 }
+
+/**
+ * ==========================================
+ * SECURITY: Escape HTML để chống XSS
+ * Dùng bất cứ khi nào render user data vào innerHTML
+ * ==========================================
+ */
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
