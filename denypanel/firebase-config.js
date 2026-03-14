@@ -76,16 +76,31 @@ async function getUserProfile(uid) {
 async function checkUsernameExists(username) {
   if (!username) return false;
   const lower = username.toLowerCase();
-  // Check exact match trước (nhanh)
+
+  // 1. Check exact match (case-sensitive)
   const exact = await db.collection('users')
     .where('username', '==', username)
     .limit(1).get();
   if (!exact.empty) return true;
-  // Check lowercase (nếu có lưu field usernameLower)
+
+  // 2. Check lowercase field (new accounts)
   const lowerSnap = await db.collection('users')
     .where('usernameLower', '==', lower)
     .limit(1).get();
-  return !lowerSnap.empty;
+  if (!lowerSnap.empty) return true;
+
+  // 3. Fallback: scan all users and compare case-insensitive
+  // (handles legacy accounts without usernameLower field)
+  const allSnap = await db.collection('users')
+    .where('username', '>=', lower.charAt(0))
+    .where('username', '<=', lower.charAt(0) + '\uf8ff')
+    .get();
+  for (const doc of allSnap.docs) {
+    const u = (doc.data().username || '').toLowerCase();
+    if (u === lower) return true;
+  }
+
+  return false;
 }
 
 /** Cập nhật số dư user trong Firestore */
