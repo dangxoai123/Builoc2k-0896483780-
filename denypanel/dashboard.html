@@ -11,6 +11,43 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="firebase-config.js"></script>
+<style>
+/* ===== MOBILE SIDEBAR DRAWER FIX ===== */
+@media (max-width: 768px) {
+  .sidebar {
+    display: flex !important;
+    width: 240px !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.3s ease !important;
+    z-index: 800 !important;
+    position: fixed !important;
+    left: 0; top: 0;
+    height: 100vh !important;
+    align-items: stretch !important;
+  }
+  .sidebar.mob-open {
+    transform: translateX(0) !important;
+    box-shadow: 4px 0 30px rgba(0,0,0,0.6) !important;
+  }
+  .sidebar .logo-text { display: block !important; }
+  .sidebar .sidebar-item span { display: block !important; }
+  .sidebar .sidebar-item {
+    justify-content: flex-start !important;
+    padding-left: 18px !important;
+  }
+  .sidebar .sidebar-tooltip { display: none !important; }
+  .main { margin-left: 0 !important; }
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 750;
+    backdrop-filter: blur(2px);
+  }
+  .sidebar-overlay.show { display: block !important; }
+}
+</style>
 </head>
 <body>
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
