@@ -1733,3 +1733,90 @@ function toggleFaq(i) {
     icon.classList.add('fa-minus');
   }
 }
+
+// ==========================================
+// NOTIFICATION PANEL
+// ==========================================
+const _notifData = [
+  {
+    date: '14 tháng 3, 2026',
+    isNew: true,
+    title: 'Ra mắt MMOpanel chính thức',
+    body: 'MMOpanel đã chính thức ra mắt với đầy đủ dịch vụ: Telegram, Instagram, TikTok, YouTube, Facebook và hơn 70 danh mục dịch vụ.'
+  },
+  {
+    date: '10 tháng 3, 2026',
+    isNew: true,
+    title: 'Tính năng Yêu thích (Bookmark)',
+    body: 'Người dùng có thể lưu dịch vụ yêu thích bằng biểu tượng ❤ và xem lại nhanh từ tab Yêu thích trên trang đặt hàng.'
+  },
+  {
+    date: '05 tháng 3, 2026',
+    isNew: false,
+    title: 'Cập nhật thanh toán MBBank & Sepay',
+    body: 'Hệ thống nạp tiền tự động qua MBBank đã được tích hợp. Nạp tiền xác nhận trong vòng 1-5 phút.'
+  },
+  {
+    date: '01 tháng 3, 2026',
+    isNew: false,
+    title: 'Thêm dịch vụ Twitter Space Listeners',
+    body: 'Đã ra mắt dịch vụ Twitter Space Listeners (Update 05/01/26) - Tốc độ cao, bắt đầu sau 2-3p.'
+  },
+  {
+    date: '20 tháng 2, 2026',
+    isNew: false,
+    title: 'Update Server TikTok & Facebook',
+    body: 'Ra mắt server TikTok và Facebook mới:\n- TikTok Followers bảo hành 90 ngày\n- Facebook Followers Việt Nam'
+  }
+];
+
+let _notifOpen = false;
+let _notifRendered = false;
+
+function toggleNotifPanel() {
+  const panel = document.getElementById('notifPanel');
+  const overlay = document.getElementById('notifOverlay');
+  const dot = document.getElementById('notifDot');
+  if (!panel) return;
+
+  _notifOpen = !_notifOpen;
+
+  if (_notifOpen) {
+    panel.style.display = 'flex';
+    overlay.style.display = 'block';
+    if (!_notifRendered) {
+      renderNotifPanel();
+      _notifRendered = true;
+    }
+    // Ẩn dot khi đã xem
+    if (dot) dot.style.display = 'none';
+    localStorage.setItem('notif_seen', Date.now().toString());
+  } else {
+    panel.style.display = 'none';
+    overlay.style.display = 'none';
+  }
+}
+
+function renderNotifPanel() {
+  const body = document.getElementById('notifPanelBody');
+  if (!body) return;
+  body.innerHTML = _notifData.map(n => `
+    <div class="notif-item">
+      <div class="notif-item-top">
+        ${n.isNew ? '<span class="notif-badge-new">NEW</span>' : ''}
+        <span class="notif-date">${n.date}</span>
+      </div>
+      <div class="notif-item-title">${n.title}</div>
+      <div class="notif-item-body">${n.body.replace(/\n/g,'<br>')}</div>
+    </div>
+  `).join('');
+}
+
+// Hiện dot nếu chưa xem thông báo mới nhất
+(function initNotifDot() {
+  const seen = parseInt(localStorage.getItem('notif_seen') || '0');
+  const latestNotif = new Date('2026-03-14').getTime();
+  const dot = document.getElementById('notifDot');
+  if (dot && seen < latestNotif) dot.style.display = 'block';
+  else if (dot) dot.style.display = 'none';
+})();
