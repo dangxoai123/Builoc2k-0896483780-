@@ -1515,14 +1515,23 @@ button { cursor: pointer; font-family: 'Poppins', sans-serif; }
 
 @media (max-width: 768px) {
 
-  /* Mobile sidebar ẩn sang trái, trượt ra khi mở */
+  /* Mobile sidebar: ẩn sang trái, full width khi mở */
   .sidebar {
     display: flex !important;
+    width: var(--sidebar-w-open) !important; /* luôn 240px trên mobile */
     transform: translateX(-100%);
     transition: transform 0.3s ease;
     z-index: 800;
     box-shadow: none;
+    /* Luôn expanded trên mobile để hiện text */
+    align-items: stretch;
   }
+  /* Hiển thị text labels luôn trong sidebar mobile */
+  .sidebar .logo-text { display: block !important; }
+  .sidebar .sidebar-item span { display: block !important; }
+  .sidebar .sidebar-item { justify-content: flex-start !important; padding-left: 18px !important; }
+  .sidebar .sidebar-tooltip { display: none !important; }
+
   .sidebar.mob-open {
     transform: translateX(0);
     box-shadow: 4px 0 30px rgba(0,0,0,0.5);
