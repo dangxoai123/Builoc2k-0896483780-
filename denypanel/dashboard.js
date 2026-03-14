@@ -1739,34 +1739,46 @@ function toggleFaq(i) {
 // ==========================================
 const _notifData = [
   {
-    date: '14 tháng 3, 2026',
+    date: 'January 05, 2026',
     isNew: true,
-    title: 'Ra mắt MMOpanel chính thức',
-    body: 'MMOpanel đã chính thức ra mắt với đầy đủ dịch vụ: Telegram, Instagram, TikTok, YouTube, Facebook và hơn 70 danh mục dịch vụ.'
+    title: 'Update Server Twitter Space Listeners (Update 05/01/26)',
+    body: 'Update Base và giảm giá mạnh dịch vụ Twitter Space Listener - Tốc độ cao - Bắt đầu sau 2-3p.'
   },
   {
-    date: '10 tháng 3, 2026',
+    date: 'December 05, 2025',
     isNew: true,
-    title: 'Tính năng Yêu thích (Bookmark)',
-    body: 'Người dùng có thể lưu dịch vụ yêu thích bằng biểu tượng ❤ và xem lại nhanh từ tab Yêu thích trên trang đặt hàng.'
+    title: 'Ra mắt Server TikTok và FB:',
+    body: 'Ra mắt Server TikTok và FB:\n- 1606 TikTok Followers | Bắt đầu sau 1-2h - Bảo hành 90 ngày (05/12/25)\n- 1607 Facebook Followers Việt Nam | Dùng được cả Page/Profile - Bảo hành 30 ngày.'
   },
   {
-    date: '05 tháng 3, 2026',
+    date: 'November 20, 2025',
     isNew: false,
-    title: 'Cập nhật thanh toán MBBank & Sepay',
-    body: 'Hệ thống nạp tiền tự động qua MBBank đã được tích hợp. Nạp tiền xác nhận trong vòng 1-5 phút.'
+    title: 'Ra mắt mục dịch vụ TikTok Follower Không Tụt mới',
+    body: 'TikTok Followers | Không tụt - Bảo hành dài ngày.\nGiá rẻ - Tốc độ cao - Không tụt - Bảo hành từ 30-360 ngày.'
   },
   {
-    date: '01 tháng 3, 2026',
+    date: 'November 20, 2025',
     isNew: false,
-    title: 'Thêm dịch vụ Twitter Space Listeners',
-    body: 'Đã ra mắt dịch vụ Twitter Space Listeners (Update 05/01/26) - Tốc độ cao, bắt đầu sau 2-3p.'
+    title: 'Ra mắt mục dịch vụ Facebook Post Reactions Global/VN',
+    body: 'Ra mắt mục dịch vụ:\n- Facebook Post Reactions Global\n- Facebook Post Reactions Việt Nam\nTốc độ lên tự nhiên như người dùng thật - Bắt đầu sau 3-5p.'
   },
   {
-    date: '20 tháng 2, 2026',
+    date: 'November 02, 2025',
     isNew: false,
-    title: 'Update Server TikTok & Facebook',
-    body: 'Ra mắt server TikTok và Facebook mới:\n- TikTok Followers bảo hành 90 ngày\n- Facebook Followers Việt Nam'
+    title: 'Ra mắt Server Twitter Retweet USA - Twitter Like Active User',
+    body: '- 1563 Twitter Retweet USA | Bắt đầu sau 2-5p - Tốc độ lên tự nhiên - Không tụt cho tới hiện tại (2/11/25)\n- 1561 Twitter Likes + Impression | Chạy sau 2p - Tốc độ cao (2/11)'
+  },
+  {
+    date: 'October 31, 2025',
+    isNew: false,
+    title: 'Update mục dịch vụ Twitter Cổ - Chất lượng cao - Chạy tốt sau update 31/10',
+    body: 'Server mới: 1560 Twitter Followers USA | Bắt đầu sau 6-12h - Không tụt cho tới hiện tại - Bảo hành 30 ngày $8.99.'
+  },
+  {
+    date: 'October 31, 2025',
+    isNew: false,
+    title: 'THÔNG BÁO: ĐIỀU CHỈNH TỈ GIÁ QUY ĐỔI KHI NẠP TÀI KHOẢN',
+    body: 'Chúng tôi thông báo về việc điều chỉnh tỉ giá quy đổi từ VNĐ sang USD tại hệ thống.\nÁp dụng từ ngày 31/10/2025, tỉ giá quy đổi khi nạp là 27,000 VNĐ cho mỗi 1 USD.\nLưu ý: Tỉ giá này là cố định và không thay đổi theo biến động của thị trường.'
   }
 ];
 
