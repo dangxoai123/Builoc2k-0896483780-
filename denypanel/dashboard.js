@@ -959,7 +959,7 @@ function renderSvcPage() {
       }));
       html += `
         <div class="svc-service-row" style="grid-template-columns:30px 80px 1fr 130px 80px 100px 130px auto">
-          <div><button class="fav-btn" onclick="this.classList.toggle('active')" title="Yêu thích"><i class="fas fa-heart"></i></button></div>
+          <div><button class="fav-btn ${getFavs().includes(s.service) ? 'active' : ''}" onclick="toggleFavSvc(${s.service},this)" title="Yêu thích"><i class="fas fa-heart"></i></button></div>
           <div><span class="svc-id-tag">${s.service}</span></div>
           <div>
             <div class="svc-name-main">${esc(s.name)}</div>
@@ -977,6 +977,86 @@ function renderSvcPage() {
     });
   }
   container.innerHTML = html;
+}
+
+// ==========================================
+// FAVORITES (Yêu thích)
+// ==========================================
+function getFavs() {
+  try { return JSON.parse(localStorage.getItem('dp_favs') || '[]'); } catch { return []; }
+}
+function saveFavs(arr) {
+  localStorage.setItem('dp_favs', JSON.stringify(arr));
+}
+function toggleFavSvc(id, btn) {
+  let favs = getFavs();
+  if (favs.includes(id)) {
+    favs = favs.filter(f => f !== id);
+    btn.classList.remove('active');
+  } else {
+    favs.push(id);
+    btn.classList.add('active');
+  }
+  saveFavs(favs);
+}
+
+function switchHomeTab(tab, btn) {
+  document.querySelectorAll('#page-home .order-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  const form = document.getElementById('homeOrderForm');
+  const searchBar = document.getElementById('homeOrderSearch')?.parentElement;
+
+  if (tab === 'order') {
+    if (form) form.style.display = '';
+    if (searchBar) searchBar.style.display = '';
+    document.getElementById('homeFavList')?.remove();
+  } else if (tab === 'fav') {
+    if (form) form.style.display = 'none';
+    if (searchBar) searchBar.style.display = 'none';
+    renderHomeFavorites();
+  }
+}
+
+function renderHomeFavorites() {
+  // Remove old
+  document.getElementById('homeFavList')?.remove();
+  const parent = document.getElementById('homeOrderForm')?.parentElement;
+  if (!parent) return;
+
+  const favIds = getFavs();
+  const favSvcs = allServicesData.filter(s => favIds.includes(s.service));
+
+  const wrap = document.createElement('div');
+  wrap.id = 'homeFavList';
+  wrap.style.cssText = 'padding:16px;display:flex;flex-direction:column;gap:10px';
+
+  if (!favSvcs.length) {
+    wrap.innerHTML = `<div style="text-align:center;padding:48px;color:var(--gray2)">
+      <i class="fas fa-heart" style="font-size:36px;color:var(--green);margin-bottom:16px;display:block"></i>
+      <div style="font-size:14px">Bạn chưa thêm dịch vụ yêu thích nào.<br>Nhấn biểu tượng ❤ ở trang Dịch vụ để lưu.</div>
+    </div>`;
+    parent.appendChild(wrap);
+    return;
+  }
+
+  favSvcs.forEach(s => {
+    const div = document.createElement('div');
+    div.style.cssText = 'background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.2s';
+    div.onmouseenter = () => div.style.borderColor = 'var(--green)';
+    div.onmouseleave = () => div.style.borderColor = 'var(--border)';
+    div.onclick = () => buyNowSvc(s.service);
+    div.innerHTML = `
+      <span class="svc-id-tag" style="font-size:12px;flex-shrink:0">${s.service}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.name)}</div>
+        <div style="font-size:12px;color:var(--green);font-weight:800;margin-top:2px">${formatRate(s.rate)}<span style="color:var(--gray);font-size:10px;font-weight:400">/1k</span></div>
+      </div>
+      <button class="btn-dat-hang" style="padding:6px 14px;font-size:12px;border-radius:8px;box-shadow:none;flex-shrink:0" onclick="event.stopPropagation();buyNowSvc(${s.service})">Mua ngay</button>
+    `;
+    wrap.appendChild(div);
+  });
+  parent.appendChild(wrap);
 }
 
 // ==========================================

@@ -213,9 +213,9 @@
         <!-- Quick new order form on home -->
         <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden">
           <div class="order-tabs" style="padding:0 20px">
-            <button class="order-tab active"><i class="fas fa-plus-square"></i> Đặt hàng</button>
-            <button class="order-tab"><i class="fas fa-heart"></i> Yêu thích</button>
-            <button class="order-tab"><i class="fas fa-shopping-basket"></i> Đặt Hàng Lớn</button>
+            <button class="order-tab active" id="homeTab-order" onclick="switchHomeTab('order',this)"><i class="fas fa-plus-square"></i> Đặt hàng</button>
+            <button class="order-tab" id="homeTab-fav" onclick="switchHomeTab('fav',this)"><i class="fas fa-heart"></i> Yêu thích</button>
+            <button class="order-tab" id="homeTab-sub" onclick="showPage('sub',null)"><i class="fas fa-shopping-basket"></i> Đặt Hàng Lớn</button>
           </div>
           <div class="order-search-bar">
             <input class="order-search-input" placeholder="Tìm kiếm theo ID dịch vụ" id="homeOrderSearch" oninput="filterHomeOrder()">
