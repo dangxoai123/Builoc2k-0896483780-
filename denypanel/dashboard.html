@@ -875,10 +875,11 @@
 <div class="toast-v2" id="toastV2"><i class="fas fa-check-circle"></i> <span id="toastMsg">.</span></div>
 
 <!-- FAB Bell -->
-<div class="fab-bell" onclick="showPage('home',null)">
+<div class="fab-bell" onclick="toggleNotifPanel()" id="fabBellBtn">
   🔔
-  <div class="fab-badge">1</div>
+  <div class="fab-badge" id="fabBadge">1</div>
 </div>
+
 
 <script src="api.js"></script>
 <script src="dashboard.js"></script>
