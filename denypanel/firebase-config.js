@@ -32,6 +32,14 @@ async function loginUser(email, password) {
 
 /** Đăng ký tài khoản mới */
 async function registerUser(email, password, username) {
+  // Double-check username không bị trùng (bảo vệ server-side)
+  const exists = await checkUsernameExists(username);
+  if (exists) {
+    const err = new Error('Username "' + username + '" đã được sử dụng!');
+    err.code = 'auth/username-taken';
+    throw err;
+  }
+
   const cred = await auth.createUserWithEmailAndPassword(email, password);
   const uid = cred.user.uid;
 
@@ -130,6 +138,7 @@ async function getUserOrders(uid) {
 // Map Firebase lỗi sang tiếng Việt
 function getAuthErrorMsg(code) {
   const map = {
+    'auth/username-taken': 'Username này đã được sử dụng! Vui lòng chọn tên khác.',
     'auth/user-not-found': 'Tài khoản không tồn tại!',
     'auth/wrong-password': 'Sai mật khẩu!',
     'auth/invalid-credential': 'Email hoặc mật khẩu không đúng!',

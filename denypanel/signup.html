@@ -412,7 +412,10 @@ async function handleSignup(e) {
   try {
     var exists = await checkUsernameExists(username);
     if (exists) return showErr('❌ Username "' + username + '" đã có người dùng! Vui lòng chọn tên khác.');
-  } catch(err2) { /* network issue, proceed */ }
+  } catch(err2) {
+    // Nếu không kiểm tra được → chặn lại để an toàn
+    return showErr('⚠️ Không thể kiểm tra username. Vui lòng thử lại!');
+  }
 
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tạo tài khoản...';
 
