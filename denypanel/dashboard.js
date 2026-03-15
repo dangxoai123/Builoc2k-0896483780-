@@ -596,11 +596,25 @@ function simulateProgress(orderId) {
 // Firestore orders (per-user, cô lập hoàn toàn)
 async function loadOrdersPage() {
   let orders = [];
-  if (_firebaseUser) {
-    orders = await getUserOrders(_firebaseUser.uid);
-  }
+  try {
+    const token = localStorage.getItem('jwt_token');
+    const r = await fetch('/api/orders', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (r.ok) {
+      const data = await r.json();
+      // Map DB field names to dashboard expected names
+      orders = (data.orders || []).map(o => ({
+        orderId: o.order_id || o.id,
+        id: o.order_id || o.id,
+        serviceName: o.service_name || o.service,
+        link: o.link,
+        quantity: o.quantity,
+        charge: parseFloat(o.charge || 0),
+        status: o.status || 'pending',
+        remains: o.remains
+      }));
+    }
+  } catch(e) { console.warn('loadOrdersPage:', e.message); }
   renderOrdersPage(orders);
-  updateStats();
 }
 
 // Legacy localStorage (chỉ dùng cho simulateProgress)
@@ -676,24 +690,11 @@ function mapMMOpanelStatus(raw) {
 async function checkOrderById(orderId) {
   if (!orderId) return;
   showToastV2('🔄 Đang đồng bộ trạng thái...', 'info');
-
   try {
     const result = await MMOpanelAPI.getOrderStatus(orderId);
     if (!result.success) { showToastV2('❌ Không lấy được trạng thái', 'err'); return; }
 
     const newStatus = mapMMOpanelStatus(result.status);
-    const remains = parseInt(result.remains) || 0;
-
-    // Cập nhật Firestore
-    if (_firebaseUser) {
-      const ordersSnap = await db.collection('users').doc(_firebaseUser.uid)
-        .collection('orders').where('orderId', '==', parseInt(orderId)).get();
-
-      if (!ordersSnap.empty) {
-        await ordersSnap.docs[0].ref.update({ status: newStatus, remains });
-      }
-    }
-
     // Reload UI
     await loadOrdersPage();
 
