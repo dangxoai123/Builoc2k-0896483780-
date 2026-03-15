@@ -2,33 +2,43 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper: kiểm tra admin (dùng Firebase Auth)
+    // Helper: kiểm tra admin (hardcode UID hoặc role trong Firestore)
     function isAdmin() {
-      return request.auth != null &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      return request.auth != null && (
+        request.auth.uid == 'iMNN0onFBDMayRjSrykxTVvoFn92' ||  // builoc1906@gmail.com
+        request.auth.uid == 'rq67OcWVwRP8j5OoI0Wbj7FE7Zl1' ||  // buinguyenloc112000@gmail.com
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
     }
 
     // ==========================================
     // USERS collection
     // ==========================================
     match /users/{userId} {
-      // Chủ tài khoản hoặc admin đọc được (bao gồm cả list query của admin)
-      allow read: if request.auth != null &&
+      // List query cho check username khi signup
+      allow list: if true;
+      // Read: chủ tài khoản hoặc admin
+      allow get: if request.auth != null &&
         (request.auth.uid == userId || isAdmin());
 
-      // Chỉ chủ tài khoản tự cập nhật — nhưng không được tự nâng quyền admin hay đổi balance
+      // Chủ tài khoản tự cập nhật (không được đổi role/balance)
       allow update: if request.auth != null &&
         request.auth.uid == userId &&
         !('role' in request.resource.data) &&
         !('balance' in request.resource.data.diff(resource.data).affectedKeys());
 
-      // Admin mới update balance và role
+      // Admin update balance và role
       allow write: if request.auth != null && isAdmin();
 
-      // Cho phép tạo account mới (register)
+      // Server webhook cộng balance (không có auth token)
+      // Chỉ cho phép update đúng field balance (không thêm field mới)
+      allow update: if request.auth == null &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['balance']);
+
+      // Tạo account mới
       allow create: if request.auth != null && request.auth.uid == userId;
 
-      // Không ai được tự xóa tài khoản
+      // Không xóa
       allow delete: if false;
 
       // ==========================================
@@ -65,7 +75,8 @@ service cloud.firestore {
     // ==========================================
     match /transactions/{txId} {
       allow read: if request.auth != null && isAdmin();
-      allow create: if request.auth != null && isAdmin();
+      // Admin hoặc server (không auth) tạo transaction log
+      allow create: if true;
       allow update, delete: if false;
     }
 
@@ -73,10 +84,14 @@ service cloud.firestore {
     // PENDING DEPOSITS
     // ==========================================
     match /pending_deposits/{ref} {
-      allow read: if request.auth != null &&
-        (resource.data.uid == request.auth.uid || isAdmin());
+      // Tất cả đều có thể read (cần cho server webhook check)
+      allow read: if true;
       allow create: if request.auth != null;
+      // Admin update
       allow update: if request.auth != null && isAdmin();
+      // Server webhook update status (không auth)
+      allow update: if request.auth == null &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','txId','completedAt','amount']);
       allow delete: if false;
     }
 

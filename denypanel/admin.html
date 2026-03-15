@@ -747,8 +747,8 @@ async function applyBalance() {
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    document.getElementById('currentBalanceDisplay').textContent = newBal.toLocaleString('en-US',{maximumFractionDigits:0}) + ' ₫';
-    showAlert(alertOk, `✅ Thành công! Số dư mới: ${newBal.toLocaleString('en-US',{maximumFractionDigits:0})} ₫`);
+    document.getElementById('currentBalanceDisplay').textContent = fmtBal(newBal);
+    showAlert(alertOk, `✅ Thành công! Số dư mới: ${fmtBal(newBal)}`);
 
     // Cập nhật bảng
     const u = _allUsers.find(x => x.uid === _currentEditUid);
