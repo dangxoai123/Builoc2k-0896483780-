@@ -499,20 +499,26 @@
 
 <script>
 // ==========================================
-// ADMIN GATE - Kiểm tra + sign in Firebase
+// ADMIN GATE - Chỉ kiểm tra password cục bộ
+// Firebase Auth session từ dashboard được tái dùng
 // ==========================================
-const ADMIN_USER           = 'builoc1906';
-const ADMIN_PASS           = 'builoc1906';
-const ADMIN_FIREBASE_EMAIL = 'buinguyenloc112000@gmail.com';
-const ADMIN_FIREBASE_PASS  = 'builoc1906';
+const ADMIN_USER = 'builoc1906';
+const ADMIN_PASS = 'builoc1906';
 
-async function checkAdminPass() {
+function checkAdminPass() {
   const inputUser = document.getElementById('adminGateUser').value.trim();
   const inputPass = document.getElementById('adminGatePass').value;
   const errMsg = document.getElementById('adminGateErr');
-  const btn = document.querySelector('.admin-gate-box button');
 
-  if (inputUser !== ADMIN_USER || inputPass !== ADMIN_PASS) {
+  if (inputUser === ADMIN_USER && inputPass === ADMIN_PASS) {
+    sessionStorage.setItem('admin_gate_ok', '1');
+    document.getElementById('adminGate').style.display = 'none';
+    // Data sẽ được load bởi onAuthStateChanged nếu đã có Firebase session
+    // Nếu chưa có → reload để trigger onAuthStateChanged lại
+    if (!_adminUid) {
+      window.location.reload();
+    }
+  } else {
     errMsg.textContent = '❌ Sai tài khoản hoặc mật khẩu!';
     errMsg.style.display = 'block';
     document.getElementById('adminGatePass').value = '';
@@ -521,24 +527,12 @@ async function checkAdminPass() {
     box.style.transform = 'translateX(-8px)';
     setTimeout(() => box.style.transform = 'translateX(8px)', 100);
     setTimeout(() => box.style.transform = '', 200);
-    return;
   }
+}
 
-  // Đúng password → sign in Firebase để có request.auth hợp lệ
-  btn.innerHTML = '⏳ Đang xác thực...';
-  btn.disabled = true;
-  errMsg.style.display = 'none';
-
-  try {
-    await auth.signInWithEmailAndPassword(ADMIN_FIREBASE_EMAIL, ADMIN_FIREBASE_PASS);
-    // onAuthStateChanged sẽ kiểm tra role='admin' và load data
-  } catch(e) {
-    errMsg.textContent = '❌ Lỗi Firebase: ' + (e.message || e.code);
-    errMsg.style.display = 'block';
-  }
-
-  btn.innerHTML = '🔓 Đăng nhập Admin';
-  btn.disabled = false;
+// Kiểm tra session khi load lại trang
+if (sessionStorage.getItem('admin_gate_ok') === '1') {
+  document.getElementById('adminGate').style.display = 'none';
 }
 
 // ==========================================
@@ -551,19 +545,25 @@ let _currentEditEmail = null;
 let _balMode = 'add'; // add | sub | set
 let _servicesData = [];
 let _markupData = {};
-// Tỷ giá VND/USD — khớp với api/rate.js FALLBACK_RATE
 const ADMIN_VND_RATE = 26294.5;
-// Helper hiển thị balance USD → VND
 function fmtBal(usd) {
   return Math.round(parseFloat(usd || 0) * ADMIN_VND_RATE).toLocaleString('vi-VN') + ' ₫';
 }
+
 // ==========================================
 // AUTH CHECK
 // ==========================================
 auth.onAuthStateChanged(async (user) => {
   if (!user) {
-    // Chưa có Firebase Auth → hiển thị admin gate
-    document.getElementById('adminGate').style.display = 'flex';
+    // Chưa đăng nhập Firebase
+    if (sessionStorage.getItem('admin_gate_ok') === '1') {
+      // Đã qua gate nhưng không có Firebase session → redirect login
+      sessionStorage.removeItem('admin_gate_ok');
+      window.location.href = 'login.html?redirect=admin';
+    } else {
+      // Hiển thị admin gate
+      document.getElementById('adminGate').style.display = 'flex';
+    }
     return;
   }
 
@@ -571,8 +571,6 @@ auth.onAuthStateChanged(async (user) => {
   document.getElementById('adminGate').style.display = 'none';
 
   const profile = await getUserProfile(user.uid);
-
-  // Setup admin info
   const name = profile?.username || user.email || 'Admin';
   document.getElementById('adminInitial').textContent = name[0].toUpperCase();
   document.getElementById('adminEmail').textContent = profile?.email || user.email;
@@ -584,6 +582,7 @@ auth.onAuthStateChanged(async (user) => {
   loadPricingTable();
   loadTransactions();
 });
+
 
 // ==========================================
 // NAVIGATION
