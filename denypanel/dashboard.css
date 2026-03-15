@@ -1861,3 +1861,27 @@ button { cursor: pointer; font-family: 'Poppins', sans-serif; }
   transition: color 0.2s;
 }
 .notif-share-btn:hover { color: #aaa; }
+
+/* ====== LANGUAGE TOGGLE BUTTON ====== */
+.lang-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 30px;
+  padding: 6px 12px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Poppins', sans-serif;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.lang-toggle-btn:hover {
+  background: rgba(40,203,105,0.12);
+  border-color: var(--green);
+  color: var(--green);
+}

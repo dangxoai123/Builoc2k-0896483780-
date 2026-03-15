@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="auth.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<!-- JWT Auth - No Firebase needed -->
+<script src="lang.js"></script>
 <style>
   /* Field hint below input */
   .field-hint { font-size:11px; margin-top:5px; display:none; align-items:center; gap:5px; }
@@ -62,7 +62,10 @@
     <div class="logo-icon"><i class="fas fa-wifi"></i></div>
     MMOpanel
   </a>
-  <a href="index.html" class="btn-home-auth">Trang chủ</a>
+  <div style="display:flex;align-items:center;gap:12px">
+    <button class="lang-toggle-btn" onclick="toggleLang()">🇺🇸 EN</button>
+    <a href="index.html" class="btn-home-auth" data-i18n="nav_home">Trang chủ</a>
+  </div>
 </header>
 
 <div class="auth-container">
@@ -82,8 +85,8 @@
         <span>+1000 New Followers!</span>
       </div>
     </div>
-    <h2 class="auth-tagline">Ph&#xE1;t tri&#x1EC3;n <span class="highlight" style="font-family:'Dancing Script',cursive">m&#x1EA1;ng x&#xE3;<br>h&#x1ED9;i.</span></h2>
-    <a href="services.html" class="btn-svc-auth">D&#x1ECB;ch v&#x1EE5; <i class="fas fa-arrow-up-right"></i></a>
+    <h2 class="auth-tagline" data-i18n="login_tagline">Ph&#xE1;t tri&#x1EC3;n <span class="highlight" style="font-family:'Dancing Script',cursive">m&#x1EA1;ng x&#xE3;<br>h&#x1ED9;i.</span></h2>
+    <a href="services.html" class="btn-svc-auth" data-i18n="login_svc_btn">D&#x1ECB;ch v&#x1EE5; <i class="fas fa-arrow-up-right"></i></a>
   </div>
 
   <div class="auth-right">

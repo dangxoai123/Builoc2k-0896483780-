@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="auth.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<!-- JWT Auth - No Firebase needed -->
+<script src="lang.js"></script>
 </head>
 <body class="auth-body">
 
@@ -16,7 +16,10 @@
     <div class="logo-icon"><i class="fas fa-wifi"></i></div>
     MMOpanel
   </a>
-  <a href="index.html" class="btn-home-auth">Trang chủ</a>
+  <div style="display:flex;align-items:center;gap:12px">
+    <button class="lang-toggle-btn" onclick="toggleLang()">🇺🇸 EN</button>
+    <a href="index.html" class="btn-home-auth" data-i18n="nav_home">Trang chủ</a>
+  </div>
 </header>
 
 <div class="auth-container">
@@ -36,26 +39,26 @@
         <span>+1000 New Followers!</span>
       </div>
     </div>
-    <h2 class="auth-tagline">Phát triển <span class="highlight" style="font-family:'Dancing Script',cursive">mạng xã<br>hội.</span></h2>
-    <a href="services.html" class="btn-svc-auth">Dịch vụ <i class="fas fa-arrow-up-right"></i></a>
+    <h2 class="auth-tagline" data-i18n="login_tagline">Phát triển <span class="highlight" style="font-family:'Dancing Script',cursive">mạng xã<br>hội.</span></h2>
+    <a href="services.html" class="btn-svc-auth" data-i18n="login_svc_btn">Dịch vụ <i class="fas fa-arrow-up-right"></i></a>
   </div>
 
   <div class="auth-right">
     <div class="auth-form-box">
-      <h1 class="auth-title">Đăng Nhập</h1>
-      <p class="auth-subtitle">Chào mừng bạn trở lại! Vui lòng đăng nhập.</p>
+      <h1 class="auth-title" data-i18n="login_title">Đăng Nhập</h1>
+      <p class="auth-subtitle" data-i18n="login_subtitle">Chào mừng bạn trở lại! Vui lòng đăng nhập.</p>
 
       <div id="loginError" class="auth-error" style="display:none"></div>
 
       <form id="loginForm" onsubmit="handleLogin(event)">
         <div class="form-group">
-          <label>Email</label>
-          <input type="email" id="loginEmail" class="form-input" placeholder="Nhập địa chỉ email..." required>
+          <label data-i18n="login_email_lbl">Email</label>
+          <input type="email" id="loginEmail" class="form-input" placeholder="Nhập địa chỉ email..." data-i18n="login_email_ph" required>
         </div>
         <div class="form-group">
-          <label>Mật khẩu</label>
+          <label data-i18n="login_pass_lbl">Mật khẩu</label>
           <div class="input-password">
-            <input type="password" id="loginPassword" class="form-input" placeholder="Nhập mật khẩu..." required>
+            <input type="password" id="loginPassword" class="form-input" placeholder="Nhập mật khẩu..." data-i18n="login_pass_ph" required>
             <button type="button" class="eye-btn" onclick="togglePass('loginPassword',this)"><i class="fas fa-eye"></i></button>
           </div>
         </div>
@@ -63,14 +66,14 @@
           <label class="check-label">
             <input type="checkbox" id="rememberMe"> Ghi nhớ đăng nhập
           </label>
-          <a href="#" class="forgot-link">Quên mật khẩu?</a>
+          <a href="#" class="forgot-link" data-i18n="login_forgot">Quên mật khẩu?</a>
         </div>
         <button type="submit" class="btn-auth" id="loginBtn">
-          <span>Đăng Nhập</span>
+          <span data-i18n="login_btn">Đăng Nhập</span>
         </button>
       </form>
 
-      <p class="auth-switch">Chưa có tài khoản? <a href="signup.html" class="auth-link">Đăng ký ngay</a></p>
+      <p class="auth-switch"><span data-i18n="login_no_acc">Chưa có tài khoản?</span> <a href="signup.html" class="auth-link" data-i18n="login_register">Đăng ký ngay</a></p>
     </div>
   </div>
 </div>

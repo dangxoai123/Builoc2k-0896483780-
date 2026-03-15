@@ -6,7 +6,7 @@
 <title>Dashboard - MMOpanel</title>
 <link rel="stylesheet" href="dashboard.css?v=20260315k">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<!-- JWT Auth - No Firebase -->
+<script src="lang.js"></script>
 <script src="/socket.io/socket.io.js"></script>
 <style>
 /* ===== MOBILE DRAWER ===== */
@@ -99,7 +99,8 @@ button.plat-btn i {
       <button class="md-item" onclick="mobileNav('faq')"><i class="fas fa-question-circle"></i><span>FAQ</span></button>
     </div>
     <div style="border-top:1px solid #111620;padding:8px 0">
-      <button class="md-item" onclick="logoutUser()"><i class="fas fa-sign-out-alt"></i><span>Đăng xuất</span></button>
+      <button class="lang-toggle-btn" onclick="toggleLang()" style="width:calc(100% - 32px);margin:8px 16px;justify-content:center">🇺🇸 EN</button>
+      <button class="md-item" onclick="logoutUser()"><i class="fas fa-sign-out-alt"></i><span data-i18n="menu_logout">Đăng xuất</span></button>
     </div>
   </nav>
 
@@ -236,6 +237,8 @@ button.plat-btn i {
           <i class="fas fa-bell"></i>
           <div class="notif-dot" id="notifDot"></div>
         </div>
+        <!-- Lang Toggle -->
+        <button class="lang-toggle-btn" onclick="toggleLang()" style="margin-left:4px">🇺🇸 EN</button>
         <!-- User -->
         <div class="user-avatar-btn" onclick="showPage('profile',null)" id="userAvatarBtn" title="Tài khoản">B</div>
       </div>
@@ -651,13 +654,13 @@ button.plat-btn i {
           <button class="req-svc-btn" onclick="openReqSvcModal()"><i class="fas fa-plus"></i> Yêu cầu dịch vụ mới</button>
         </div>
         <div class="svc-table-header">
-          <div>❤</div>
-          <div>Mã DV</div>
-          <div>Dịch vụ</div>
-          <div>Giá cho 1000 đơn vị</div>
-          <div>Tối thiểu</div>
-          <div>Tối đa</div>
-          <div>Thời gian trung bình</div>
+          <div data-i18n="dash_col_fav">❤</div>
+          <div data-i18n="dash_col_id">Mã DV</div>
+          <div data-i18n="dash_col_name">Dịch vụ</div>
+          <div data-i18n="dash_col_price">Giá cho 1000 đơn vị</div>
+          <div data-i18n="dash_col_min">Tối thiểu</div>
+          <div data-i18n="dash_col_max">Tối đa</div>
+          <div data-i18n="dash_col_time">Thời gian trung bình</div>
           <div style="text-align:right"></div>
         </div>
         <div class="svc-body" id="svcPageBody">
