@@ -80,6 +80,48 @@
 }
 .btn-chitiet:hover { background: #0fac4e; transform: translateY(-1px); }
 .loading-svc { text-align: center; padding: 60px; color: #7d8590; }
+
+/* ========== MOBILE RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .services-page-wrapper { padding: 80px 12px 40px; }
+  .services-filter-top { padding: 12px; gap: 10px; }
+  .platform-icons-list { gap: 6px; }
+
+  /* Ẩn header bảng trên mobile */
+  .table-col-header { display: none; }
+
+  /* Mỗi dịch vụ thành card */
+  .service-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 16px;
+    position: relative;
+  }
+  /* Ẩn cột thời gian trên mobile */
+  .service-item > div:nth-child(5),
+  .service-item > div:nth-child(6) { display: none; }
+
+  /* Hàng đầu: ID + tên */
+  .svc-name { font-size: 13px; }
+  .svc-rate { font-size: 14px; }
+
+  /* Min/Max inline */
+  .svc-num { font-size: 12px; display: inline; }
+  .svc-max-red { font-size: 12px; display: inline; }
+
+  /* Nút chi tiết căn phải */
+  .btn-chitiet { align-self: flex-end; margin-top: 4px; }
+
+  .services-main-container { border-radius: 0 0 12px 12px; }
+  .table-col-header + .services-main-container,
+  .services-main-container { border-top: 1px solid #111620; }
+
+  /* Tìm kiếm full width */
+  .search-services { width: 100%; min-width: 0; }
+  .services-filter-top { flex-wrap: wrap; }
+}
+
 </style>
 </head>
 <body>

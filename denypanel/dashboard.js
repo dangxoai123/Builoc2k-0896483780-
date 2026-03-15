@@ -1836,7 +1836,6 @@ function renderNotifPanel() {
 // LOGOUT
 // ==========================================
 function logoutUser() {
-  // Xóa tất cả token và dữ liệu user
   localStorage.removeItem('jwt_token');
   localStorage.removeItem('user_data');
   localStorage.removeItem('userData');
@@ -1844,7 +1843,42 @@ function logoutUser() {
   localStorage.removeItem('dp_exchange_rate');
   localStorage.removeItem('dp_exchange_rate_time');
   sessionStorage.clear();
-
-  // Chuyển về trang đăng nhập
   window.location.href = 'login.html';
+}
+
+// ==========================================
+// MOBILE DRAWER
+// ==========================================
+function openMobileDrawer() {
+  const drawer  = document.getElementById('mobileDrawer');
+  const overlay = document.getElementById('mobileDrawerOverlay');
+  if (!drawer) return;
+  drawer.style.display   = 'flex';
+  overlay.style.display  = 'block';
+  // Animate in
+  setTimeout(() => { drawer.style.transform = 'translateX(0)'; }, 10);
+}
+
+function closeMobileDrawer() {
+  const drawer  = document.getElementById('mobileDrawer');
+  const overlay = document.getElementById('mobileDrawerOverlay');
+  if (!drawer) return;
+  drawer.style.transform = 'translateX(-260px)';
+  setTimeout(() => {
+    drawer.style.display  = 'none';
+    overlay.style.display = 'none';
+  }, 300);
+}
+
+function mobileNav(page) {
+  closeMobileDrawer();
+  showPage(page, null);
+  // Cập nhật topbar title
+  const titles = {
+    home: 'Trang chủ', services: 'Dịch vụ', order: 'Đặt hàng mới',
+    orders: 'Đơn hàng', sub: 'Đặt hàng lớn', funds: 'Nạp tiền',
+    api: 'API', affiliate: 'Đại lý', faq: 'FAQ'
+  };
+  const el = document.getElementById('topTitle');
+  if (el && titles[page]) el.textContent = titles[page];
 }
