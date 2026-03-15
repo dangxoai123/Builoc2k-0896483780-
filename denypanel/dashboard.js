@@ -507,66 +507,54 @@ async function _placeOrder(prefix) {
   // Disable buttons
   const btn = document.getElementById('btnDatHang') || document.querySelector(`#page-${prefix === 'home' ? 'home' : 'order'} .btn-dat-hang`);
   if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang đặt hàng...'; }
-
   if (msgBox) msgBox.style.display = 'none';
 
-  let result;
   try {
-    result = await MMOpanelAPI.addOrder(opt.value, link, qty);
-  } catch(apiErr) {
-    console.error('[PlaceOrder] API error:', apiErr);
-    showMsg(msgBox, `❌ Lỗi kết nối API: ${apiErr.message}`, 'err');
-    showToastV2('❌ Lỗi kết nối API!', 'err');
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-shopping-bag"></i> Đặt hàng'; }
-    return;
-  }
+    const token       = localStorage.getItem('jwt_token');
+    const serviceName = opt.dataset.name || opt.textContent.split(' - ')[0];
 
-  if (result.success) {
-    try {
-      const token = localStorage.getItem('jwt_token');
-      const serviceName = opt.dataset.name || opt.textContent.split(' - ')[0];
-      const isDelayed = serviceName.toLowerCase().includes('bắt đầu sau') || serviceName.toLowerCase().includes('bat dau sau');
+    // Đặt hàng qua backend (thay thế MMOpanelAPI.addOrder demo mode)
+    const placeResp = await fetch('/api/orders/place', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service_id:   opt.value,
+        service_name: serviceName,
+        link, quantity: qty,
+        charge: parseFloat(cost.toFixed(6))
+      })
+    });
+    const result = await placeResp.json();
 
-      // Lưu order vào PostgreSQL qua API
-      await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          order_id: result.orderId,
-          service_id: parseInt(opt.value),
-          service_name: serviceName,
-          link, quantity: qty,
-          charge: parseFloat(cost.toFixed(4)),
-          status: isDelayed ? 'waiting' : 'pending',
-          demo: result.demo || false
-        })
-      });
-
-      showMsg(msgBox, `✅ Đặt hàng thành công! Order ID: #${result.orderId}${result.demo ? ' (Demo)' : ''}`, 'ok');
-      showToastV2(`✅ Đặt hàng thành công! #${result.orderId}`, 'ok');
-
-      // Reset form
-      sel.value = '';
-      document.getElementById(`${prefix}OrderLink`).value = '';
-      document.getElementById(`${prefix}OrderQty`).value = '';
-      safeSet(`${prefix}CostDisplay`, '0 ₫');
-
-      await refreshBalance();
-      updateStats();
-      loadOrdersPage();
-
-    } catch(saveErr) {
-      console.error('[PlaceOrder] Save error:', saveErr);
-      showMsg(msgBox,
-        `⚠️ Đặt hàng OK (ID: #${result.orderId}) nhưng lỗi lưu nội bộ: ${saveErr.message}`,
-        'err'
-      );
-      showToastV2(`⚠️ Đơn #${result.orderId} đã gửi nhưng lỗi lưu!`, 'err');
-      try { await refreshBalance(); } catch(_) {}
+    if (!placeResp.ok || !result.success) {
+      showMsg(msgBox, `❌ Lỗi: ${result.error || 'Không thể đặt hàng'}`, 'err');
+      showToastV2('❌ Đặt hàng thất bại!', 'err');
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-shopping-bag"></i> Đặt hàng'; }
+      return;
     }
-  } else {
-    showMsg(msgBox, `❌ Lỗi: ${result.error || 'Không thể đặt hàng'}`, 'err');
-    showToastV2('❌ Đặt hàng thất bại!', 'err');
+
+    showMsg(msgBox, `✅ Đặt hàng thành công! Order ID: #${result.orderId}${result.demo ? ' (Demo)' : ''}`, 'ok');
+    showToastV2(`✅ Đặt hàng thành công! #${result.orderId}`, 'ok');
+
+    // Cập nhật balance trong bộ nhớ
+    if (result.newBalance !== undefined && _userProfile) {
+      _userProfile.balance = result.newBalance;
+    }
+
+    // Reset form
+    sel.value = '';
+    if (document.getElementById(`${prefix}OrderLink`)) document.getElementById(`${prefix}OrderLink`).value = '';
+    if (document.getElementById(`${prefix}OrderQty`))  document.getElementById(`${prefix}OrderQty`).value  = '';
+    safeSet(`${prefix}CostDisplay`, '0 ₫');
+
+    await refreshBalance();
+    updateStats();
+    loadOrdersPage();
+
+  } catch(e) {
+    console.error('[PlaceOrder]', e);
+    showMsg(msgBox, `❌ Lỗi kết nối: ${e.message}`, 'err');
+    showToastV2('❌ Lỗi kết nối!', 'err');
   }
 
   if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-shopping-bag"></i> Đặt hàng'; }
@@ -637,7 +625,7 @@ function renderOrdersPage(ordersIn) {
     container.innerHTML = `
       <div class="empty-orders-box">
         <p style="font-size:50px;margin-bottom:16px">📭</p>
-        <p>Xin chào <strong>${escapeHtml(_userProfile?.username || 'bạn')}</strong>, ${search || statusFilter ? 'không tìm thấy đơn hàng phù hợp.' : 'bạn chưa từng đặt hàng trước đây.'}<br>
+        <p>Xin chào <strong>${esc(_userProfile?.username || 'bạn')}</strong>, ${search || statusFilter ? 'không tìm thấy đơn hàng phù hợp.' : 'bạn chưa từng đặt hàng trước đây.'}<br>
         ${!search && !statusFilter ? 'Bạn có thể thêm số dư và đặt bất kỳ dịch vụ nào trên trang <strong>Đơn đặt hàng mới.</strong>' : ''}</p>
         ${!search && !statusFilter ? '<br><button class="btn-dat-hang" style="display:inline-flex;padding:12px 28px" onclick="showPage(\'funds\',null)"><i class="fas fa-wallet"></i> Nạp tiền</button>' : ''}
       </div>`;
@@ -654,10 +642,10 @@ function renderOrdersPage(ordersIn) {
         </thead>
         <tbody>
           ${filtered.map(o => {
-            const safeId = parseInt(o.orderId||o.id) || 0;
-            const safeName = escapeHtml(o.serviceName);
-            const safeLink = escapeHtml(o.link);
-            const safeStatus = escapeHtml(o.status);
+            const safeId   = parseInt(o.orderId||o.id) || 0;
+            const safeName = esc(o.serviceName || '');
+            const safeLink = esc(o.link || '');
+            const safeStatus = esc(o.status || '');
             return `
             <tr>
               <td><span style="background:var(--green3);color:var(--green);padding:3px 8px;border-radius:6px;font-weight:700;font-size:12px">#${safeId}</span></td>
