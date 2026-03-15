@@ -1,168 +1,59 @@
 /**
- * ==========================================
- * FIREBASE CONFIG - Builoc2k Reseller Panel
- * ==========================================
- * Sử dụng Firebase SDK v9+ (compat mode)
+ * jwt-helpers.js (thay firebase-config.js)
+ * Các hàm helper dùng chung cho tất cả trang
  */
 
-// Firebase Config (project: builoc2k-denypanel)
-const firebaseConfig = {
-  apiKey: "AIzaSyDA6SIIeT8jlzLMyp1r6WnefnsGQxMgygA",
-  authDomain: "builoc2k-denypanel.firebaseapp.com",
-  projectId: "builoc2k-denypanel",
-  storageBucket: "builoc2k-denypanel.firebasestorage.app",
-  messagingSenderId: "1062694746960",
-  appId: "1:1062694746960:web:59fad0e292a1fb137d0a55"
-};
-
-// Initialize Firebase (compat mode - works with script tags)
-firebase.initializeApp(firebaseConfig);
-
-const auth = firebase.auth();
-const db = firebase.firestore();
-
 // ==========================================
-// AUTH HELPERS
+// JWT AUTH HELPERS
 // ==========================================
 
-/** Đăng nhập bằng email */
-async function loginUser(email, password) {
-  return auth.signInWithEmailAndPassword(email, password);
+/** Lấy JWT token */
+function getToken() {
+  return localStorage.getItem('jwt_token') || '';
 }
 
-/** Đăng ký tài khoản mới */
-async function registerUser(email, password, username) {
-  // Double-check username không bị trùng (bảo vệ server-side)
-  const exists = await checkUsernameExists(username);
-  if (exists) {
-    const err = new Error('Username "' + username + '" đã được sử dụng!');
-    err.code = 'auth/username-taken';
-    throw err;
-  }
-
-  const cred = await auth.createUserWithEmailAndPassword(email, password);
-  const uid = cred.user.uid;
-
-  // Lưu thông tin user vào Firestore
-  await db.collection('users').doc(uid).set({
-    username: username,
-    usernameLower: username.toLowerCase(), // dùng để check trùng không phân biệt hoa/thường
-    email: email,
-    balance: 0,
-    currency: 'VND',
-    role: 'user',
-    totalOrders: 0,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-
-  return cred;
+/** Lấy user data từ localStorage */
+function getCachedUser() {
+  try { return JSON.parse(localStorage.getItem('user_data') || '{}'); } catch { return {}; }
 }
 
-/** Đăng xuất */
-async function logoutUser() {
-  try { await auth.signOut(); } catch(e) {}
-  // Xóa localStorage auth cũ
-  localStorage.removeItem('dp_user');
-  localStorage.removeItem('dp_logged_in');
-  sessionStorage.clear();
-  // Redirect với flag để login.html không auto-redirect lại
+/** Logout - xóa JWT và chuyển về login */
+function logoutUser() {
+  localStorage.removeItem('jwt_token');
+  localStorage.removeItem('user_data');
   window.location.href = 'login.html?logout=1';
 }
 
-/** Lấy data user hiện tại từ Firestore */
-async function getUserProfile(uid) {
-  // source:'server' để bypass cache, luôn lấy data mới nhất từ Firestore
-  const doc = await db.collection('users').doc(uid).get({ source: 'server' });
-  return doc.exists ? doc.data() : null;
-}
-
-/**
- * Kiểm tra xem username đã tồn tại chưa (không phân biệt hoa/thường)
- * @param {string} username
- * @returns {Promise<boolean>} true nếu đã có người dùng
- */
+/** Kiểm tra username tồn tại chưa */
 async function checkUsernameExists(username) {
-  if (!username) return false;
-  const lower = username.toLowerCase();
-
-  // 1. Check exact match (case-sensitive)
-  const exact = await db.collection('users')
-    .where('username', '==', username)
-    .limit(1).get();
-  if (!exact.empty) return true;
-
-  // 2. Check lowercase field (new accounts)
-  const lowerSnap = await db.collection('users')
-    .where('usernameLower', '==', lower)
-    .limit(1).get();
-  if (!lowerSnap.empty) return true;
-
-  // 3. Fallback: scan all users and compare case-insensitive
-  // (handles legacy accounts without usernameLower field)
-  const allSnap = await db.collection('users')
-    .where('username', '>=', lower.charAt(0))
-    .where('username', '<=', lower.charAt(0) + '\uf8ff')
-    .get();
-  for (const doc of allSnap.docs) {
-    const u = (doc.data().username || '').toLowerCase();
-    if (u === lower) return true;
-  }
-
-  return false;
+  const r = await fetch('/api/auth/check-username?username=' + encodeURIComponent(username));
+  const d = await r.json();
+  return d.exists;
 }
 
-/** Cập nhật số dư user trong Firestore */
-async function updateBalance(uid, newBalance) {
-  await db.collection('users').doc(uid).update({ balance: newBalance });
+/** Lấy thông tin user từ server */
+async function getUserProfile(uid) {
+  // Không dùng nữa (Firebase), trả về null
+  return null;
 }
 
-/** Lưu đơn hàng vào Firestore */
-async function saveOrder(uid, orderData) {
-  await db.collection('users').doc(uid).collection('orders').add({
-    ...orderData,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  });
-  // Tăng tổng đơn hàng
-  await db.collection('users').doc(uid).update({
-    totalOrders: firebase.firestore.FieldValue.increment(1)
-  });
-}
-
-/** Lấy danh sách đơn hàng của user */
-async function getUserOrders(uid) {
-  const snap = await db.collection('users').doc(uid).collection('orders')
-    .orderBy('createdAt', 'desc').limit(50).get();
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-}
-
-// Map Firebase lỗi sang tiếng Việt
+/** Thông báo lỗi auth đơn giản */
 function getAuthErrorMsg(code) {
-  const map = {
-    'auth/username-taken': 'Username này đã được sử dụng! Vui lòng chọn tên khác.',
-    'auth/user-not-found': 'Tài khoản không tồn tại!',
-    'auth/wrong-password': 'Sai mật khẩu!',
-    'auth/invalid-credential': 'Email hoặc mật khẩu không đúng!',
-    'auth/email-already-in-use': 'Email này đã được đăng ký!',
-    'auth/weak-password': 'Mật khẩu quá yếu (tối thiểu 6 ký tự)!',
-    'auth/invalid-email': 'Email không hợp lệ!',
-    'auth/too-many-requests': 'Quá nhiều lần thử. Vui lòng thử lại sau!',
-    'auth/network-request-failed': 'Lỗi kết nối mạng!',
+  const msgs = {
+    'auth/wrong-password': '❌ Sai mật khẩu!',
+    'auth/user-not-found': '❌ Email chưa được đăng ký!',
+    'auth/invalid-email': '❌ Email không hợp lệ!',
+    'auth/too-many-requests': '❌ Quá nhiều lần thử, vui lòng đợi.',
+    'auth/email-already-in-use': '❌ Email đã được sử dụng!',
+    'auth/username-taken': '❌ Username đã được dùng!',
   };
-  return map[code] || 'Lỗi: ' + code;
+  return msgs[code] || '❌ Lỗi: ' + (code || 'Không xác định');
 }
 
-/**
- * ==========================================
- * SECURITY: Escape HTML để chống XSS
- * Dùng bất cứ khi nào render user data vào innerHTML
- * ==========================================
- */
+// ==========================================
+// escapeHtml helper
+// ==========================================
 function escapeHtml(str) {
-  if (str === null || str === undefined) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
