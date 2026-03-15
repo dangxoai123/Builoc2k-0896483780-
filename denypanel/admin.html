@@ -557,15 +557,46 @@ function fmtBal(usd) {
 // ==========================================
 auth.onAuthStateChanged(async (user) => {
   if (!user) {
-    // Chưa có Firebase Auth → hiển thị admin gate để đăng nhập
     document.getElementById('adminGate').style.display = 'flex';
     return;
   }
 
+  // ====================================================
+  // SECURITY CHECK: Chỉ cho phép Admin vào trang này
+  // ====================================================
+  const ADMIN_UIDS = [
+    'iMNN0onFBDMayRjSrykxTVvoFn92',   // builoc1906@gmail.com
+    'rq67OcWVwRP8j5OoI0Wbj7FE7Zl1',   // buinguyenloc112000@gmail.com
+  ];
+
+  // Lấy profile để kiểm tra role
+  const profile = await getUserProfile(user.uid);
+  const isAdminUser = ADMIN_UIDS.includes(user.uid) || profile?.role === 'admin';
+
+  if (!isAdminUser) {
+    // Không phải admin → đăng xuất ngay lập tức và chuyển hướng
+    console.warn('[Admin] Truy cập bị từ chối cho:', user.email);
+    await auth.signOut();
+    document.getElementById('adminGate').style.display = 'none';
+    document.getElementById('accessDenied').style.display = 'block';
+    document.getElementById('accessDenied').innerHTML = `
+      <div style="text-align:center;padding:80px 20px">
+        <div style="font-size:60px;margin-bottom:16px">🔒</div>
+        <h2 style="font-size:24px;font-weight:800;color:var(--red);margin-bottom:10px">Không có quyền truy cập</h2>
+        <p style="color:var(--gray);margin-bottom:20px">Tài khoản <strong>${user.email}</strong> không có quyền Admin.</p>
+        <a href="dashboard.html" class="btn btn-blue" style="display:inline-flex">Về Dashboard</a>
+      </div>`;
+    // Tự chuyển hướng sau 3 giây
+    setTimeout(() => { window.location.href = 'dashboard.html'; }, 3000);
+    return;
+  }
+
+  // ====================================================
+  // Đã xác nhận là Admin → load dữ liệu
+  // ====================================================
   _adminUid = user.uid;
   document.getElementById('adminGate').style.display = 'none';
 
-  const profile = await getUserProfile(user.uid);
   const name = profile?.username || user.email || 'Admin';
   document.getElementById('adminInitial').textContent = name[0].toUpperCase();
   document.getElementById('adminEmail').textContent = profile?.email || user.email;
