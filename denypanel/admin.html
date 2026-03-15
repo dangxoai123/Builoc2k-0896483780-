@@ -172,7 +172,7 @@
 </head>
 <body>
 
-<!-- ADMIN GATE - Màn hình đăng nhập riêng -->
+<!-- ADMIN GATE - Màn hình đăng nhập -->
 <div class="admin-gate" id="adminGate">
   <div class="admin-gate-box">
     <div class="lock-icon">🔐</div>
@@ -180,7 +180,7 @@
     <p>Nhập tài khoản và mật khẩu để tiếp tục</p>
     <input type="text" id="adminGateUser" placeholder="Tài khoản..." onkeydown="if(event.key==='Enter')checkAdminPass()" autofocus autocomplete="off">
     <input type="password" id="adminGatePass" placeholder="Mật khẩu..." onkeydown="if(event.key==='Enter')checkAdminPass()">
-    <div class="err-msg" id="adminGateErr">❌ Sai tài khoản hoặc mật khẩu! Vui lòng thử lại.</div>
+    <div class="err-msg" id="adminGateErr">❌ Sai tài khoản hoặc mật khẩu!</div>
     <button onclick="checkAdminPass()">🔓 Đăng nhập Admin</button>
   </div>
 </div>
@@ -499,33 +499,46 @@
 
 <script>
 // ==========================================
-// ADMIN GATE - Kiểm tra tài khoản + mật khẩu
+// ADMIN GATE - Kiểm tra + sign in Firebase
 // ==========================================
-const ADMIN_USER = 'builoc1906';
-const ADMIN_PASS = 'builoc1906';
+const ADMIN_USER           = 'builoc1906';
+const ADMIN_PASS           = 'builoc1906';
+const ADMIN_FIREBASE_EMAIL = 'buinguyenloc112000@gmail.com';
+const ADMIN_FIREBASE_PASS  = 'builoc1906';
 
-function checkAdminPass() {
+async function checkAdminPass() {
   const inputUser = document.getElementById('adminGateUser').value.trim();
   const inputPass = document.getElementById('adminGatePass').value;
   const errMsg = document.getElementById('adminGateErr');
-  if (inputUser === ADMIN_USER && inputPass === ADMIN_PASS) {
-    sessionStorage.setItem('admin_gate_ok', '1');
-    document.getElementById('adminGate').style.display = 'none';
-  } else {
+  const btn = document.querySelector('.admin-gate-box button');
+
+  if (inputUser !== ADMIN_USER || inputPass !== ADMIN_PASS) {
+    errMsg.textContent = '❌ Sai tài khoản hoặc mật khẩu!';
     errMsg.style.display = 'block';
     document.getElementById('adminGatePass').value = '';
     document.getElementById('adminGatePass').focus();
-    // Shake animation
     const box = document.querySelector('.admin-gate-box');
     box.style.transform = 'translateX(-8px)';
     setTimeout(() => box.style.transform = 'translateX(8px)', 100);
     setTimeout(() => box.style.transform = '', 200);
+    return;
   }
-}
 
-// Kiểm tra session khi load lại trang
-if (sessionStorage.getItem('admin_gate_ok') === '1') {
-  document.getElementById('adminGate').style.display = 'none';
+  // Đúng password → sign in Firebase để có request.auth hợp lệ
+  btn.innerHTML = '⏳ Đang xác thực...';
+  btn.disabled = true;
+  errMsg.style.display = 'none';
+
+  try {
+    await auth.signInWithEmailAndPassword(ADMIN_FIREBASE_EMAIL, ADMIN_FIREBASE_PASS);
+    // onAuthStateChanged sẽ kiểm tra role='admin' và load data
+  } catch(e) {
+    errMsg.textContent = '❌ Lỗi Firebase: ' + (e.message || e.code);
+    errMsg.style.display = 'block';
+  }
+
+  btn.innerHTML = '🔓 Đăng nhập Admin';
+  btn.disabled = false;
 }
 
 // ==========================================
@@ -545,28 +558,36 @@ function fmtBal(usd) {
   return Math.round(parseFloat(usd || 0) * ADMIN_VND_RATE).toLocaleString('vi-VN') + ' ₫';
 }
 // ==========================================
-// AUTH CHECK - Load data nếu có Firebase user
+// AUTH CHECK - Chỉ load data khi đã có Firebase Auth
 // ==========================================
 auth.onAuthStateChanged(async (user) => {
   if (!user) {
-    // Không redirect - admin gate đã xử lý xác thực
-    // Vẫn load data từ Firestore (không cần Firebase Auth)
-    await loadDashboard();
-    loadUsers();
-    loadMarkupData();
-    loadPricingTable();
-    loadTransactions();
+    // Chưa đăng nhập Firebase → hiển thị admin gate
+    // KHÔNG load data (sẽ bị Firestore từ chối vì request.auth = null)
+    if (sessionStorage.getItem('admin_gate_ok') !== '1') {
+      document.getElementById('adminGate').style.display = 'flex';
+    }
     return;
   }
+
   _adminUid = user.uid;
 
+  // Kiểm tra quyền admin trong Firestore
   const profile = await getUserProfile(user.uid);
+  if (!profile || profile.role !== 'admin') {
+    document.getElementById('adminGate').style.display = 'flex';
+    document.getElementById('adminGateErr').textContent = '❌ Tài khoản này không có quyền Admin!';
+    document.getElementById('adminGateErr').style.display = 'block';
+    await auth.signOut();
+    return;
+  }
 
   // Setup admin info
   document.getElementById('adminInitial').textContent = ((profile?.username)||user.email)[0].toUpperCase();
   document.getElementById('adminEmail').textContent = profile?.email || user.email;
+  document.getElementById('adminGate').style.display = 'none';
 
-  // Load initial data
+  // Load initial data (có Firebase Auth hợp lệ)
   await loadDashboard();
   loadUsers();
   loadMarkupData();
