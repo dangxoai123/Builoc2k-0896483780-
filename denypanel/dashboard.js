@@ -1831,3 +1831,20 @@ function renderNotifPanel() {
   if (dot && seen < latestNotif) dot.style.display = 'block';
   else if (dot) dot.style.display = 'none';
 })();
+
+// ==========================================
+// LOGOUT
+// ==========================================
+function logoutUser() {
+  // Xóa tất cả token và dữ liệu user
+  localStorage.removeItem('jwt_token');
+  localStorage.removeItem('user_data');
+  localStorage.removeItem('userData');
+  localStorage.removeItem('token');
+  localStorage.removeItem('dp_exchange_rate');
+  localStorage.removeItem('dp_exchange_rate_time');
+  sessionStorage.clear();
+
+  // Chuyển về trang đăng nhập
+  window.location.href = 'login.html';
+}
