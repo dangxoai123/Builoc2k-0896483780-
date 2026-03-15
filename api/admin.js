@@ -125,4 +125,26 @@ router.get('/orders', async (req, res) => {
   }
 });
 
+// POST /api/admin/users/:uid/reset-password — Đặt lại mật khẩu user
+router.post('/users/:uid/reset-password', async (req, res) => {
+  const { uid } = req.params;
+  const { newPassword } = req.body;
+  if (!newPassword || newPassword.length < 6)
+    return res.status(400).json({ error: 'Mật khẩu phải ít nhất 6 ký tự' });
+
+  try {
+    const bcrypt = require('bcryptjs');
+    const hashed = await bcrypt.hash(newPassword, 10);
+    const result = await pool.query(
+      'UPDATE users SET password=$1 WHERE uid=$2 RETURNING id, email, username',
+      [hashed, uid]
+    );
+    if (result.rowCount === 0)
+      return res.status(404).json({ error: 'User không tồn tại' });
+    res.json({ success: true, message: `Đã đặt lại mật khẩu cho ${result.rows[0].email}` });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router;

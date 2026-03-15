@@ -1,2 +1,13 @@
 HỌ TÊN : BÙI LỘC
 sdt :+84896483780
+Host: 103.165.144.162
+Port: 5432
+Database: mmopanel
+User: mmopanel
+Password: mmopanel2026
+https://zonecloud.vn/thue-vps-zone/#dich-vu
+buinguyenloc112000@gmail.com
+Locbui2k@
+admin
+builoc1906@gmail.com
+k999999
