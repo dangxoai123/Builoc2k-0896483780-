@@ -112,52 +112,88 @@ async function fetchSepay(limit = 20) {
   });
 }
 
-// Credit user qua Cloud Function creditUser (Admin SDK - bypass Firestore rules)
-const CREDIT_USER_URL    = 'https://us-central1-builoc2k-denypanel.cloudfunctions.net/creditUser';
-const INTERNAL_SECRET    = 'DENYPANEL_INTERNAL_2026_SECRET_KEY';
-const VND_DEPOSIT_RATE   = 26294.5; // duplicate để dùng ở đây
 
-async function creditByRef(ref, amountVND, txId, description) {
-  // Chuyển VND → USD trước khi gửi lên Cloud Function
-  // Cloud Function sẽ cộng thẳng amount vào balance (đơn vị USD)
-  const amountUSD = parseFloat(amountVND) / VND_DEPOSIT_RATE;
+const FIREBASE_PROJECT    = 'builoc2k-denypanel';
+const FIREBASE_WEB_API_KEY = 'AIzaSyDA6SIIeT8jlzLMyp1r6WnefnsGQxMgygA';
+const VND_DEPOSIT_RATE    = 26294.5;
 
-  const body = JSON.stringify({
-    secret:      INTERNAL_SECRET,
-    ref,
-    amount:      parseFloat(amountUSD.toFixed(6)),
-    txId:        String(txId || ref),
-    description: description || '',
-  });
+// Credit user via Firestore REST API (rules đã cho phép unauthenticated update)
+async function creditByRef(ref, amount, txId, description) {
+  const qKey = `?key=${FIREBASE_WEB_API_KEY}`;
+  const aKey = `&key=${FIREBASE_WEB_API_KEY}`;
+  const rqPath = `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents:runQuery${qKey}`;
 
-  return new Promise((resolve, reject) => {
-    const url  = new URL(CREDIT_USER_URL);
-    const req  = https.request({
-      hostname: url.hostname,
-      port: 443,
-      path: url.pathname,
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
-    }, (resp) => {
-      let d = '';
-      resp.on('data', c => d += c);
-      resp.on('end', () => {
-        try {
-          const json = JSON.parse(d);
-          console.log(`[creditByRef] CloudFn response:`, JSON.stringify(json));
-          resolve(json);
-        } catch(e) {
-          resolve({ raw: d });
-        }
-      });
-    });
-    req.on('error', reject);
-    req.setTimeout(15000, () => { req.destroy(); reject(new Error('creditByRef timeout')); });
-    req.write(body);
-    req.end();
-  });
+  try {
+    // 1. Tìm pending deposit theo ref
+    const qResp = await httpPost('firestore.googleapis.com', rqPath, JSON.stringify({
+      structuredQuery: {
+        from: [{ collectionId: 'pending_deposits' }],
+        where: { compositeFilter: { op: 'AND', filters: [
+          { fieldFilter: { field: { fieldPath: 'ref' },    op: 'EQUAL', value: { stringValue: ref } } },
+          { fieldFilter: { field: { fieldPath: 'status' }, op: 'EQUAL', value: { stringValue: 'pending' } } },
+        ]}},
+        limit: 1,
+      },
+    }));
+
+    const pDoc = JSON.parse(qResp).find(d => d.document)?.document;
+    if (!pDoc) return { error: `No pending deposit: ${ref}` };
+
+    const uid          = pDoc.fields?.uid?.stringValue;
+    const email        = pDoc.fields?.email?.stringValue;
+    const pDocFullPath = `/v1/${pDoc.name}`;
+    if (!uid) return { error: 'No uid in pending deposit' };
+
+    // 2. Đọc balance hiện tại
+    const uPath  = `projects/${FIREBASE_PROJECT}/databases/(default)/documents/users/${uid}`;
+    const uResp  = await httpGet('firestore.googleapis.com', `/v1/${uPath}${qKey}`);
+    const uDoc   = JSON.parse(uResp);
+    const oldBal = parseFloat(uDoc.fields?.balance?.doubleValue ?? uDoc.fields?.balance?.integerValue ?? 0);
+    const addUSD = parseFloat(amount) / VND_DEPOSIT_RATE;
+    const newBal = parseFloat((oldBal + addUSD).toFixed(6));
+
+    // 3. Đánh dấu pending_deposits = completed (rules allow unauthenticated update status)
+    await httpPatch('firestore.googleapis.com',
+      `${pDocFullPath}?updateMask.fieldPaths=status&updateMask.fieldPaths=txId&updateMask.fieldPaths=completedAt${aKey}`,
+      JSON.stringify({ fields: {
+        status:      { stringValue: 'completed' },
+        txId:        { stringValue: String(txId) },
+        completedAt: { stringValue: new Date().toISOString() },
+      }})
+    );
+
+    // 4. Cộng balance (rules allow unauthenticated update chỉ field balance, chỉ tăng)
+    await httpPatch('firestore.googleapis.com',
+      `/v1/${uPath}?updateMask.fieldPaths=balance${aKey}`,
+      JSON.stringify({ fields: { balance: { doubleValue: newBal } } })
+    );
+
+    // 5. Ghi log transaction (rules allow create: if true)
+    await httpPost('firestore.googleapis.com',
+      `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/transactions${qKey}`,
+      JSON.stringify({ fields: {
+        email:         { stringValue: email || '' },
+        uid:           { stringValue: uid },
+        type:          { stringValue: 'deposit' },
+        amount:        { doubleValue: parseFloat(amount) },
+        amountUSD:     { doubleValue: addUSD },
+        txId:          { stringValue: String(txId) },
+        ref:           { stringValue: ref },
+        description:   { stringValue: description || '' },
+        createdAt:     { stringValue: new Date().toISOString() },
+        balanceBefore: { doubleValue: oldBal },
+        balanceAfter:  { doubleValue: newBal },
+        gateway:       { stringValue: 'Sepay/MBBank' },
+      }})
+    );
+
+    console.log(`[credit] ✅ uid=${uid} email=${email} +${amount}VND (+${addUSD.toFixed(4)}USD) bal: ${oldBal}→${newBal}`);
+    return { success: true, email, amount, newBalance: newBal };
+  } catch(e) {
+    console.error('[credit] ❌', e.message);
+    return { error: e.message };
+  }
 }
-
 
 function httpGet(hostname, path) {
   return new Promise((resolve, reject) => {
