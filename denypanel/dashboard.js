@@ -493,11 +493,8 @@ async function _placeOrder(prefix) {
 
   const cost = (qty / 1000) * parseFloat(opt.dataset.rate);
 
-  // Lấy số dư mới nhất từ Firestore (tránh dùng cache cũ)
-  if (_firebaseUser) {
-    const fresh = await getUserProfile(_firebaseUser.uid);
-    if (fresh) _userProfile = fresh;
-  }
+  // Lấy số dư mới nhất từ API
+  await refreshBalance();
   const balance = parseFloat(_userProfile?.balance || 0);
 
   if (cost > balance) {
@@ -526,33 +523,24 @@ async function _placeOrder(prefix) {
 
   if (result.success) {
     try {
-      // Trừ số dư trong Firestore
-      const newBalance = (balance - cost);
-      if (_firebaseUser) {
-        await updateBalance(_firebaseUser.uid, newBalance);
-        _userProfile.balance = newBalance;
-      }
-
+      const token = localStorage.getItem('jwt_token');
       const serviceName = opt.dataset.name || opt.textContent.split(' - ')[0];
-      // Dịch vụ "Bắt đầu sau" → trạng thái "Đang đợi" ngay khi đặt hàng
       const isDelayed = serviceName.toLowerCase().includes('bắt đầu sau') || serviceName.toLowerCase().includes('bat dau sau');
-      const order = {
-        orderId: result.orderId,
-        serviceId: parseInt(opt.value),
-        serviceName,
-        link,
-        quantity: qty,
-        charge: parseFloat(cost.toFixed(4)),
-        status: isDelayed ? 'waiting' : 'pending',
-        remains: qty,
-        refill: false,
-        demo: result.demo || false
-      };
 
-      // Lưu đơn vào Firestore theo từng user (cô lập hoàn toàn)
-      if (_firebaseUser) {
-        await saveOrder(_firebaseUser.uid, order);
-      }
+      // Lưu order vào PostgreSQL qua API
+      await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order_id: result.orderId,
+          service_id: parseInt(opt.value),
+          service_name: serviceName,
+          link, quantity: qty,
+          charge: parseFloat(cost.toFixed(4)),
+          status: isDelayed ? 'waiting' : 'pending',
+          demo: result.demo || false
+        })
+      });
 
       showMsg(msgBox, `✅ Đặt hàng thành công! Order ID: #${result.orderId}${result.demo ? ' (Demo)' : ''}`, 'ok');
       showToastV2(`✅ Đặt hàng thành công! #${result.orderId}`, 'ok');
@@ -568,14 +556,12 @@ async function _placeOrder(prefix) {
       loadOrdersPage();
 
     } catch(saveErr) {
-      console.error('[PlaceOrder] Firestore save error:', saveErr);
-      // Đơn đã được đặt thành công trên MMOpanel nhưng lỗi khi lưu nội bộ
+      console.error('[PlaceOrder] Save error:', saveErr);
       showMsg(msgBox,
-        `⚠️ Đặt hàng OK trên hệ thống (ID: #${result.orderId}) nhưng lỗi lưu cục bộ: ${saveErr.message}<br>Vui lòng chụp màn hình và liên hệ admin.`,
+        `⚠️ Đặt hàng OK (ID: #${result.orderId}) nhưng lỗi lưu nội bộ: ${saveErr.message}`,
         'err'
       );
       showToastV2(`⚠️ Đơn #${result.orderId} đã gửi nhưng lỗi lưu!`, 'err');
-      // Vẫn reset form và reload balance
       try { await refreshBalance(); } catch(_) {}
     }
   } else {
@@ -585,6 +571,7 @@ async function _placeOrder(prefix) {
 
   if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-shopping-bag"></i> Đặt hàng'; }
 }
+
 
 function simulateProgress(orderId) {
   setTimeout(() => {
