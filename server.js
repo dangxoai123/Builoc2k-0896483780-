@@ -14,6 +14,7 @@ const helmet     = require('helmet');
 const rateLimit  = require('express-rate-limit');
 
 const app        = express();
+app.set('trust proxy', 1); // Tin tưởng Nginx/Cloudflare reverse proxy
 const httpServer = http.createServer(app);
 const io         = new Server(httpServer, {
   cors: { origin: '*', methods: ['GET', 'POST'] }
