@@ -496,7 +496,15 @@
 
 <script>
 // ==========================================
-// ADMIN GATE - Đăng nhập Firebase trực tiếp
+// HELPERS
+// ==========================================
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ==========================================
+// ADMIN GATE - Đăng nhập JWT
 // ==========================================
 async function checkAdminPass() {
   const email   = document.getElementById('adminGateEmail').value.trim();
