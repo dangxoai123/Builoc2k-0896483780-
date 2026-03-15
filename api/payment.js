@@ -117,14 +117,14 @@ const FIREBASE_PROJECT    = 'builoc2k-denypanel';
 const FIREBASE_WEB_API_KEY = 'AIzaSyDA6SIIeT8jlzLMyp1r6WnefnsGQxMgygA';
 const VND_DEPOSIT_RATE    = 26294.5;
 
-// Credit user via Firestore REST API (rules đã cho phép unauthenticated update)
+// Credit user via Firestore REST API dùng INCREMENT TRANSFORM (atomic, không cần đọc balance cũ)
 async function creditByRef(ref, amount, txId, description) {
   const qKey = `?key=${FIREBASE_WEB_API_KEY}`;
   const aKey = `&key=${FIREBASE_WEB_API_KEY}`;
   const rqPath = `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents:runQuery${qKey}`;
 
   try {
-    // 1. Tìm pending deposit theo ref
+    // 1. Tìm pending deposit theo ref (allow read: if true)
     const qResp = await httpPost('firestore.googleapis.com', rqPath, JSON.stringify({
       structuredQuery: {
         from: [{ collectionId: 'pending_deposits' }],
@@ -144,56 +144,72 @@ async function creditByRef(ref, amount, txId, description) {
     const pDocFullPath = `/v1/${pDoc.name}`;
     if (!uid) return { error: 'No uid in pending deposit' };
 
-    // 2. Đọc balance hiện tại
-    const uPath  = `projects/${FIREBASE_PROJECT}/databases/(default)/documents/users/${uid}`;
-    const uResp  = await httpGet('firestore.googleapis.com', `/v1/${uPath}${qKey}`);
-    const uDoc   = JSON.parse(uResp);
-    const oldBal = parseFloat(uDoc.fields?.balance?.doubleValue ?? uDoc.fields?.balance?.integerValue ?? 0);
-    const addUSD = parseFloat(amount) / VND_DEPOSIT_RATE;
-    const newBal = parseFloat((oldBal + addUSD).toFixed(6));
+    const addUSD    = parseFloat((parseFloat(amount) / VND_DEPOSIT_RATE).toFixed(6));
+    const uFullPath = `projects/${FIREBASE_PROJECT}/databases/(default)/documents/users/${uid}`;
 
-    // 3. Đánh dấu pending_deposits = completed (rules allow unauthenticated update status)
-    await httpPatch('firestore.googleapis.com',
-      `${pDocFullPath}?updateMask.fieldPaths=status&updateMask.fieldPaths=txId&updateMask.fieldPaths=completedAt${aKey}`,
-      JSON.stringify({ fields: {
-        status:      { stringValue: 'completed' },
-        txId:        { stringValue: String(txId) },
-        completedAt: { stringValue: new Date().toISOString() },
-      }})
-    );
+    // 2. Dùng Firestore commit endpoint: cộng balance + đánh dấu pending completed trong 1 batch
+    const commitPath = `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents:commit${qKey}`;
+    const commitBody = JSON.stringify({
+      writes: [
+        // 2a. Increment balance — atomic, không cần đọc số dư cũ
+        {
+          transform: {
+            document: uFullPath,
+            fieldTransforms: [{
+              fieldPath: 'balance',
+              increment: { doubleValue: addUSD }
+            }]
+          }
+        },
+        // 2b. Đánh dấu pending_deposits = completed
+        {
+          update: {
+            name: `projects/${FIREBASE_PROJECT}/databases/(default)/documents/${pDoc.name.replace(/^projects\/[^/]+\/databases\/[^/]+\/documents\//, '')}`,
+            fields: {
+              status:      { stringValue: 'completed' },
+              txId:        { stringValue: String(txId || ref) },
+              completedAt: { stringValue: new Date().toISOString() },
+            }
+          },
+          updateMask: { fieldPaths: ['status', 'txId', 'completedAt'] }
+        }
+      ]
+    });
 
-    // 4. Cộng balance (rules allow unauthenticated update chỉ field balance, chỉ tăng)
-    await httpPatch('firestore.googleapis.com',
-      `/v1/${uPath}?updateMask.fieldPaths=balance${aKey}`,
-      JSON.stringify({ fields: { balance: { doubleValue: newBal } } })
-    );
+    const commitResp = await httpPost('firestore.googleapis.com', commitPath, commitBody);
+    const commitJson = JSON.parse(commitResp);
 
-    // 5. Ghi log transaction (rules allow create: if true)
+    // Kiểm tra lỗi trong commit response
+    if (commitJson.error) {
+      console.error('[credit] commit error:', JSON.stringify(commitJson.error));
+      return { error: commitJson.error.message || 'commit failed' };
+    }
+
+    // 3. Ghi log transaction (allow create: if true)
     await httpPost('firestore.googleapis.com',
       `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/transactions${qKey}`,
       JSON.stringify({ fields: {
-        email:         { stringValue: email || '' },
-        uid:           { stringValue: uid },
-        type:          { stringValue: 'deposit' },
-        amount:        { doubleValue: parseFloat(amount) },
-        amountUSD:     { doubleValue: addUSD },
-        txId:          { stringValue: String(txId) },
-        ref:           { stringValue: ref },
-        description:   { stringValue: description || '' },
-        createdAt:     { stringValue: new Date().toISOString() },
-        balanceBefore: { doubleValue: oldBal },
-        balanceAfter:  { doubleValue: newBal },
-        gateway:       { stringValue: 'Sepay/MBBank' },
+        email:       { stringValue: email || '' },
+        uid:         { stringValue: uid },
+        type:        { stringValue: 'deposit' },
+        amount:      { doubleValue: parseFloat(amount) },
+        amountUSD:   { doubleValue: addUSD },
+        txId:        { stringValue: String(txId || ref) },
+        ref:         { stringValue: ref },
+        description: { stringValue: description || '' },
+        createdAt:   { stringValue: new Date().toISOString() },
+        gateway:     { stringValue: 'Sepay/MBBank' },
       }})
     );
 
-    console.log(`[credit] ✅ uid=${uid} email=${email} +${amount}VND (+${addUSD.toFixed(4)}USD) bal: ${oldBal}→${newBal}`);
-    return { success: true, email, amount, newBalance: newBal };
+    console.log(`[credit] ✅ uid=${uid} +${amount}VND (+${addUSD}USD)`);
+    return { success: true, email, amount, amountUSD: addUSD };
   } catch(e) {
     console.error('[credit] ❌', e.message);
     return { error: e.message };
   }
 }
+
 
 function httpGet(hostname, path) {
   return new Promise((resolve, reject) => {
