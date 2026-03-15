@@ -792,7 +792,7 @@ button { cursor: pointer; font-family: 'Poppins', sans-serif; }
 .platform-scroll::-webkit-scrollbar { display: none; }
 
 .plat-btn {
-  width: 55px; height: 55px;
+  width: 50px; height: 50px;
   border-radius: 50%;
   border: 2px solid transparent;
   display: flex;
@@ -1505,7 +1505,7 @@ button { cursor: pointer; font-family: 'Poppins', sans-serif; }
   .page-content { padding: 8px; }
   .welcome-stats { flex-direction: column; }
   .welcome-stat-box { width: 100%; }
-  .plat-btn { width: 49px; height: 49px; font-size: 16px; }
+  .plat-btn { width: 44px; height: 44px; font-size: 16px; }
   .svc-service-row > div:nth-child(8) button { font-size: 11px; padding: 6px !important; }
 }
 
