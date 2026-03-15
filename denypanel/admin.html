@@ -572,7 +572,7 @@ auth.onAuthStateChanged(async (user) => {
 
   // Load data
   await loadDashboard();
-  loadUsers();
+  startUsersListener(); // Real-time: tự động cập nhật khi có user mới
   loadMarkupData();
   loadPricingTable();
   loadTransactions();
@@ -598,41 +598,73 @@ function closeModal(id) {
 // ==========================================
 async function loadDashboard() {
   try {
-    const snap = await db.collection('users').get();
+    // source:'server' — bypass Firestore cache, luôn lấy data mới nhất
+    const snap = await db.collection('users').get({ source: 'server' });
     const users = snap.docs.map(d => d.data());
     const totalBalance = users.reduce((sum, u) => sum + parseFloat(u.balance||0), 0);
-    const totalOrders = users.reduce((sum, u) => sum + (parseInt(u.totalOrders)||0), 0);
+    const totalOrders  = users.reduce((sum, u) => sum + (parseInt(u.totalOrders)||0), 0);
 
-    document.getElementById('statTotalUsers').textContent = users.length;
-    document.getElementById('statTotalBalance').textContent = fmtBal(totalBalance);
+    document.getElementById('statTotalUsers').textContent    = users.length;
+    document.getElementById('statTotalBalance').textContent  = fmtBal(totalBalance);
+    document.getElementById('statTotalOrders').textContent   = totalOrders;
+    document.getElementById('statServices').textContent      = '—';
 
-    document.getElementById('statTotalOrders').textContent = totalOrders;
-    document.getElementById('statServices').textContent = '—';
-
-    // Recent users
-    const recent = snap.docs.slice(0,5).map(d=>({id:d.id,...d.data()}));
-    document.getElementById('recentUsers').innerHTML = recent.map(u => `
+    // Recent users (mới nhất lên đầu)
+    const sorted = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>{
+      const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds||0)*1000;
+      const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds||0)*1000;
+      return tb - ta;
+    });
+    document.getElementById('recentUsers').innerHTML = sorted.slice(0,5).map(u => `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
         <div>
-          <div style="font-weight:600">${u.username || '—'}</div>
-          <div style="font-size:11px;color:var(--gray)">${u.email}</div>
+          <div style="font-weight:600">${escapeHtml(u.username || '—')}</div>
+          <div style="font-size:11px;color:var(--gray)">${escapeHtml(u.email||'')}</div>
         </div>
         <div class="balance-positive">${fmtBal(u.balance)}</div>
-
       </div>`).join('') || '<p>Chưa có user nào.</p>';
-  } catch(e) { console.error(e); }
+  } catch(e) { console.error('[loadDashboard]', e.message); }
 }
 
 // ==========================================
-// USER MANAGEMENT
+// USER MANAGEMENT — Real-time listener
 // ==========================================
+let _usersUnsubscribe = null;
+
+// Lắng nghe real-time: tự động cập nhật khi có user mới đăng ký
+function startUsersListener() {
+  if (_usersUnsubscribe) _usersUnsubscribe(); // Hủy listener cũ nếu có
+  _usersUnsubscribe = db.collection('users').onSnapshot(
+    { includeMetadataChanges: false },
+    (snap) => {
+      _allUsers = snap.docs.map(d => ({uid: d.id, ...d.data()}));
+      // Sắp xếp mới nhất lên đầu
+      _allUsers.sort((a, b) => {
+        const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds || 0) * 1000;
+        const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds || 0) * 1000;
+        return tb - ta;
+      });
+      document.getElementById('userCount').textContent = _allUsers.length;
+      renderUsersTable(_allUsers);
+      // Cập nhật dashboard stats luôn
+      const totalBalance = _allUsers.reduce((s,u) => s + parseFloat(u.balance||0), 0);
+      const totalOrders  = _allUsers.reduce((s,u) => s + (parseInt(u.totalOrders)||0), 0);
+      document.getElementById('statTotalUsers').textContent   = _allUsers.length;
+      document.getElementById('statTotalBalance').textContent = fmtBal(totalBalance);
+      document.getElementById('statTotalOrders').textContent  = totalOrders;
+    },
+    (err) => {
+      console.error('[usersListener] Lỗi:', err.message);
+    }
+  );
+}
+
 async function loadUsers() {
   document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray);padding:30px"><div class="spinner"></div> Đang tải...</td></tr>';
   try {
-    // Không dùng orderBy để tránh yêu cầu index Firestore — sắp xếp trong JS
-    const snap = await db.collection('users').get();
+    // Force đọc từ server (bypass cache) — đảm bảo thấy user mới nhất
+    const snap = await db.collection('users').get({ source: 'server' });
     _allUsers = snap.docs.map(d => ({uid: d.id, ...d.data()}));
-    // Sắp xếp mới nhất lên đầu theo createdAt (trong JS)
     _allUsers.sort((a, b) => {
       const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds || 0) * 1000;
       const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds || 0) * 1000;
@@ -642,7 +674,7 @@ async function loadUsers() {
     renderUsersTable(_allUsers);
   } catch(e) {
     console.error('[loadUsers] Lỗi:', e.message);
-    document.getElementById('usersTableBody').innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--red);padding:30px">❌ Lỗi tải danh sách user: ${e.message}</td></tr>`;
+    document.getElementById('usersTableBody').innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--red);padding:30px">❌ Lỗi: ${e.message}</td></tr>`;
   }
 }
 
