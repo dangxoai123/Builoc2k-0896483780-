@@ -558,36 +558,26 @@ function fmtBal(usd) {
   return Math.round(parseFloat(usd || 0) * ADMIN_VND_RATE).toLocaleString('vi-VN') + ' ₫';
 }
 // ==========================================
-// AUTH CHECK - Chỉ load data khi đã có Firebase Auth
+// AUTH CHECK
 // ==========================================
 auth.onAuthStateChanged(async (user) => {
   if (!user) {
-    // Chưa đăng nhập Firebase → hiển thị admin gate
-    // KHÔNG load data (sẽ bị Firestore từ chối vì request.auth = null)
-    if (sessionStorage.getItem('admin_gate_ok') !== '1') {
-      document.getElementById('adminGate').style.display = 'flex';
-    }
+    // Chưa có Firebase Auth → hiển thị admin gate
+    document.getElementById('adminGate').style.display = 'flex';
     return;
   }
 
   _adminUid = user.uid;
-
-  // Kiểm tra quyền admin trong Firestore
-  const profile = await getUserProfile(user.uid);
-  if (!profile || profile.role !== 'admin') {
-    document.getElementById('adminGate').style.display = 'flex';
-    document.getElementById('adminGateErr').textContent = '❌ Tài khoản này không có quyền Admin!';
-    document.getElementById('adminGateErr').style.display = 'block';
-    await auth.signOut();
-    return;
-  }
-
-  // Setup admin info
-  document.getElementById('adminInitial').textContent = ((profile?.username)||user.email)[0].toUpperCase();
-  document.getElementById('adminEmail').textContent = profile?.email || user.email;
   document.getElementById('adminGate').style.display = 'none';
 
-  // Load initial data (có Firebase Auth hợp lệ)
+  const profile = await getUserProfile(user.uid);
+
+  // Setup admin info
+  const name = profile?.username || user.email || 'Admin';
+  document.getElementById('adminInitial').textContent = name[0].toUpperCase();
+  document.getElementById('adminEmail').textContent = profile?.email || user.email;
+
+  // Load data
   await loadDashboard();
   loadUsers();
   loadMarkupData();
