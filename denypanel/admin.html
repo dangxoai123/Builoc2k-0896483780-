@@ -602,8 +602,17 @@ auth.onAuthStateChanged(async (user) => {
   document.getElementById('adminEmail').textContent = profile?.email || user.email;
 
   // Load data
+  loadUsers();            // Tải ngay lập tức từ server (chắc chắn hoạt động)
+  startUsersListener();   // Real-time listener (cập nhật tức thì khi có user mới)
+
+  // Auto-refresh mỗi 30 giây để đảm bảo không bỏ sót user mới
+  if (window._adminRefreshInterval) clearInterval(window._adminRefreshInterval);
+  window._adminRefreshInterval = setInterval(() => {
+    loadUsers();
+    loadDashboard();
+  }, 30000);
+
   await loadDashboard();
-  startUsersListener(); // Real-time: tự động cập nhật khi có user mới
   loadMarkupData();
   loadPricingTable();
   loadTransactions();

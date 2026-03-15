@@ -1348,9 +1348,9 @@ function showPage(name, btn) {
   if (name === 'faq') renderFaq();
   if (name === 'profile') {
     const user = getUserData();
-    safeSet('profileNameDisplay', user.username || 'dangxoai');
+    safeSet('profileNameDisplay', user.username || '');
     safeSet('profileEmailDisplay', user.email || '');
-    safeSet('settUsernameV2', user.username || 'dangxoai', 'value');
+    safeSet('settUsernameV2', user.username || '', 'value');
     safeSet('settEmailV2', user.email || '', 'value');
     if (document.getElementById('profileOrders')) document.getElementById('profileOrders').textContent = getLocalOrders().length;
     if (document.getElementById('profileBalance')) document.getElementById('profileBalance').textContent = '$' + parseFloat((getUserData().balance||0)).toFixed(2);
