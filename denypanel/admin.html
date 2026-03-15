@@ -172,16 +172,16 @@
 </head>
 <body>
 
-<!-- ADMIN GATE - Màn hình đăng nhập -->
+<!-- ADMIN GATE - Đăng nhập bằng email Firebase -->
 <div class="admin-gate" id="adminGate">
   <div class="admin-gate-box">
     <div class="lock-icon">🔐</div>
     <h2>Admin Panel</h2>
-    <p>Nhập tài khoản và mật khẩu để tiếp tục</p>
-    <input type="text" id="adminGateUser" placeholder="Tài khoản..." onkeydown="if(event.key==='Enter')checkAdminPass()" autofocus autocomplete="off">
+    <p>Nhập email và mật khẩu để tiếp tục</p>
+    <input type="email" id="adminGateEmail" placeholder="Email..." onkeydown="if(event.key==='Enter')checkAdminPass()" autofocus autocomplete="email">
     <input type="password" id="adminGatePass" placeholder="Mật khẩu..." onkeydown="if(event.key==='Enter')checkAdminPass()">
-    <div class="err-msg" id="adminGateErr">❌ Sai tài khoản hoặc mật khẩu!</div>
-    <button onclick="checkAdminPass()">🔓 Đăng nhập Admin</button>
+    <div class="err-msg" id="adminGateErr">❌ Sai email hoặc mật khẩu!</div>
+    <button onclick="checkAdminPass()" id="adminGateBtn">🔓 Đăng nhập Admin</button>
   </div>
 </div>
 
@@ -499,40 +499,42 @@
 
 <script>
 // ==========================================
-// ADMIN GATE - Chỉ kiểm tra password cục bộ
-// Firebase Auth session từ dashboard được tái dùng
+// ADMIN GATE - Đăng nhập Firebase trực tiếp
 // ==========================================
-const ADMIN_USER = 'builoc1906';
-const ADMIN_PASS = 'builoc1906';
+async function checkAdminPass() {
+  const email   = document.getElementById('adminGateEmail').value.trim();
+  const pass    = document.getElementById('adminGatePass').value;
+  const errMsg  = document.getElementById('adminGateErr');
+  const btn     = document.getElementById('adminGateBtn');
 
-function checkAdminPass() {
-  const inputUser = document.getElementById('adminGateUser').value.trim();
-  const inputPass = document.getElementById('adminGatePass').value;
-  const errMsg = document.getElementById('adminGateErr');
+  if (!email || !pass) {
+    errMsg.textContent = '❌ Vui lòng nhập email và mật khẩu!';
+    errMsg.style.display = 'block';
+    return;
+  }
 
-  if (inputUser === ADMIN_USER && inputPass === ADMIN_PASS) {
-    sessionStorage.setItem('admin_gate_ok', '1');
-    document.getElementById('adminGate').style.display = 'none';
-    // Data sẽ được load bởi onAuthStateChanged nếu đã có Firebase session
-    // Nếu chưa có → reload để trigger onAuthStateChanged lại
-    if (!_adminUid) {
-      window.location.reload();
+  btn.innerHTML = '⏳ Đang xác thực...';
+  btn.disabled = true;
+  errMsg.style.display = 'none';
+
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+    // onAuthStateChanged sẽ tự đóng gate và load data
+  } catch(e) {
+    const code = e.code || '';
+    if (code.includes('invalid-credential') || code.includes('wrong-password') || code.includes('user-not-found')) {
+      errMsg.textContent = '❌ Sai email hoặc mật khẩu!';
+    } else if (code.includes('too-many-requests')) {
+      errMsg.textContent = '❌ Quá nhiều lần thử! Vui lòng đợi.';
+    } else {
+      errMsg.textContent = '❌ Lỗi: ' + e.message;
     }
-  } else {
-    errMsg.textContent = '❌ Sai tài khoản hoặc mật khẩu!';
     errMsg.style.display = 'block';
     document.getElementById('adminGatePass').value = '';
-    document.getElementById('adminGatePass').focus();
-    const box = document.querySelector('.admin-gate-box');
-    box.style.transform = 'translateX(-8px)';
-    setTimeout(() => box.style.transform = 'translateX(8px)', 100);
-    setTimeout(() => box.style.transform = '', 200);
   }
-}
 
-// Kiểm tra session khi load lại trang
-if (sessionStorage.getItem('admin_gate_ok') === '1') {
-  document.getElementById('adminGate').style.display = 'none';
+  btn.innerHTML = '🔓 Đăng nhập Admin';
+  btn.disabled = false;
 }
 
 // ==========================================
@@ -555,15 +557,8 @@ function fmtBal(usd) {
 // ==========================================
 auth.onAuthStateChanged(async (user) => {
   if (!user) {
-    // Chưa đăng nhập Firebase
-    if (sessionStorage.getItem('admin_gate_ok') === '1') {
-      // Đã qua gate nhưng không có Firebase session → redirect login
-      sessionStorage.removeItem('admin_gate_ok');
-      window.location.href = 'login.html?redirect=admin';
-    } else {
-      // Hiển thị admin gate
-      document.getElementById('adminGate').style.display = 'flex';
-    }
+    // Chưa có Firebase Auth → hiển thị admin gate để đăng nhập
+    document.getElementById('adminGate').style.display = 'flex';
     return;
   }
 
