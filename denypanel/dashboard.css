@@ -802,7 +802,7 @@ button { cursor: pointer; font-family: 'Poppins', sans-serif; }
   cursor: pointer;
   transition: var(--tr);
   flex-shrink: 0;
-  opacity: 0.7;
+  opacity: 1;
 }
 
 .plat-btn:hover, .plat-btn.active { opacity: 1; border-color: var(--green); transform: scale(1.1); }
