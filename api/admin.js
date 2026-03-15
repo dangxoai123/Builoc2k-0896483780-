@@ -102,4 +102,27 @@ router.get('/stats', async (req, res) => {
   }
 });
 
+// GET /api/admin/orders - tất cả đơn hàng của mọi user
+router.get('/orders', async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT o.id,
+             COALESCE(o.order_id::text, o.id::text)           AS order_id,
+             COALESCE(o.service_id, 0)                         AS service_id,
+             COALESCE(o.service_name, o.service::text, '')     AS service_name,
+             o.link, o.quantity, o.charge, o.status,
+             COALESCE(o.remains, o.quantity)                   AS remains,
+             o.created_at,
+             u.uid AS _uid, u.username AS _username, u.email AS _email
+      FROM orders o
+      LEFT JOIN users u ON o.user_id = u.id
+      ORDER BY o.created_at DESC
+    `);
+    res.json({ orders: result.rows });
+  } catch (e) {
+    console.error('[admin/orders]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router;

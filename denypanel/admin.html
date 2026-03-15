@@ -921,7 +921,8 @@ function updateSellRate(svcId, baseRate, markup) {
 
 async function saveGlobalMarkup() {
   const markup = parseFloat(document.getElementById('globalMarkup').value) || 0;
-  await db.collection('settings').doc('pricing').set({ globalMarkup: markup, services: _markupData }, { merge: true });
+  // Lưu vào localStorage (có thể mở rộng sang /api/admin/settings sau)
+  localStorage.setItem('admin_global_markup', markup);
   renderPricingTable(_servicesData);
   showToast('Đã lưu markup ' + markup + '%');
 }
@@ -929,7 +930,7 @@ async function saveGlobalMarkup() {
 async function saveSingleMarkup(svcId, baseRate) {
   const markup = parseFloat(document.getElementById('mk_' + svcId).value) || 0;
   _markupData[svcId] = markup;
-  await db.collection('settings').doc('pricing').set({ services: _markupData }, { merge: true });
+  localStorage.setItem('admin_markup_data', JSON.stringify(_markupData));
   showToast('Đã lưu markup #' + svcId);
 }
 
@@ -938,7 +939,7 @@ async function saveAllMarkups() {
     const el = document.getElementById('mk_' + s.service);
     if (el) _markupData[s.service] = parseFloat(el.value) || 0;
   });
-  await db.collection('settings').doc('pricing').set({ services: _markupData }, { merge: true });
+  localStorage.setItem('admin_markup_data', JSON.stringify(_markupData));
   showToast('Đã lưu tất cả markup!');
 }
 
@@ -947,49 +948,31 @@ async function saveAllMarkups() {
 // ==========================================
 async function loadTransactions() {
   try {
-    // Không dùng orderBy vì deposit lưu createdAt là ISO string,
-    // admin.add lưu Firestore Timestamp → Firestore không sort được mix 2 kiểu
-    const snap = await db.collection('transactions').limit(100).get();
+    const resp = await fetch('/api/admin/transactions', { headers: { 'Authorization': 'Bearer ' + _jwt } });
+    const data = await resp.json();
     const tbody = document.getElementById('txTableBody');
-    if (!snap.docs.length) {
+    if (!data.transactions || !data.transactions.length) {
       tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray);padding:30px">Chưa có giao dịch nào.</td></tr>';
       return;
     }
-
-    // Sort phía client: mới nhất lên đầu
-    const docs = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => {
-      function toMs(v) {
-        if (!v) return 0;
-        if (typeof v.toDate === 'function') return v.toDate().getTime();
-        if (typeof v === 'number') return v;
-        if (typeof v === 'string') return new Date(v).getTime() || 0;
-        if (v._seconds) return v._seconds * 1000;
-        return 0;
-      }
-      return toMs(b.createdAt) - toMs(a.createdAt);
-    });
-
-    tbody.innerHTML = docs.map(tx => {
-      // Handle nhiều dạng timestamp
-      let time = '—';
-      if (tx.createdAt) {
-        let dt = null;
-        if (typeof tx.createdAt.toDate === 'function') dt = tx.createdAt.toDate();
-        else if (typeof tx.createdAt === 'number') dt = new Date(tx.createdAt);
-        else if (typeof tx.createdAt === 'string') dt = new Date(tx.createdAt);
-        else if (tx.createdAt._seconds) dt = new Date(tx.createdAt._seconds * 1000);
-        if (dt && !isNaN(dt)) time = dt.toLocaleString('vi-VN');
-      }
-      const typeLabel = { add:'<span style="color:var(--green)">➕ Cộng</span>', sub:'<span style="color:var(--red)">➖ Trừ</span>', set:'<span style="color:var(--blue)">✏️ Đặt</span>', deposit:'<span style="color:var(--blue)">💳 Nạp</span>' }[tx.type] || tx.type;
+    const typeLabel = {
+      'add':     '<span style="color:var(--green)">➕ Cộng</span>',
+      'sub':     '<span style="color:var(--red)">➖ Trừ</span>',
+      'deduct':  '<span style="color:var(--red)">➖ Trừ</span>',
+      'set':     '<span style="color:var(--blue)">✏️ Đặt</span>',
+      'deposit': '<span style="color:var(--blue)">💳 Nạp</span>'
+    };
+    tbody.innerHTML = data.transactions.map(tx => {
+      const time = tx.created_at ? new Date(tx.created_at).toLocaleString('vi-VN') : '—';
+      const amt  = parseFloat(tx.amount_usd || tx.amount || 0);
       return `<tr>
         <td style="font-size:11px;color:var(--gray)">${time}</td>
-        <td style="font-size:12px">${tx.email||'—'}</td>
-        <td>${typeLabel}</td>
-        <td style="font-weight:700">${parseFloat(tx.amount||0).toLocaleString('en-US',{maximumFractionDigits:0})} ₫</td>
-        <td style="font-size:12px;color:var(--gray)">${tx.note||tx.description||'—'}</td>
-        <td style="font-size:11px;color:var(--gray)">${tx.adminUid?.slice(0,8)||tx.gateway||'—'}</td>
+        <td style="font-size:12px">${tx.email || '—'}</td>
+        <td>${typeLabel[tx.type] || tx.type}</td>
+        <td style="font-weight:700">${amt.toFixed(4)} USD</td>
+        <td style="font-size:12px;color:var(--gray)">${tx.description || '—'}</td>
+        <td style="font-size:11px;color:var(--gray)">—</td>
       </tr>`;
-
     }).join('');
   } catch(e) { console.error(e); }
 }
@@ -1005,50 +988,34 @@ async function loadOrdersAdmin() {
   if (tbody) tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--gray);padding:30px"><div class="spinner"></div> Đang tải đơn hàng...</td></tr>';
 
   try {
-    // Lấy danh sách users trước
-    const usersSnap = await db.collection('users').get();
-    const users = usersSnap.docs.map(d => ({ uid: d.id, ...d.data() }));
+    const resp   = await fetch('/api/admin/orders', { headers: { 'Authorization': 'Bearer ' + _jwt } });
+    const data   = await resp.json();
+    if (!resp.ok) throw new Error(data.error || 'Không tải được đơn hàng');
 
-    // Cập nhật dropdown filter users
+    // Populate user filter dropdown
     const userFilter = document.getElementById('ordersUserFilter');
     if (userFilter) {
+      const seen = new Set();
       userFilter.innerHTML = '<option value="">-- Tất cả users --</option>';
-      users.forEach(u => {
-        const opt = document.createElement('option');
-        opt.value = u.uid;
-        opt.textContent = `${u.username || '—'} (${u.email || u.uid.slice(0,8)})`;
-        userFilter.appendChild(opt);
+      data.orders.forEach(o => {
+        if (o._uid && !seen.has(o._uid)) {
+          seen.add(o._uid);
+          const opt = document.createElement('option');
+          opt.value = o._uid;
+          opt.textContent = `${o._username || '—'} (${o._email || o._uid.slice(0,8)})`;
+          userFilter.appendChild(opt);
+        }
       });
     }
 
-    // Load orders của từng user song song
-    const allOrdersRaw = [];
-    await Promise.all(users.map(async (u) => {
-      try {
-        const ordersSnap = await db.collection('users').doc(u.uid).collection('orders').get();
-        ordersSnap.docs.forEach(doc => {
-          allOrdersRaw.push({
-            _docId: doc.id,
-            _uid: u.uid,
-            _username: u.username || '—',
-            _email: u.email || '—',
-            ...doc.data()
-          });
-        });
-      } catch(e) { /* ignore per-user errors */ }
+    _allOrders = data.orders.map(o => ({
+      ...o,
+      orderId: o.order_id,
+      serviceName: o.service_name,
+      _docId: o.id   // internal DB id
     }));
-
-    // Sort mới nhất lên đầu
-    allOrdersRaw.sort((a, b) => {
-      const ta = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : (typeof a.createdAt === 'string' ? new Date(a.createdAt).getTime() : 0);
-      const tb = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : (typeof b.createdAt === 'string' ? new Date(b.createdAt).getTime() : 0);
-      return tb - ta;
-    });
-
-    _allOrders = allOrdersRaw;
     _ordersLoaded = true;
 
-    // Cập nhật badge
     const badge = document.getElementById('ordersBadge');
     if (badge) { badge.textContent = _allOrders.length; badge.style.display = _allOrders.length ? 'inline-flex' : 'none'; }
 
@@ -1163,30 +1130,15 @@ async function adminSyncOrder(uid, docId, orderId) {
   if (!orderId) return;
   showToast('🔄 Đang đồng bộ #' + orderId + '...');
   try {
-    // Gọi MMOpanel API qua proxy
-    const resp = await fetch('/api/proxy', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'status', order: orderId })
-    });
+    const resp   = await fetch(`/api/orders/${orderId}/status`, { headers: { 'Authorization': 'Bearer ' + _jwt } });
     const result = await resp.json();
-    if (!result || result.error) { showToast('❌ ' + (result?.error || 'Không lấy được trạng thái')); return; }
-
-    const statusMap = {
-      'completed':'completed', 'canceled':'canceled', 'cancelled':'canceled',
-      'partial':'partial', 'in progress':'in_progress', 'processing':'in_progress',
-      'waiting':'waiting', 'pending':'pending'
-    };
-    const newStatus = statusMap[(result.status||'').toLowerCase().trim()] || 'pending';
-    const remains = parseInt(result.remains) || 0;
-
-    await db.collection('users').doc(uid).collection('orders').doc(docId).update({ status: newStatus, remains });
+    if (!resp.ok || !result.success) { showToast('❌ ' + (result?.error || 'Không lấy được trạng thái')); return; }
 
     // Cập nhật _allOrders cache
-    const idx = _allOrders.findIndex(o => o._docId === docId);
-    if (idx !== -1) { _allOrders[idx].status = newStatus; _allOrders[idx].remains = remains; }
+    const idx = _allOrders.findIndex(o => String(o.orderId) === String(orderId) || String(o.order_id) === String(orderId));
+    if (idx !== -1) { _allOrders[idx].status = result.status; _allOrders[idx].remains = result.remains; }
     filterOrdersAdmin();
-    showToast(`✅ Đơn #${orderId}: ${newStatus}`);
+    showToast(`✅ Đơn #${orderId}: ${result.status}`);
   } catch(e) {
     showToast('Lỗi: ' + e.message);
   }
