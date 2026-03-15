@@ -97,42 +97,51 @@ function refreshPrices() {
 
 
 // ==========================================
-// INIT - Firebase Auth
+// INIT - JWT Auth (thay Firebase Auth)
 // ==========================================
 
-// Biến global lưu thông tin user từ Firebase
+// Biến global lưu thông tin user
 let _firebaseUser = null;
 let _userProfile = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Dùng Firebase Auth thay vì localStorage
-  auth.onAuthStateChanged(async (user) => {
-    if (!user) {
+  const token    = localStorage.getItem('jwt_token');
+  const userData = localStorage.getItem('user_data');
+
+  if (!token) {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  // Dùng cache từ localStorage trước (hiển thị nhanh)
+  if (userData) {
+    try {
+      _userProfile = JSON.parse(userData);
+      _firebaseUser = { uid: _userProfile.uid, email: _userProfile.email };
+    } catch(e) {}
+  }
+
+  // Refresh profile từ server (cập nhật balance mới nhất)
+  fetch('/api/auth/me', {
+    headers: { 'Authorization': 'Bearer ' + token }
+  }).then(r => {
+    if (r.status === 401) {
+      localStorage.removeItem('jwt_token');
+      localStorage.removeItem('user_data');
       window.location.href = 'login.html';
       return;
     }
-    _firebaseUser = user;
-
-    // Load profile từ Firestore — thử lại nếu null (race condition sau khi đăng ký mới)
-    _userProfile = null;
-    for (let attempt = 1; attempt <= 4; attempt++) {
-      _userProfile = await getUserProfile(user.uid);
-      if (_userProfile) break;
-      // Chờ trước khi thử lại (document vừa được tạo, cần thời gian sync)
-      if (attempt < 4) await new Promise(r => setTimeout(r, attempt * 800));
-    }
-
-    if (!_userProfile) {
-      // Fallback an toàn: dùng email gốc, username để trống (không dùng email prefix)
-      _userProfile = {
-        username: '',
-        email: user.email,
-        balance: 0,
-        role: 'user',
-        totalOrders: 0
-      };
-    }
+    return r.json();
+  }).then(profile => {
+    if (!profile) return;
+    _userProfile = profile;
+    _firebaseUser = { uid: profile.uid, email: profile.email };
+    localStorage.setItem('user_data', JSON.stringify(profile));
     initDashboard();
+  }).catch(() => {
+    // Nếu offline → dùng cache
+    if (_userProfile) initDashboard();
+    else window.location.href = 'login.html';
   });
 });
 

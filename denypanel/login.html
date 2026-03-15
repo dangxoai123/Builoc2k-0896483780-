@@ -7,11 +7,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="auth.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js"></script>
+<!-- JWT Auth - No Firebase needed -->
 </head>
 <body class="auth-body">
 
@@ -80,15 +76,12 @@
 </div>
 
 <script>
-// Nếu đã đăng nhập → vào dashboard (trừ khi vừa logout)
-const justLoggedOut = new URLSearchParams(window.location.search).get('logout') === '1';
-if (!justLoggedOut) {
-  auth.onAuthStateChanged(user => {
-    if (user) window.location.href = 'dashboard.html';
-  });
+// Nếu đã đăng nhập → vào dashboard
+if (localStorage.getItem('jwt_token') && !new URLSearchParams(window.location.search).get('logout')) {
+  window.location.href = 'dashboard.html';
 } else {
-  // Vừa logout: đảm bảo đăng xuất hoàn toàn
-  auth.signOut().catch(() => {});
+  localStorage.removeItem('jwt_token');
+  localStorage.removeItem('user_data');
 }
 
 function togglePass(id, btn) {
@@ -104,28 +97,32 @@ function togglePass(id, btn) {
 
 async function handleLogin(e) {
   e.preventDefault();
-  const email = document.getElementById('loginEmail').value.trim();
+  const email    = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
-  const btn = document.getElementById('loginBtn');
+  const btn      = document.getElementById('loginBtn');
   const errorBox = document.getElementById('loginError');
-  const remember = document.getElementById('rememberMe').checked;
 
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang đăng nhập...';
-  btn.disabled = true;
+  btn.disabled  = true;
   errorBox.style.display = 'none';
 
   try {
-    const persistence = remember
-      ? firebase.auth.Auth.Persistence.LOCAL
-      : firebase.auth.Auth.Persistence.SESSION;
-    await auth.setPersistence(persistence);
-    await loginUser(email, password);
+    const res  = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Đăng nhập thất bại');
+
+    localStorage.setItem('jwt_token', data.token);
+    localStorage.setItem('user_data', JSON.stringify(data.user));
     window.location.href = 'dashboard.html';
   } catch (err) {
-    errorBox.textContent = getAuthErrorMsg(err.code);
+    errorBox.textContent   = err.message;
     errorBox.style.display = 'block';
     btn.innerHTML = '<span>Đăng Nhập</span>';
-    btn.disabled = false;
+    btn.disabled  = false;
   }
 }
 </script>

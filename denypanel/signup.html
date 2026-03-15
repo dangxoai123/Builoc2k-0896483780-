@@ -7,11 +7,7 @@
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="auth.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js"></script>
+<!-- JWT Auth - No Firebase needed -->
 <style>
   /* Field hint below input */
   .field-hint { font-size:11px; margin-top:5px; display:none; align-items:center; gap:5px; }
@@ -188,10 +184,8 @@
 </div>
 
 <script>
-// Redirect if already logged in
-auth.onAuthStateChanged(function(user) {
-  if (user) window.location.href = 'dashboard.html';
-});
+// Redirect if already logged in (JWT)
+if (localStorage.getItem('jwt_token')) window.location.href = 'dashboard.html';
 
 function togglePass(id, btn) {
   var input = document.getElementById(id);
@@ -259,13 +253,14 @@ function onUserInput() {
     return;
   }
 
-  // Format OK => debounce 600ms then check Firestore
+  // Format OK => debounce 600ms then check API
   spin.style.display = 'block';
   _uTimer = setTimeout(async function() {
     try {
-      var exists = await checkUsernameExists(val);
+      const r = await fetch('/api/auth/check-username?username=' + encodeURIComponent(val));
+      const d = await r.json();
       spin.style.display = 'none';
-      if (exists) {
+      if (d.exists) {
         _uOk = false;
         input.className = 'form-input err';
         icon.textContent = '❌';
@@ -282,7 +277,7 @@ function onUserInput() {
       }
     } catch(e) {
       spin.style.display = 'none';
-      _uOk = true; // allow register, will fail at server if dupe
+      _uOk = true;
       showHint('uHint', '⚠️ Không kiểm tra được, sẽ xác nhận khi đăng ký', 'warn');
     }
   }, 600);
@@ -408,25 +403,25 @@ async function handleSignup(e) {
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang kiểm tra username...';
   btn.disabled = true;
 
-  // --- Final duplicate check before submit ---
-  try {
-    var exists = await checkUsernameExists(username);
-    if (exists) return showErr('❌ Username "' + username + '" đã có người dùng! Vui lòng chọn tên khác.');
-  } catch(err2) {
-    // Nếu không kiểm tra được → chặn lại để an toàn
-    return showErr('⚠️ Không thể kiểm tra username. Vui lòng thử lại!');
-  }
-
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang tạo tài khoản...';
 
   try {
-    await registerUser(email, password, username);
+    const res  = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) return showErr(data.error || '❌ Đăng ký thất bại');
+
+    localStorage.setItem('jwt_token', data.token);
+    localStorage.setItem('user_data', JSON.stringify(data.user));
     okBox.textContent = '✅ Tạo tài khoản thành công! Đang chuyển hướng...';
     okBox.style.display = 'block';
     btn.innerHTML = '✅ Thành công!';
     setTimeout(function() { window.location.href = 'dashboard.html'; }, 1500);
   } catch (err) {
-    showErr(getAuthErrorMsg(err.code));
+    showErr('❌ Lỗi kết nối server. Vui lòng thử lại!');
   }
 }
 </script>

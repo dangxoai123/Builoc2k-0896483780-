@@ -162,7 +162,20 @@ router.patch('/me', authMiddleware, async (req, res) => {
   }
 });
 
+// GET /api/auth/check-username - Kiểm tra username đã tồn tại chưa
+router.get('/check-username', async (req, res) => {
+  const { username } = req.query;
+  if (!username) return res.json({ exists: false });
+  try {
+    const result = await pool.query('SELECT id FROM users WHERE username=$1', [username.toLowerCase().trim()]);
+    res.json({ exists: result.rows.length > 0 });
+  } catch (e) {
+    res.status(500).json({ error: 'Lỗi server' });
+  }
+});
+
 module.exports = router;
 module.exports.authMiddleware  = authMiddleware;
 module.exports.adminMiddleware = adminMiddleware;
 module.exports.pool            = pool;
+
