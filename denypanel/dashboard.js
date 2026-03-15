@@ -202,11 +202,18 @@ async function initDashboard() {
 // BALANCE - Quản lý số dư web con (độc lập với MMOpanel)
 // ==========================================
 async function refreshBalance() {
-  // Lấy số dư từ Firestore (do admin quản lý)
-  if (_firebaseUser) {
-    const fresh = await getUserProfile(_firebaseUser.uid);
-    if (fresh) _userProfile = fresh;
-  }
+  const token = localStorage.getItem('jwt_token');
+  if (!token) return;
+  try {
+    const r = await fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (r.ok) {
+      const profile = await r.json();
+      if (profile && !profile.error) {
+        _userProfile = profile;
+        localStorage.setItem('user_data', JSON.stringify(profile));
+      }
+    }
+  } catch(e) { console.warn('refreshBalance:', e.message); }
   const bal = parseFloat(_userProfile?.balance || 0);
   safeSet('balanceDisplay', formatMoney(bal));
   safeSet('balanceStat', formatMoney(bal));
@@ -218,33 +225,24 @@ async function refreshBalance() {
 async function updateStats() {
   let orderCount = 0;
   let totalSpent = 0;
-
   try {
-    if (_firebaseUser) {
-      // Đọc orders từ Firestore
-      const snap = await db.collection('users').doc(_firebaseUser.uid)
-        .collection('orders').get();
-      orderCount = snap.size;
-      snap.forEach(doc => {
-        const d = doc.data();
-        // Field có thể là 'charge', 'cost', 'amount'
-        const amount = parseFloat(d.charge || d.cost || d.amount || 0);
-        totalSpent += amount;
-      });
+    const token = localStorage.getItem('jwt_token');
+    const r = await fetch('/api/orders', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (r.ok) {
+      const data = await r.json();
+      const orders = data.orders || [];
+      orderCount = orders.length;
+      orders.forEach(o => { totalSpent += parseFloat(o.charge || o.cost || o.amount || 0); });
     }
-  } catch(e) {
-    console.warn('updateStats error:', e);
-  }
+  } catch(e) { console.warn('updateStats:', e.message); }
 
   safeSet('totalOrdersStat', orderCount);
   safeSet('profileOrders', orderCount);
   safeSet('profileBalance', formatMoney(_userProfile?.balance || 0));
 
-  // Cập nhật Đã tiêu
   const spentEl = document.getElementById('totalSpentStat');
   if (spentEl) spentEl.textContent = formatMoney(totalSpent);
 
-  // Ghi các hằng số totalSpent vào _userProfile để refresh dùng lại
   if (_userProfile) _userProfile._totalSpent = totalSpent;
   if (_userProfile) _userProfile._orderCount = orderCount;
 }
