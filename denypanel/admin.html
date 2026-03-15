@@ -515,17 +515,18 @@ async function checkAdminPass() {
   errMsg.style.display = 'none';
 
   try {
-    await auth.signInWithEmailAndPassword(email, pass);
-    // onAuthStateChanged sẽ tự đóng gate và load data
+    const res  = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Sai email hoặc mật khẩu!');
+    localStorage.setItem('jwt_token', data.token);
+    localStorage.setItem('user_data', JSON.stringify(data.user));
+    window.location.reload(); // JWT auth check sẽ tự load admin
   } catch(e) {
-    const code = e.code || '';
-    if (code.includes('invalid-credential') || code.includes('wrong-password') || code.includes('user-not-found')) {
-      errMsg.textContent = '❌ Sai email hoặc mật khẩu!';
-    } else if (code.includes('too-many-requests')) {
-      errMsg.textContent = '❌ Quá nhiều lần thử! Vui lòng đợi.';
-    } else {
-      errMsg.textContent = '❌ Lỗi: ' + e.message;
-    }
+    errMsg.textContent = '❌ ' + e.message;
     errMsg.style.display = 'block';
     document.getElementById('adminGatePass').value = '';
   }
