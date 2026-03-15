@@ -677,28 +677,37 @@ function mapMMOpanelStatus(raw) {
 
 async function checkOrderById(orderId) {
   if (!orderId) return;
-  showToastV2('🔄 Đang đồng bộ trạng thái...', 'info');
+  showToastV2('🔄 Đang đồng bộ trạng thái từ web chủ...', 'info');
   try {
-    const result = await MMOpanelAPI.getOrderStatus(orderId);
-    if (!result.success) { showToastV2('❌ Không lấy được trạng thái', 'err'); return; }
+    const token = localStorage.getItem('jwt_token');
+    const resp  = await fetch(`/api/orders/${orderId}/status`, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const result = await resp.json();
 
-    const newStatus = mapMMOpanelStatus(result.status);
-    // Reload UI
+    if (!resp.ok || !result.success) {
+      showToastV2(`❌ Không lấy được trạng thái: ${result.error || ''}`, 'err');
+      return;
+    }
+
+    // Reload danh sách đơn hàng
     await loadOrdersPage();
 
     const statusVi = {
-      completed: 'Hoàn thành ✅',
+      completed:   'Hoàn thành ✅',
       in_progress: 'Đang chạy ⚡',
-      canceled: 'Đã hủy ❌',
-      partial: 'Hoàn thành một phần ⚠️',
-      pending: 'Chờ xử lý 🕐',
-      waiting: 'Đang đợi bắt đầu ⏳',
+      canceled:    'Đã hủy ❌',
+      partial:     'Hoàn thành một phần ⚠️',
+      pending:     'Chờ xử lý 🕐',
+      waiting:     'Đang đợi bắt đầu ⏳',
     };
-    showToastV2(`Đơn #${orderId}: ${statusVi[newStatus] || newStatus}`, newStatus === 'completed' ? 'ok' : 'info');
+    const label = statusVi[result.status] || result.status;
+    showToastV2(`Đơn #${orderId}: ${label}`, result.status === 'completed' ? 'ok' : 'info');
   } catch(e) {
     showToastV2('Lỗi: ' + e.message, 'err');
   }
 }
+
 
 // Auto-refresh trạng thái đơn đang chờ/đang chạy/đang đợi (mỗi 60 giây)
 let _autoRefreshTimer = null;

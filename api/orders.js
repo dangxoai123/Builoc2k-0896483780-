@@ -39,6 +39,41 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/orders/:orderId/status - kiểm tra trạng thái từ DenyPanel
+router.get('/:orderId/status', async (req, res) => {
+  const { orderId } = req.params;
+  try {
+    const dpRes = await callDenyPanel({ action: 'status', key: DENY_KEY, order: orderId });
+    if (dpRes.error) return res.status(400).json({ error: dpRes.error });
+
+    const newStatus = mapStatus(dpRes.status || '');
+    const remains   = parseInt(dpRes.remains) || 0;
+
+    // Cập nhật DB
+    await pool.query(
+      `UPDATE orders SET status=$1, remains=$2
+       WHERE order_id=$3 AND user_id=(SELECT id FROM users WHERE uid=$4)`,
+      [newStatus, remains, String(orderId), req.user.uid]
+    ).catch(() => {});
+
+    res.json({ success: true, status: newStatus, remains, raw: dpRes.status });
+  } catch (e) {
+    console.error('[orders status]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+function mapStatus(raw) {
+  const s = (raw || '').toLowerCase().trim();
+  if (s === 'completed') return 'completed';
+  if (s === 'canceled' || s === 'cancelled') return 'canceled';
+  if (s === 'partial') return 'partial';
+  if (s === 'in progress' || s === 'processing') return 'in_progress';
+  if (s === 'waiting') return 'waiting';
+  return 'pending';
+}
+
+
 // ──────────────────────────────────────────────
 // POST /api/orders/place  ← ĐẶT HÀNG THỰC
 // Body: { service_id, service_name, link, quantity, charge }
