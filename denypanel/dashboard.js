@@ -823,14 +823,13 @@ async function pollDeposit() {
   if (!_depositRef || !_firebaseUser) return;
 
   try {
-    // Kiểm tra Firestore xem admin/webhook đã duyệt chưa
+    // 1. Kiểm tra Firestore xem webhook/server đã cộng tiền chưa
     const doc = await db.collection('pending_deposits').doc(_depositRef).get();
     if (!doc.exists) return;
     const data = doc.data();
 
     if (data.status === 'completed') {
       clearDeposit();
-      // Reload balance
       const fresh = await getUserProfile(_firebaseUser.uid);
       if (fresh) _userProfile = fresh;
       refreshBalance();
@@ -839,22 +838,32 @@ async function pollDeposit() {
       return;
     }
 
-    // Cũng gọi API kiểm tra trực tiếp
+    // 2. Gọi API kiểm tra Sepay và tự cộng tiền
     const resp = await fetch(`/api/payment?ref=${_depositRef}`);
     const result = await resp.json();
 
     if (result.found) {
-      clearDeposit();
-      const fresh = await getUserProfile(_firebaseUser.uid);
-      if (fresh) _userProfile = fresh;
-      refreshBalance();
-      document.getElementById('qrPayModal').style.display = 'none';
-      showToastV2(`✅ Nạp tiền thành công! +${_depositAmount.toLocaleString('vi-VN')} ₫`, 'ok');
+      // Kiểm tra credit có thực sự thành công không
+      if (result.result && result.result.success) {
+        // Cộng tiền thành công phía server → reload balance
+        clearDeposit();
+        const fresh = await getUserProfile(_firebaseUser.uid);
+        if (fresh) _userProfile = fresh;
+        refreshBalance();
+        document.getElementById('qrPayModal').style.display = 'none';
+        showToastV2(`✅ Nạp tiền thành công! +${_depositAmount.toLocaleString('vi-VN')} ₫`, 'ok');
+      } else if (result.result && result.result.error) {
+        // Tìm thấy giao dịch nhưng cộng tiền lỗi — thử lại sau
+        console.warn('[pollDeposit] credit lỗi:', result.result.error);
+        document.getElementById('qrStatus').textContent = '⚠️ Đang xử lý, vui lòng đợi...';
+      }
+      // Nếu result.result không có gì → cũng đợi tiếp
     }
   } catch(e) {
     console.warn('Poll deposit:', e.message);
   }
 }
+
 
 function expireDeposit() {
   clearDeposit();
