@@ -847,7 +847,7 @@ button { cursor: pointer; font-family: 'Poppins', sans-serif; }
   padding: 10px 16px;
   font-size: 12px;
   font-weight: 700;
-  color: var(--gray);
+  color: var(--white);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   background: var(--bg-card);
