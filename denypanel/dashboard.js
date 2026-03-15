@@ -780,18 +780,15 @@ async function startDeposit() {
   _depositRef    = genRef();
   _depositExpiry = Date.now() + DEPOSIT_TIMEOUT_MS;
 
-  // Lưu lệnh nạp tiền vào Firestore (để server có thể match)
+  // Lưu lệnh nạp vào PostgreSQL qua API
   try {
-    await db.collection('pending_deposits').doc(_depositRef).set({
-      uid: _firebaseUser.uid,
-      email: _userProfile?.email || _firebaseUser.email,
-      amount: _depositAmount,
-      ref: _depositRef,
-      status: 'pending',
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      expiresAt: new Date(_depositExpiry)
+    const token = localStorage.getItem('jwt_token');
+    await fetch('/api/payment/create-pending', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ref: _depositRef, amount: _depositAmount })
     });
-  } catch(e) { console.warn('Deposit Firestore save:', e.message); }
+  } catch(e) { console.warn('Deposit create-pending:', e.message); }
 
   // Hiển thị modal
   const modal = document.getElementById('qrPayModal');
@@ -823,44 +820,21 @@ async function startDeposit() {
 }
 
 async function pollDeposit() {
-  if (!_depositRef || !_firebaseUser) return;
+  if (!_depositRef) return;
 
   try {
-    // 1. Kiểm tra Firestore xem webhook/server đã cộng tiền chưa
-    const doc = await db.collection('pending_deposits').doc(_depositRef).get();
-    if (!doc.exists) return;
-    const data = doc.data();
-
-    if (data.status === 'completed') {
-      clearDeposit();
-      const fresh = await getUserProfile(_firebaseUser.uid);
-      if (fresh) _userProfile = fresh;
-      refreshBalance();
-      document.getElementById('qrPayModal').style.display = 'none';
-      showToastV2(`✅ Nạp tiền thành công! +${_depositAmount.toLocaleString('vi-VN')} ₫`, 'ok');
-      return;
-    }
-
-    // 2. Gọi API kiểm tra Sepay và tự cộng tiền
-    const resp = await fetch(`/api/payment?ref=${_depositRef}`);
+    // Gọi API kiểm tra Sepay và tự cộng tiền
+    const resp   = await fetch(`/api/payment?ref=${_depositRef}`);
     const result = await resp.json();
 
-    if (result.found) {
-      // Kiểm tra credit có thực sự thành công không
-      if (result.result && result.result.success) {
-        // Cộng tiền thành công phía server → reload balance
-        clearDeposit();
-        const fresh = await getUserProfile(_firebaseUser.uid);
-        if (fresh) _userProfile = fresh;
-        refreshBalance();
-        document.getElementById('qrPayModal').style.display = 'none';
-        showToastV2(`✅ Nạp tiền thành công! +${_depositAmount.toLocaleString('vi-VN')} ₫`, 'ok');
-      } else if (result.result && result.result.error) {
-        // Tìm thấy giao dịch nhưng cộng tiền lỗi — thử lại sau
-        console.warn('[pollDeposit] credit lỗi:', result.result.error);
-        document.getElementById('qrStatus').textContent = '⚠️ Đang xử lý, vui lòng đợi...';
-      }
-      // Nếu result.result không có gì → cũng đợi tiếp
+    if (result.found && result.result && result.result.success) {
+      clearDeposit();
+      await refreshBalance();
+      document.getElementById('qrPayModal').style.display = 'none';
+      showToastV2(`✅ Nạp tiền thành công! +${_depositAmount.toLocaleString('vi-VN')} ₫`, 'ok');
+    } else if (result.found && result.result && result.result.error) {
+      console.warn('[pollDeposit] credit lỗi:', result.result.error);
+      document.getElementById('qrStatus').textContent = '⚠️ Đang xử lý, vui lòng đợi...';
     }
   } catch(e) {
     console.warn('Poll deposit:', e.message);
@@ -874,22 +848,11 @@ function expireDeposit() {
   const countdown = document.getElementById('qrCountdown');
   if (el) el.innerHTML = '❌ <span style="color:#ff4444">Hết thời gian! Lệnh nạp đã hủy.</span>';
   if (countdown) { countdown.textContent = '00:00'; countdown.style.color = '#ff4444'; }
-
-  // Đánh dấu expired trong Firestore
-  if (_depositRef) {
-    db.collection('pending_deposits').doc(_depositRef).update({ status: 'expired' }).catch(()=>{});
-  }
-
-  setTimeout(() => {
-    document.getElementById('qrPayModal').style.display = 'none';
-  }, 4000);
+  setTimeout(() => { document.getElementById('qrPayModal').style.display = 'none'; }, 4000);
 }
 
 function cancelDeposit() {
   clearDeposit();
-  if (_depositRef) {
-    db.collection('pending_deposits').doc(_depositRef).update({ status: 'cancelled' }).catch(()=>{});
-  }
   document.getElementById('qrPayModal').style.display = 'none';
 }
 
