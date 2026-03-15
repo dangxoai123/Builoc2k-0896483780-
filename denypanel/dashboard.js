@@ -112,12 +112,20 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     _firebaseUser = user;
-    // Load profile từ Firestore
-    _userProfile = await getUserProfile(user.uid);
+
+    // Load profile từ Firestore — thử lại nếu null (race condition sau khi đăng ký mới)
+    _userProfile = null;
+    for (let attempt = 1; attempt <= 4; attempt++) {
+      _userProfile = await getUserProfile(user.uid);
+      if (_userProfile) break;
+      // Chờ trước khi thử lại (document vừa được tạo, cần thời gian sync)
+      if (attempt < 4) await new Promise(r => setTimeout(r, attempt * 800));
+    }
+
     if (!_userProfile) {
-      // Tạo profile mặc định nếu chưa có (fallback)
+      // Fallback an toàn: dùng email gốc, username để trống (không dùng email prefix)
       _userProfile = {
-        username: user.email.split('@')[0],
+        username: '',
         email: user.email,
         balance: 0,
         role: 'user',

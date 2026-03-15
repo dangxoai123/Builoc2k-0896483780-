@@ -15,11 +15,14 @@ service cloud.firestore {
     // USERS collection
     // ==========================================
     match /users/{userId} {
-      // List query cho check username khi signup
+      // Admin đọc toàn bộ collection (bao gồm onSnapshot real-time)
+      allow read: if isAdmin();
+
+      // Bất kỳ ai cũng list được (dùng để check username trùng khi signup)
       allow list: if true;
-      // Read: chủ tài khoản hoặc admin
-      allow get: if request.auth != null &&
-        (request.auth.uid == userId || isAdmin());
+
+      // Chủ tài khoản đọc profile của mình
+      allow get: if request.auth != null && request.auth.uid == userId;
 
       // Chủ tài khoản tự cập nhật (không được đổi role/balance)
       allow update: if request.auth != null &&
@@ -31,7 +34,6 @@ service cloud.firestore {
       allow write: if request.auth != null && isAdmin();
 
       // Server webhook cộng balance (không có auth token)
-      // Chỉ cho phép update đúng field balance (không thêm field mới)
       allow update: if request.auth == null &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['balance']);
 
