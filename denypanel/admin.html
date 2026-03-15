@@ -5,11 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Panel - MMOpanel</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="firebase-config.js"></script>
+<!-- JWT Auth - Socket.io for realtime -->
+<script src="/socket.io/socket.io.js"></script>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   :root {
@@ -555,68 +552,53 @@ function fmtBal(usd) {
 // ==========================================
 // AUTH CHECK
 // ==========================================
-auth.onAuthStateChanged(async (user) => {
-  if (!user) {
-    document.getElementById('adminGate').style.display = 'flex';
-    return;
-  }
+// ==========================================
+// AUTH CHECK - JWT
+// ==========================================
+const _jwt = localStorage.getItem('jwt_token');
+if (!_jwt) {
+  document.getElementById('adminGate').style.display = 'flex';
+} else {
+  fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + _jwt } })
+    .then(r => r.json())
+    .then(async profile => {
+      if (!profile || profile.error) {
+        document.getElementById('adminGate').style.display = 'flex';
+        return;
+      }
+      const ADMIN_EMAILS = ['builoc1906@gmail.com', 'buinguyenloc112000@gmail.com'];
+      const isAdmin = profile.role === 'admin' || ADMIN_EMAILS.includes(profile.email);
+      if (!isAdmin) {
+        document.getElementById('adminGate').style.display = 'none';
+        document.getElementById('accessDenied').style.display = 'block';
+        document.getElementById('accessDenied').innerHTML = `
+          <div style="text-align:center;padding:80px 20px">
+            <div style="font-size:60px;margin-bottom:16px">🔒</div>
+            <h2 style="font-size:24px;font-weight:800;color:var(--red);margin-bottom:10px">Không có quyền truy cập</h2>
+            <p style="color:var(--gray);margin-bottom:20px">Tài khoản <strong>${profile.email}</strong> không có quyền Admin.</p>
+            <a href="dashboard.html" class="btn btn-blue" style="display:inline-flex">Về Dashboard</a>
+          </div>`;
+        setTimeout(() => { window.location.href = 'dashboard.html'; }, 3000);
+        return;
+      }
+      // Admin OK
+      _adminUid = profile.uid;
+      document.getElementById('adminGate').style.display = 'none';
+      document.getElementById('adminInitial').textContent = (profile.username || profile.email)[0].toUpperCase();
+      document.getElementById('adminEmail').textContent = profile.email;
 
-  // ====================================================
-  // SECURITY CHECK: Chỉ cho phép Admin vào trang này
-  // ====================================================
-  const ADMIN_UIDS = [
-    'iMNN0onFBDMayRjSrykxTVvoFn92',   // builoc1906@gmail.com
-    'rq67OcWVwRP8j5OoI0Wbj7FE7Zl1',   // buinguyenloc112000@gmail.com
-  ];
-
-  // Lấy profile để kiểm tra role
-  const profile = await getUserProfile(user.uid);
-  const isAdminUser = ADMIN_UIDS.includes(user.uid) || profile?.role === 'admin';
-
-  if (!isAdminUser) {
-    // Không phải admin → đăng xuất ngay lập tức và chuyển hướng
-    console.warn('[Admin] Truy cập bị từ chối cho:', user.email);
-    await auth.signOut();
-    document.getElementById('adminGate').style.display = 'none';
-    document.getElementById('accessDenied').style.display = 'block';
-    document.getElementById('accessDenied').innerHTML = `
-      <div style="text-align:center;padding:80px 20px">
-        <div style="font-size:60px;margin-bottom:16px">🔒</div>
-        <h2 style="font-size:24px;font-weight:800;color:var(--red);margin-bottom:10px">Không có quyền truy cập</h2>
-        <p style="color:var(--gray);margin-bottom:20px">Tài khoản <strong>${user.email}</strong> không có quyền Admin.</p>
-        <a href="dashboard.html" class="btn btn-blue" style="display:inline-flex">Về Dashboard</a>
-      </div>`;
-    // Tự chuyển hướng sau 3 giây
-    setTimeout(() => { window.location.href = 'dashboard.html'; }, 3000);
-    return;
-  }
-
-  // ====================================================
-  // Đã xác nhận là Admin → load dữ liệu
-  // ====================================================
-  _adminUid = user.uid;
-  document.getElementById('adminGate').style.display = 'none';
-
-  const name = profile?.username || user.email || 'Admin';
-  document.getElementById('adminInitial').textContent = name[0].toUpperCase();
-  document.getElementById('adminEmail').textContent = profile?.email || user.email;
-
-  // Load data
-  loadUsers();            // Tải ngay lập tức từ server (chắc chắn hoạt động)
-  startUsersListener();   // Real-time listener (cập nhật tức thì khi có user mới)
-
-  // Auto-refresh mỗi 30 giây để đảm bảo không bỏ sót user mới
-  if (window._adminRefreshInterval) clearInterval(window._adminRefreshInterval);
-  window._adminRefreshInterval = setInterval(() => {
-    loadUsers();
-    loadDashboard();
-  }, 30000);
-
-  await loadDashboard();
-  loadMarkupData();
-  loadPricingTable();
-  loadTransactions();
-});
+      // Load data
+      loadUsers();
+      startUsersListener();
+      if (window._adminRefreshInterval) clearInterval(window._adminRefreshInterval);
+      window._adminRefreshInterval = setInterval(() => { loadUsers(); loadDashboard(); }, 30000);
+      await loadDashboard();
+      loadMarkupData();
+      loadPricingTable();
+      loadTransactions();
+    })
+    .catch(() => { document.getElementById('adminGate').style.display = 'flex'; });
+}
 
 
 // ==========================================
@@ -636,26 +618,23 @@ function closeModal(id) {
 // ==========================================
 // DASHBOARD
 // ==========================================
+// ==========================================
+// DASHBOARD - PostgreSQL
+// ==========================================
 async function loadDashboard() {
   try {
-    // source:'server' — bypass Firestore cache, luôn lấy data mới nhất
-    const snap = await db.collection('users').get({ source: 'server' });
-    const users = snap.docs.map(d => d.data());
-    const totalBalance = users.reduce((sum, u) => sum + parseFloat(u.balance||0), 0);
-    const totalOrders  = users.reduce((sum, u) => sum + (parseInt(u.totalOrders)||0), 0);
+    const res   = await fetch('/api/admin/stats', { headers: { 'Authorization': 'Bearer ' + _jwt } });
+    const stats = await res.json();
+    document.getElementById('statTotalUsers').textContent   = stats.totalUsers || 0;
+    document.getElementById('statTotalBalance').textContent = fmtBal((stats.totalRevenue || 0) / 26294.5);
+    document.getElementById('statTotalOrders').textContent  = stats.totalOrders || 0;
+    document.getElementById('statServices').textContent     = '506';
 
-    document.getElementById('statTotalUsers').textContent    = users.length;
-    document.getElementById('statTotalBalance').textContent  = fmtBal(totalBalance);
-    document.getElementById('statTotalOrders').textContent   = totalOrders;
-    document.getElementById('statServices').textContent      = '—';
-
-    // Recent users (mới nhất lên đầu)
-    const sorted = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>{
-      const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds||0)*1000;
-      const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds||0)*1000;
-      return tb - ta;
-    });
-    document.getElementById('recentUsers').innerHTML = sorted.slice(0,5).map(u => `
+    // Recent users
+    const uRes  = await fetch('/api/admin/users', { headers: { 'Authorization': 'Bearer ' + _jwt } });
+    const uData = await uRes.json();
+    const recent = (uData.users || []).slice(0, 5);
+    document.getElementById('recentUsers').innerHTML = recent.map(u => `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
         <div>
           <div style="font-weight:600">${escapeHtml(u.username || '—')}</div>
@@ -675,64 +654,38 @@ let _usersUnsubscribe = null;
 function startUsersListener() {
   if (_usersUnsubscribe) _usersUnsubscribe();
 
-  // Hi\u1ec3n spinner ngay l\u1eadp t\u1ee9c
-  document.getElementById('usersTableBody').innerHTML =
-    '<tr><td colspan="7" style="text-align:center;color:var(--gray);padding:30px"><div class="spinner"></div> \u0110ang t\u1ea3i danh s\u00e1ch user...</td></tr>';
-
-  _usersUnsubscribe = db.collection('users').onSnapshot(
-    { includeMetadataChanges: false },
-    (snap) => {
-      _allUsers = snap.docs.map(d => ({uid: d.id, ...d.data()}));
-      _allUsers.sort((a, b) => {
-        const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds || 0) * 1000;
-        const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds || 0) * 1000;
-        return tb - ta;
-      });
+  // Socket.io real-time
+  if (window.io) {
+    const socket = window.io();
+    socket.on('new_user', (userData) => {
+      _allUsers.unshift(userData);
       document.getElementById('userCount').textContent = _allUsers.length;
       renderUsersTable(_allUsers);
-      // C\u1eadp nh\u1eadt dashboard stats
       const totalBalance = _allUsers.reduce((s,u) => s + parseFloat(u.balance||0), 0);
-      const totalOrders  = _allUsers.reduce((s,u) => s + (parseInt(u.totalOrders)||0), 0);
       const el1 = document.getElementById('statTotalUsers');
       const el2 = document.getElementById('statTotalBalance');
-      const el3 = document.getElementById('statTotalOrders');
       if (el1) el1.textContent = _allUsers.length;
       if (el2) el2.textContent = fmtBal(totalBalance);
-      if (el3) el3.textContent = totalOrders;
-    },
-    (err) => {
-      // onSnapshot th\u1ea5t b\u1ea1i \u2014 hi\u1ec3n l\u1ed7i r\u00f5 trong UI v\u00e0 fallback sang loadUsers()
-      console.error('[usersListener] L\u1ed7i snapshot:', err.message);
-      document.getElementById('usersTableBody').innerHTML =
-        `<tr><td colspan="7" style="text-align:center;color:var(--yellow);padding:30px">
-        \u26a0\ufe0f Real-time listener l\u1ed7i (${err.message}). \u0110ang t\u1ea3i th\u1ee7 c\u00f4ng...
-        </td></tr>`;
-      // Fallback: g\u1ecdi loadUsers() ti\u00eau chu\u1ea9n
-      loadUsers();
-    }
-  );
+    });
+  }
 }
 
 async function loadUsers() {
   document.getElementById('usersTableBody').innerHTML =
-    '<tr><td colspan="7" style="text-align:center;color:var(--gray);padding:30px"><div class="spinner"></div> \u0110ang t\u1ea3i...</td></tr>';
+    '<tr><td colspan="7" style="text-align:center;color:var(--gray);padding:30px"><div class="spinner"></div> Đang tải...</td></tr>';
   try {
-    const snap = await db.collection('users').get({ source: 'server' });
-    _allUsers = snap.docs.map(d => ({uid: d.id, ...d.data()}));
-    _allUsers.sort((a, b) => {
-      const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds || 0) * 1000;
-      const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds || 0) * 1000;
-      return tb - ta;
-    });
+    const res  = await fetch('/api/admin/users', { headers: { 'Authorization': 'Bearer ' + _jwt } });
+    const data = await res.json();
+    _allUsers  = data.users || [];
     document.getElementById('userCount').textContent = _allUsers.length;
     renderUsersTable(_allUsers);
   } catch(e) {
-    console.error('[loadUsers] L\u1ed7i:', e.message);
+    console.error('[loadUsers]', e.message);
     document.getElementById('usersTableBody').innerHTML =
       `<tr><td colspan="7" style="text-align:center;color:var(--red);padding:30px">
-      \u274c L\u1ed7i t\u1ea3i user: ${e.message}<br>
+      ❌ Lỗi tải user: ${e.message}<br>
       <button onclick="loadUsers()" style="margin-top:10px;padding:8px 20px;background:var(--green);color:#000;border:none;border-radius:8px;cursor:pointer;font-weight:700">
-        \u21ba T\u1ea3i l\u1ea1i
+        ↺ Tải lại
       </button></td></tr>`;
   }
 }
@@ -745,7 +698,7 @@ function renderUsersTable(users) {
   }
   tbody.innerHTML = users.map(u => {
     const bal = parseFloat(u.balance || 0);
-    const createdAt = u.createdAt?.toDate ? u.createdAt.toDate().toLocaleDateString('vi-VN') : '—';
+    const createdAt = u.created_at ? new Date(u.created_at).toLocaleDateString('vi-VN') : '—';
     const safeUsername = escapeHtml(u.username || '—');
     const safeEmail = escapeHtml(u.email || '—');
     const safeUid = escapeHtml(u.uid);
