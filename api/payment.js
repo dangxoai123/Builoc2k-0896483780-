@@ -117,14 +117,14 @@ const FIREBASE_PROJECT    = 'builoc2k-denypanel';
 const FIREBASE_WEB_API_KEY = 'AIzaSyDA6SIIeT8jlzLMyp1r6WnefnsGQxMgygA';
 const VND_DEPOSIT_RATE    = 26294.5;
 
-// Credit user via Firestore REST API dùng INCREMENT TRANSFORM (atomic, không cần đọc balance cũ)
+// Credit user via Firestore REST API — đọc balance cũ rồi ghi balance mới (upsert)
+// Hoạt động đúng với user mới chưa có document trong Firestore
 async function creditByRef(ref, amount, txId, description) {
   const qKey = `?key=${FIREBASE_WEB_API_KEY}`;
-  const aKey = `&key=${FIREBASE_WEB_API_KEY}`;
   const rqPath = `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents:runQuery${qKey}`;
 
   try {
-    // 1. Tìm pending deposit theo ref (allow read: if true)
+    // 1. Tìm pending deposit theo ref
     const qResp = await httpPost('firestore.googleapis.com', rqPath, JSON.stringify({
       structuredQuery: {
         from: [{ collectionId: 'pending_deposits' }],
@@ -139,32 +139,52 @@ async function creditByRef(ref, amount, txId, description) {
     const pDoc = JSON.parse(qResp).find(d => d.document)?.document;
     if (!pDoc) return { error: `No pending deposit: ${ref}` };
 
-    const uid          = pDoc.fields?.uid?.stringValue;
-    const email        = pDoc.fields?.email?.stringValue;
-    const pDocFullPath = `/v1/${pDoc.name}`;
+    const uid   = pDoc.fields?.uid?.stringValue;
+    const email = pDoc.fields?.email?.stringValue;
     if (!uid) return { error: 'No uid in pending deposit' };
 
-    const addUSD    = parseFloat((parseFloat(amount) / VND_DEPOSIT_RATE).toFixed(6));
-    const uFullPath = `projects/${FIREBASE_PROJECT}/databases/(default)/documents/users/${uid}`;
+    const addUSD   = parseFloat((parseFloat(amount) / VND_DEPOSIT_RATE).toFixed(6));
+    const uDocPath = `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/users/${uid}${qKey}`;
 
-    // 2. Dùng Firestore commit endpoint: cộng balance + đánh dấu pending completed trong 1 batch
+    // 2. Đọc balance hiện tại của user (GET)
+    //    Nếu user mới chưa có document → balance = 0 (upsert khi ghi)
+    let currentBalance = 0;
+    try {
+      const getResp = await httpGet('firestore.googleapis.com', uDocPath);
+      const getJson = JSON.parse(getResp);
+      if (!getJson.error) {
+        currentBalance = parseFloat(
+          getJson.fields?.balance?.doubleValue ||
+          getJson.fields?.balance?.integerValue || 0
+        );
+      }
+    } catch(e) {
+      console.log('[credit] GET user doc failed, assume balance=0:', e.message);
+    }
+
+    const newBalance = parseFloat((currentBalance + addUSD).toFixed(6));
+    console.log(`[credit] uid=${uid} balance: ${currentBalance} + ${addUSD} = ${newBalance}`);
+
+    // 3. Commit batch: ghi balance mới (upsert) + đánh dấu pending completed
     const commitPath = `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents:commit${qKey}`;
+    const uFullPath  = `projects/${FIREBASE_PROJECT}/databases/(default)/documents/users/${uid}`;
+    const pFullName  = pDoc.name.replace(/^projects\/[^/]+\/databases\/[^/]+\/documents\//, '');
+
     const commitBody = JSON.stringify({
       writes: [
-        // 2a. Increment balance — atomic, không cần đọc số dư cũ
-        {
-          transform: {
-            document: uFullPath,
-            fieldTransforms: [{
-              fieldPath: 'balance',
-              increment: { doubleValue: addUSD }
-            }]
-          }
-        },
-        // 2b. Đánh dấu pending_deposits = completed
+        // 3a. Cập nhật balance (updateMask → chỉ ghi field balance, không xóa các field khác)
+        //     Nếu document chưa tồn tại → Firestore sẽ tạo mới (upsert)
         {
           update: {
-            name: `projects/${FIREBASE_PROJECT}/databases/(default)/documents/${pDoc.name.replace(/^projects\/[^/]+\/databases\/[^/]+\/documents\//, '')}`,
+            name: uFullPath,
+            fields: { balance: { doubleValue: newBalance } }
+          },
+          updateMask: { fieldPaths: ['balance'] }
+        },
+        // 3b. Đánh dấu pending_deposits = completed
+        {
+          update: {
+            name: `projects/${FIREBASE_PROJECT}/databases/(default)/documents/${pFullName}`,
             fields: {
               status:      { stringValue: 'completed' },
               txId:        { stringValue: String(txId || ref) },
@@ -179,13 +199,12 @@ async function creditByRef(ref, amount, txId, description) {
     const commitResp = await httpPost('firestore.googleapis.com', commitPath, commitBody);
     const commitJson = JSON.parse(commitResp);
 
-    // Kiểm tra lỗi trong commit response
     if (commitJson.error) {
       console.error('[credit] commit error:', JSON.stringify(commitJson.error));
       return { error: commitJson.error.message || 'commit failed' };
     }
 
-    // 3. Ghi log transaction (allow create: if true)
+    // 4. Ghi log transaction
     await httpPost('firestore.googleapis.com',
       `/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents/transactions${qKey}`,
       JSON.stringify({ fields: {
@@ -202,8 +221,8 @@ async function creditByRef(ref, amount, txId, description) {
       }})
     );
 
-    console.log(`[credit] ✅ uid=${uid} +${amount}VND (+${addUSD}USD)`);
-    return { success: true, email, amount, amountUSD: addUSD };
+    console.log(`[credit] ✅ uid=${uid} +${amount}VND (+${addUSD}USD) newBal=${newBalance}`);
+    return { success: true, email, amount, amountUSD: addUSD, newBalance };
   } catch(e) {
     console.error('[credit] ❌', e.message);
     return { error: e.message };

@@ -629,12 +629,20 @@ async function loadDashboard() {
 async function loadUsers() {
   document.getElementById('usersTableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray);padding:30px"><div class="spinner"></div> Đang tải...</td></tr>';
   try {
-    const snap = await db.collection('users').orderBy('createdAt','desc').get();
+    // Không dùng orderBy để tránh yêu cầu index Firestore — sắp xếp trong JS
+    const snap = await db.collection('users').get();
     _allUsers = snap.docs.map(d => ({uid: d.id, ...d.data()}));
+    // Sắp xếp mới nhất lên đầu theo createdAt (trong JS)
+    _allUsers.sort((a, b) => {
+      const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : (a.createdAt?.seconds || 0) * 1000;
+      const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : (b.createdAt?.seconds || 0) * 1000;
+      return tb - ta;
+    });
     document.getElementById('userCount').textContent = _allUsers.length;
     renderUsersTable(_allUsers);
   } catch(e) {
-    document.getElementById('usersTableBody').innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--red);padding:30px">Lỗi: ${e.message}</td></tr>`;
+    console.error('[loadUsers] Lỗi:', e.message);
+    document.getElementById('usersTableBody').innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--red);padding:30px">❌ Lỗi tải danh sách user: ${e.message}</td></tr>`;
   }
 }
 
