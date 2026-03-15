@@ -807,7 +807,8 @@ button { cursor: pointer; font-family: 'Poppins', sans-serif; }
 }
 .plat-btn i { font-size: 14px !important; }
 
-.plat-btn:hover, .plat-btn.active { opacity: 1; border-color: var(--green); transform: scale(1.1); }
+.plat-btn:hover { opacity: 1; border-color: var(--green); transform: scale(1.1); }
+.plat-btn.active { opacity: 1; border-color: var(--green); transform: none; }
 
 .svc-search-box {
   display: flex;
