@@ -792,20 +792,20 @@ button { cursor: pointer; font-family: 'Poppins', sans-serif; }
 .platform-scroll::-webkit-scrollbar { display: none; }
 
 .plat-btn {
-  width: 38px; height: 38px;
+  width: 46px; height: 46px;
   border-radius: 50%;
   border: 2px solid transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: 18px;
   cursor: pointer;
   transition: var(--tr);
   flex-shrink: 0;
   opacity: 1;
   overflow: hidden;
 }
-.plat-btn i { font-size: 14px !important; }
+.plat-btn i { font-size: 17px !important; }
 
 .plat-btn:hover { opacity: 1; border-color: var(--green); transform: scale(1.1); }
 .plat-btn.active { opacity: 1; border-color: var(--green); transform: none; }
@@ -1505,7 +1505,7 @@ button { cursor: pointer; font-family: 'Poppins', sans-serif; }
   .page-content { padding: 8px; }
   .welcome-stats { flex-direction: column; }
   .welcome-stat-box { width: 100%; }
-  .plat-btn { width: 34px; height: 34px; font-size: 14px; }
+  .plat-btn { width: 40px; height: 40px; font-size: 16px; }
   .svc-service-row > div:nth-child(8) button { font-size: 11px; padding: 6px !important; }
 }
 
