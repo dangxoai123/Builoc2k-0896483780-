@@ -35,7 +35,9 @@ router.get('/', async (req, res) => {
 
   try {
     const servicesRaw = await callDenyPanelAPI({ action: 'services', key: SERVICES_API_KEY });
-    const services    = JSON.parse(servicesRaw);
+    let services;
+    try { services = JSON.parse(servicesRaw); } catch { services = []; }
+    if (!Array.isArray(services)) throw new Error('DenyPanel returned non-array: ' + servicesRaw.slice(0, 80));
     const refService  = services.find(s => String(s.service) === REF_SERVICE_ID);
 
     if (!refService) throw new Error('Reference service not found');
