@@ -1882,3 +1882,27 @@ function mobileNav(page) {
   const el = document.getElementById('topTitle');
   if (el && titles[page]) el.textContent = titles[page];
 }
+
+/** Chuyển tab phương thức nạp tiền: 'mbbank' hoặc 'usdt' */
+function switchFundTab(method) {
+  // Ẩn hết panels
+  ['mbbank', 'usdt'].forEach(m => {
+    const panel = document.getElementById('fundPanel-' + m);
+    if (panel) panel.style.display = 'none';
+    const tab = document.getElementById('fundTab-' + m);
+    if (tab) {
+      tab.style.border = '2px solid var(--border)';
+      tab.style.background = 'rgba(255,255,255,0.04)';
+      tab.style.color = 'var(--gray)';
+    }
+  });
+  // Hiện panel được chọn
+  const activePanel = document.getElementById('fundPanel-' + method);
+  if (activePanel) activePanel.style.display = 'block';
+  const activeTab = document.getElementById('fundTab-' + method);
+  if (activeTab) {
+    activeTab.style.border = '2px solid var(--green)';
+    activeTab.style.background = 'rgba(40,203,105,0.12)';
+    activeTab.style.color = 'var(--green)';
+  }
+}

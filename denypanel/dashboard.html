@@ -527,6 +527,21 @@ button.plat-btn i {
            ADD FUNDS
       ============================ -->
       <div class="page" id="page-funds">
+
+        <!-- Payment method tabs -->
+        <div style="display:flex;gap:10px;margin-bottom:18px">
+          <button id="fundTab-mbbank" onclick="switchFundTab('mbbank')"
+            style="flex:1;padding:12px;border-radius:12px;border:2px solid var(--green);background:rgba(40,203,105,0.12);color:var(--green);font-weight:700;font-size:14px;cursor:pointer;transition:all 0.2s;font-family:'Poppins',sans-serif">
+            🏦 MBBank
+          </button>
+          <button id="fundTab-usdt" onclick="switchFundTab('usdt')"
+            style="flex:1;padding:12px;border-radius:12px;border:2px solid var(--border);background:rgba(255,255,255,0.04);color:var(--gray);font-weight:700;font-size:14px;cursor:pointer;transition:all 0.2s;font-family:'Poppins',sans-serif">
+            💎 USDT (TRC20)
+          </button>
+        </div>
+
+        <!-- ===== MBBank Panel ===== -->
+        <div id="fundPanel-mbbank">
         <div class="funds-layout">
           <!-- Left: Amount input -->
           <div class="funds-main-card">
@@ -582,6 +597,90 @@ button.plat-btn i {
             <div class="contact-item"><i class="fas fa-phone"></i> Zalo: +84896483780</div>
           </div>
         </div>
+        </div><!-- /fundPanel-mbbank -->
+
+        <!-- ===== USDT TRC20 Panel ===== -->
+        <div id="fundPanel-usdt" style="display:none">
+          <div class="funds-layout">
+            <!-- Left: QR + Address -->
+            <div class="funds-main-card">
+              <div class="funds-header">
+                <div class="funds-header-left">
+                  <div class="funds-header-icon" style="background:rgba(38,161,123,0.15);color:#26a17b">
+                    <i class="fas fa-coins"></i>
+                  </div>
+                  Nạp tiền USDT TRC20
+                </div>
+                <span style="background:rgba(38,161,123,0.15);color:#26a17b;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:700">💎 Tether</span>
+              </div>
+
+              <!-- QR Code -->
+              <div style="text-align:center;margin:20px 0">
+                <div style="background:#fff;border-radius:16px;padding:16px;display:inline-block;box-shadow:0 4px 20px rgba(0,0,0,0.3)">
+                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=TR9ntWk6SNng4p9KsqPgG7MaUuhhJkzJVn"
+                       alt="USDT TRC20 QR" style="width:180px;height:180px;display:block">
+                </div>
+                <div style="margin-top:10px;font-size:12px;color:var(--gray)">Mạng lưới: <strong style="color:#26a17b">Tron (TRC20)</strong></div>
+              </div>
+
+              <!-- Address -->
+              <div style="font-size:12px;color:var(--gray);margin-bottom:6px;font-weight:600">Địa chỉ ví USDT</div>
+              <div style="background:rgba(38,161,123,0.08);border:1px solid rgba(38,161,123,0.25);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                <code style="flex:1;font-family:monospace;font-size:13px;color:#26a17b;font-weight:700;word-break:break-all;min-width:0">TR9ntWk6SNng4p9KsqPgG7MaUuhhJkzJVn</code>
+                <button onclick="copyText('TR9ntWk6SNng4p9KsqPgG7MaUuhhJkzJVn')"
+                  style="background:rgba(38,161,123,0.2);border:none;color:#26a17b;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap;font-family:'Poppins',sans-serif;flex-shrink:0">
+                  <i class="fas fa-copy"></i> Copy
+                </button>
+              </div>
+
+              <!-- Warning -->
+              <div style="margin-top:14px;background:rgba(255,193,7,0.08);border:1px solid rgba(255,193,7,0.25);border-radius:10px;padding:12px 14px">
+                <div style="font-size:12px;color:#ffc107;font-weight:600;margin-bottom:4px">⚠️ Lưu ý quan trọng</div>
+                <div style="font-size:12px;color:var(--gray2);line-height:1.7">
+                  Chỉ gửi <strong style="color:#26a17b">USDT</strong> trên mạng <strong style="color:#26a17b">TRC20</strong>.<br>
+                  Không gửi các loại token khác hoặc sai mạng lưới — có thể mất tiền vĩnh viễn.
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Instructions -->
+            <div class="funds-note-card">
+              <div class="funds-note-icon" style="background:rgba(38,161,123,0.15);color:#26a17b"><i class="fas fa-info-circle"></i></div>
+              <h3>Hướng dẫn nạp USDT</h3>
+              <div style="display:grid;gap:10px;margin-top:12px">
+                <div style="display:flex;gap:10px;align-items:flex-start">
+                  <span style="background:#26a17b;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex-shrink:0">1</span>
+                  <p style="font-size:13px">Sao chép địa chỉ ví hoặc quét mã QR bên trái</p>
+                </div>
+                <div style="display:flex;gap:10px;align-items:flex-start">
+                  <span style="background:#26a17b;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex-shrink:0">2</span>
+                  <p style="font-size:13px">Gửi USDT qua mạng <strong>TRC20</strong> đến địa chỉ trên</p>
+                </div>
+                <div style="display:flex;gap:10px;align-items:flex-start">
+                  <span style="background:#26a17b;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:11px;flex-shrink:0">3</span>
+                  <p style="font-size:13px"><strong>Liên hệ admin</strong> để được duyệt số dư sau khi giao dịch thành công</p>
+                </div>
+              </div>
+
+              <!-- Prominent admin contact note -->
+              <div style="margin-top:16px;background:rgba(40,203,105,0.1);border:1px solid rgba(40,203,105,0.3);border-radius:12px;padding:14px">
+                <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:10px">📢 Nạp tiền xong liên hệ admin để duyệt!</div>
+                <a href="https://t.me/Builoc2k" target="_blank"
+                  class="btn-dat-hang" style="display:inline-flex;padding:10px 20px;font-size:13px;margin-bottom:8px;text-decoration:none">
+                  <i class="fab fa-telegram"></i> Telegram: t.me/Builoc2k
+                </a><br>
+                <div class="contact-item" style="margin-top:8px"><i class="fas fa-phone"></i> Zalo: +84896483780</div>
+              </div>
+
+              <hr style="border-color:var(--border);margin:16px 0">
+              <p style="color:var(--gray2);font-size:12px;line-height:1.7">
+                ⚡ Thời gian xác nhận: <strong>5–30 phút</strong> sau khi giao dịch on-chain.<br>
+                Cần <strong>20 xác nhận</strong> trên mạng Tron để được duyệt.
+              </p>
+            </div>
+          </div>
+        </div><!-- /fundPanel-usdt -->
+
       </div>
 
       <!-- ===========================
@@ -975,8 +1074,8 @@ button.plat-btn i {
 </div>
 
 
-<script src="api.js?v=20260315j"></script>
-<script src="dashboard.js?v=20260315j"></script>
+<script src="api.js?v=20260315l"></script>
+<script src="dashboard.js?v=20260315l"></script>
 
 
 
