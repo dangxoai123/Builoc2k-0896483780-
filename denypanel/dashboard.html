@@ -66,7 +66,44 @@ button.plat-btn i {
   /* Ẩn nút toggle desktop, hiện hamburger mobile */
   .desktop-only-btn { display: none !important; }
   #mobileHamburgerBtn { display: flex !important; }
+
+  /* ===== FUNDS PAGE MOBILE ===== */
+  /* Tabs nạp tiền: xếp ngang, nhỏ lại */
+  #page-funds > div:first-child {
+    flex-direction: row !important;
+    gap: 8px !important;
+    margin-bottom: 14px !important;
+  }
+  #page-funds > div:first-child button {
+    font-size: 12px !important;
+    padding: 10px 6px !important;
+  }
+
+  /* funds-layout: 1 cột */
+  .funds-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+  }
+  .funds-main-card,
+  .funds-note-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* QR code nhỏ lại trên mobile */
+  #fundPanel-usdt img[alt="USDT TRC20 QR"] {
+    width: 150px !important;
+    height: 150px !important;
+  }
+
+  /* Địa chỉ ví: chữ nhỏ hơn */
+  #fundPanel-usdt code {
+    font-size: 11px !important;
+  }
 }
+
 @media (min-width: 769px) {
   /* Ẩn mobile drawer trên desktop */
   #mobileDrawer, #mobileDrawerOverlay { display: none !important; }
