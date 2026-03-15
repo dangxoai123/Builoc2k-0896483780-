@@ -780,38 +780,20 @@ async function applyBalance() {
   btn.disabled = true;
 
   try {
-    const userRef = db.collection('users').doc(_currentEditUid);
-    const userDoc = await userRef.get();
-    const currentBal = parseFloat(userDoc.data().balance || 0);
-
-    // ⚠️ Admin nhập số tiền bằng VND, balance lưu bằng USD
-    // Cần chia cho ADMIN_VND_RATE trước khi lưu
     const amountUSD = amount / ADMIN_VND_RATE;
+    const type = _balMode === 'add' ? 'add' : _balMode === 'sub' ? 'sub' : 'set';
 
-    let newBal;
-    if (_balMode === 'add') newBal = currentBal + amountUSD;
-    else if (_balMode === 'sub') newBal = Math.max(0, currentBal - amountUSD);
-    else newBal = amountUSD; // set: nhập VND, lưu USD tương đương
-
-    await userRef.update({ balance: newBal });
-
-    // Ghi lịch sử giao dịch
-    await db.collection('transactions').add({
-      uid: _currentEditUid,
-      email: _currentEditEmail,
-      type: _balMode,
-      amount: amount,
-      balanceBefore: currentBal,
-      balanceAfter: newBal,
-      note: note || '',
-      adminUid: _adminUid,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    const res  = await fetch(`/api/admin/users/${_currentEditUid}/balance`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _jwt },
+      body: JSON.stringify({ amount: amountUSD, type, description: note || 'Admin adjustment' })
     });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Lỗi cập nhật');
 
+    const newBal = data.newBalance;
     document.getElementById('currentBalanceDisplay').textContent = fmtBal(newBal);
     showAlert(alertOk, `✅ Thành công! Số dư mới: ${fmtBal(newBal)}`);
-
-    // Cập nhật bảng
     const u = _allUsers.find(x => x.uid === _currentEditUid);
     if (u) u.balance = newBal;
     renderUsersTable(_allUsers);
@@ -845,7 +827,12 @@ async function saveUserEdit() {
   alertOk.style.display = 'none'; alertErr.style.display = 'none';
 
   try {
-    await db.collection('users').doc(_currentEditUid).update({ username, role });
+    const res  = await fetch(`/api/admin/users/${_currentEditUid}/info`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _jwt },
+      body: JSON.stringify({ username, role })
+    });
+    if (!res.ok) throw new Error('Cập nhật thất bại');
     const u = _allUsers.find(x => x.uid === _currentEditUid);
     if (u) { u.username = username; u.role = role; }
     renderUsersTable(_allUsers);
@@ -854,26 +841,17 @@ async function saveUserEdit() {
 }
 
 async function sendResetEmail() {
-  try {
-    await auth.sendPasswordResetEmail(_currentEditEmail);
-    showAlert(document.getElementById('userAlert'), `✅ Đã gửi email đặt lại mật khẩu đến ${_currentEditEmail}`);
-  } catch(e) {
-    showAlert(document.getElementById('userAlertErr'), 'Lỗi: ' + e.message);
-  }
+  showAlert(document.getElementById('userAlert'), `ℹ️ Tính năng reset mật khẩu qua email sẽ được thêm sau.`);
 }
 
 // ==========================================
 // PRICING / MARKUP
 // ==========================================
 async function loadMarkupData() {
-  try {
-    const doc = await db.collection('settings').doc('pricing').get();
-    if (doc.exists) {
-      const data = doc.data();
-      _markupData = data.services || {};
-      document.getElementById('globalMarkup').value = data.globalMarkup || 0;
-    }
-  } catch(e) { console.error(e); }
+  // Markup data - có thể mở rộng sau với PostgreSQL settings table
+  _markupData = {};
+  const globalMarkupEl = document.getElementById('globalMarkup');
+  if (globalMarkupEl) globalMarkupEl.value = 0;
 }
 
 async function loadPricingTable() {

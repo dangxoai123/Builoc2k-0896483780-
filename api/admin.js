@@ -49,25 +49,40 @@ router.post('/users/:uid/balance', async (req, res) => {
     const user    = userRes.rows[0];
     if (!user) return res.status(404).json({ error: 'User không tồn tại' });
 
-    const amountUSD  = parseFloat(amount);
-    const newBalance = parseFloat(
-      type === 'add' ? user.balance + amountUSD : user.balance - amountUSD
-    ).toFixed(6);
+    const amountUSD    = parseFloat(amount);
+    const currentBal   = parseFloat(user.balance || 0);
+    let newBalance;
+    if (type === 'add') newBalance = currentBal + amountUSD;
+    else if (type === 'sub') newBalance = Math.max(0, currentBal - amountUSD);
+    else newBalance = amountUSD; // set
+    newBalance = parseFloat(newBalance.toFixed(6));
 
     await pool.query('UPDATE users SET balance=$1 WHERE uid=$2', [newBalance, uid]);
 
-    // Ghi log transaction
     await pool.query(
       `INSERT INTO transactions (user_id, type, amount, amount_usd, description)
        VALUES ($1, $2, $3, $4, $5)`,
-      [user.id, type === 'add' ? 'add' : 'deduct', amountUSD, amountUSD, description || 'Admin adjustment']
+      [user.id, type === 'sub' ? 'deduct' : type, amountUSD, amountUSD, description || 'Admin adjustment']
     );
 
-    res.json({ success: true, newBalance: parseFloat(newBalance) });
+    res.json({ success: true, newBalance });
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
 });
+
+// POST /api/admin/users/:uid/info — Cập nhật username/role
+router.post('/users/:uid/info', async (req, res) => {
+  const { uid } = req.params;
+  const { username, role } = req.body;
+  try {
+    await pool.query('UPDATE users SET username=$1, role=$2 WHERE uid=$3', [username, role, uid]);
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 
 // GET /api/admin/stats
 router.get('/stats', async (req, res) => {
