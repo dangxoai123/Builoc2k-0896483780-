@@ -12,64 +12,55 @@
  * ==========================================
  */
 
-const https = require('https');
-const querystring = require('querystring');
+const express = require('express');
+const router  = express.Router();
+const https   = require('https');
+const qs      = require('querystring');
 
-const API_KEY = '2a6149e2e8ff0be95ded16a8e408e2d6';      // Key đặt hàng (cũ)
-const SERVICES_API_KEY = '58788d220d60bd1d1110e7871f5871d3'; // Key đồng bộ giá (mới)
-// Service tham chiếu để tính tỷ giá (ID ổn định, có trên DenyPanel)
-const REF_SERVICE_ID = '1536';
-// Fallback nếu không lấy được tỷ giá từ DenyPanel
-const FALLBACK_RATE = 26294.5; // Tỷ giá thực DenyPanel hiển thị (~26,294 VND/USD)
+const API_KEY          = '2a6149e2e8ff0be95ded16a8e408e2d6';
+const SERVICES_API_KEY = '58788d220d60bd1d1110e7871f5871d3';
+const REF_SERVICE_ID   = '1536';
+const FALLBACK_RATE    = 26294.5;
 
-// Cache trong memory (tối đa 5 phút)
 let cachedRate = null;
-let cacheTime = 0;
-const CACHE_TTL = 5 * 60 * 1000; // 5 phút
+let cacheTime  = 0;
+const CACHE_TTL = 5 * 60 * 1000;
 
-module.exports = async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=60');
+router.get('/', async (req, res) => {
+  res.setHeader('Cache-Control', 'public, s-maxage=300');
 
-  if (req.method === 'OPTIONS') return res.status(204).end();
-
-  // Trả cache nếu còn hiệu lực
   if (cachedRate && Date.now() - cacheTime < CACHE_TTL) {
-    return res.status(200).json({ rate: cachedRate, source: 'cache' });
+    return res.json({ rate: cachedRate, source: 'cache' });
   }
 
   try {
-    // Bước 1: Lấy giá USD của dịch vụ tham chiếu từ DenyPanel API
     const servicesRaw = await callDenyPanelAPI({ action: 'services', key: SERVICES_API_KEY });
-    const services = JSON.parse(servicesRaw);
-    const refService = services.find(s => String(s.service) === REF_SERVICE_ID);
+    const services    = JSON.parse(servicesRaw);
+    const refService  = services.find(s => String(s.service) === REF_SERVICE_ID);
 
     if (!refService) throw new Error('Reference service not found');
     const usdRate = parseFloat(refService.rate);
 
-    // Bước 2: Fetch trang DenyPanel với cookie VND để lấy giá hiển thị
     const html = await fetchDenyPanelPage();
-
-    // Bước 3: Tìm giá VND trong HTML (tìm pattern: số thập phân dài gần service 1536)
     const rate = parseExchangeRate(html, usdRate);
 
     if (rate && rate > 20000 && rate < 35000) {
       cachedRate = rate;
-      cacheTime = Date.now();
+      cacheTime  = Date.now();
       console.log(`[Rate] Fetched from DenyPanel: 1 USD = ${rate} VND`);
-      return res.status(200).json({ rate, usdRate, source: 'denypanel' });
+      return res.json({ rate, source: 'denypanel' });
     }
-
-    throw new Error('Could not parse VND rate from DenyPanel page');
-
+    throw new Error('Could not parse VND rate');
   } catch (err) {
     console.warn('[Rate] Error, using fallback:', err.message);
     cachedRate = FALLBACK_RATE;
-    cacheTime = Date.now();
-    return res.status(200).json({ rate: FALLBACK_RATE, source: 'fallback', error: err.message });
+    cacheTime  = Date.now();
+    res.json({ rate: FALLBACK_RATE, source: 'fallback' });
   }
-};
+});
+
+module.exports = router;
+
 
 /**
  * Gọi DenyPanel API
