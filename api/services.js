@@ -22,9 +22,17 @@ router.get('/', async (req, res) => {
   }
 
   try {
-    const raw    = await fetchServices();
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) throw new Error('Invalid response from DenyPanel');
+    const raw = await fetchServices();
+    let parsed;
+    try { parsed = JSON.parse(raw); } catch { parsed = null; }
+
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      console.warn('[Services] DenyPanel returned non-array, raw:', raw.slice(0, 120));
+      // Nếu có cache cũ dùng tạm
+      if (_cache) return res.json(_cache);
+      // Không có cache → trả error rõ ràng (dashboard sẽ dùng demo)
+      return res.status(502).json({ error: 'DenyPanel API không khả dụng', raw: raw.slice(0, 120) });
+    }
 
     _cache     = parsed;
     _cacheTime = Date.now();
@@ -32,7 +40,7 @@ router.get('/', async (req, res) => {
     res.json(parsed);
   } catch (err) {
     console.error('[Services] Error:', err.message);
-    if (_cache) return res.json(_cache);          // Dùng cache cũ
+    if (_cache) return res.json(_cache);
     res.status(500).json({ error: err.message });
   }
 });

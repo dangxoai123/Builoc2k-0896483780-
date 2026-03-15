@@ -20,29 +20,6 @@ const pool = new Pool({
   password: process.env.DB_PASS     || 'mmopanel2026',
 });
 
-// Auto-GRANT permissions khi khởi động (fix permission denied)
-(async () => {
-  const superPool = new Pool({
-    host: 'localhost', port: 5432, database: 'mmopanel',
-    user: process.env.DB_SUPERUSER || 'postgres',
-    password: process.env.DB_SUPERPASS || '',
-  });
-  try {
-    await superPool.query(`
-      GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO mmopanel;
-      GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO mmopanel;
-      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO mmopanel;
-      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO mmopanel;
-    `);
-    console.log('[DB] ✅ PostgreSQL permissions granted to mmopanel');
-  } catch (e) {
-    console.warn('[DB] GRANT skipped (may already have perms):', e.message);
-  } finally {
-    await superPool.end();
-  }
-})();
-
-
 const JWT_SECRET = process.env.JWT_SECRET || 'mmopanel_jwt_secret_2026';
 const ADMIN_EMAILS = ['builoc1906@gmail.com', 'buinguyenloc112000@gmail.com'];
 
