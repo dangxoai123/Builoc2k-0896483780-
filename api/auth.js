@@ -57,6 +57,9 @@ router.post('/register', async (req, res) => {
   if (!username || !email || !password) {
     return res.status(400).json({ error: 'Thiếu thông tin' });
   }
+  if (username.trim().length > 30) {
+    return res.status(400).json({ error: 'Tên hình anh (username) tối đa 30 ký tự' });
+  }
   if (password.length < 6) {
     return res.status(400).json({ error: 'Mật khẩu phải ít nhất 6 ký tự' });
   }
