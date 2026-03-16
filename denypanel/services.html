@@ -205,12 +205,21 @@
 /**
  * services.html - Public services listing
  * Prices are fetched LIVE from MMOpanel API via api.js
- * VND_RATE = 27,000 (official MMOpanel exchange rate)
+ * VND_RATE = 26,294.5 (official MMOpanel exchange rate)
  */
-const VND_RATE = 26294.5; // Tỷ giá thực MMOpanel (~26,294 VND/USD)
+const VND_RATE = 26294.5;
 let currentFilter = 'all';
 let svcData = [];
+let svcDescriptions = {};
 let currentCur = localStorage.getItem('svc_currency') || 'USD';
+
+/** Load descriptions từ JSON file (giống dashboard) */
+async function loadSvcDescriptions() {
+  try {
+    const r = await fetch('service-descriptions.json');
+    if (r.ok) svcDescriptions = await r.json();
+  } catch(e) { console.warn('Could not load service-descriptions.json', e.message); }
+}
 
 /** Format price in current currency with sub-price in the other */
 function fmtRate(usdRate) {
@@ -220,7 +229,6 @@ function fmtRate(usdRate) {
     const vndStr = vnd.toLocaleString('vi-VN', { maximumFractionDigits: 0 }) + ' ₫';
     return { main: vndStr, sub: '$' + r.toFixed(2) + ' USD' };
   }
-  // USD mode
   const vnd = r * VND_RATE;
   const vndStr = vnd.toLocaleString('vi-VN', { maximumFractionDigits: 0 }) + ' ₫';
   return { main: '$' + r.toFixed(2), sub: '≈ ' + vndStr };
@@ -235,8 +243,10 @@ function setCur(c) {
 }
 
 async function init() {
-  svcData = await MMOpanelAPI.getServices();
-  // Apply stored preference
+  [svcData] = await Promise.all([
+    MMOpanelAPI.getServices(),
+    loadSvcDescriptions()
+  ]);
   document.getElementById('curUSD').classList.toggle('active', currentCur === 'USD');
   document.getElementById('curVND').classList.toggle('active', currentCur === 'VND');
   renderServices();
@@ -284,7 +294,7 @@ function renderServices() {
           <div class="svc-num">${Number(s.min).toLocaleString()}</div>
           <div class="svc-max-red">${Number(s.max).toLocaleString()}</div>
           <div class="svc-time">Đang tính toán</div>
-          <div><button class="btn-chitiet" onclick='showSvcDetail(${JSON.stringify(s).replace(/'/g, "&apos;")})'>Chi tiết</button></div>
+          <div><button class="btn-chitiet" onclick='showSvcDetail(${JSON.stringify(s).replace(/'/g, "&apos;")})'> Chi tiết</button></div>
         </div>`;
     });
   }
@@ -296,20 +306,65 @@ function toggleMenu() { document.getElementById('mobileMenu').classList.toggle('
 // ============================
 // SERVICE DETAIL MODAL
 // ============================
+function esc(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function parseDescField(text, field) {
+  const re = new RegExp(field + '[:\\s]+([^\\n]+)', 'i');
+  const m = text.match(re);
+  return m ? m[1].trim() : '';
+}
+
 function showSvcDetail(s) {
+  // Lấy description từ service-descriptions.json (giống dashboard)
+  const rawDesc = svcDescriptions[String(s.service)] || '';
+
+  // Parse Speed, Refill, Quality, Link từ description text
+  const speed    = parseDescField(rawDesc, 'Speed') || (s.type && s.type !== 'Default' ? s.type : 'Đang tính toán');
+  const refill   = parseDescField(rawDesc, 'Refill') || (s.refill ? '30 Ngày' : 'Không bảo hành');
+  const quality  = parseDescField(rawDesc, 'Quality') || 'Rất Tốt';
+  const link     = parseDescField(rawDesc, 'Link') || 'https://...';
+  const startTime = parseDescField(rawDesc, 'B[áa]t đầu sau|Start Time');
+
+  // Lấy phần description text (bỏ các dòng Speed/Refill/Quality/Link ở đầu)
+  let descText = '';
+  if (rawDesc) {
+    const descLines = rawDesc.split('\n').map(l => l.trim()).filter(Boolean);
+    const skipPrefixes = ['Speed:', 'Refill:', 'Quality:', 'Link:'];
+    const bodyLines = descLines.filter(l => !skipPrefixes.some(p => l.toLowerCase().startsWith(p.toLowerCase())));
+    descText = bodyLines.join('\n').trim();
+  } else {
+    descText = s.name;
+  }
+
+  // Giá
   const r = parseFloat(s.rate || 0);
   const vnd = (r * VND_RATE).toLocaleString('vi-VN', { maximumFractionDigits: 0 }) + ' ₫';
   const usd = '$' + r.toFixed(4);
+  const rateStr = currentCur === 'VND' ? vnd : usd;
 
   document.getElementById('sdmId').textContent = s.service;
   document.getElementById('sdmName').textContent = s.name;
-  document.getElementById('sdmSpeed').textContent = s.type && s.type !== 'Default' ? s.type : 'N/A';
-  document.getElementById('sdmRefill').textContent = s.refill ? 'Có bảo hành' : 'Không bảo hành';
-  document.getElementById('sdmQuality').textContent = 'Rất Tốt';
-  document.getElementById('sdmRate').textContent = currentCur === 'VND' ? vnd : usd;
+  document.getElementById('sdmSpeed').textContent = speed;
+  document.getElementById('sdmRefill').textContent = refill;
+  document.getElementById('sdmQuality').textContent = quality;
+  document.getElementById('sdmRate').textContent = rateStr + ' /1k';
   document.getElementById('sdmMin').textContent = Number(s.min).toLocaleString();
   document.getElementById('sdmMax').textContent = Number(s.max).toLocaleString();
-  document.getElementById('sdmDesc').textContent = s.description || s.name || '';
+  document.getElementById('sdmLink').textContent = link;
+
+  // Build description HTML (giống dashboard)
+  let descHtml = '';
+  if (startTime) {
+    descHtml += `<div style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;gap:8px;align-items:baseline"><span style="font-size:13px;color:#bfd5fd;font-weight:600;min-width:110px">Start Time:</span><span style="font-size:13px;color:#e6edf3;font-weight:700">${esc(startTime)}</span></div>`;
+  }
+  if (descText) {
+    descHtml += `<div style="padding:14px 0"><p style="font-size:13px;color:#c9d1d9;line-height:1.85;white-space:pre-line">${esc(descText)}</p></div>`;
+  } else {
+    descHtml = `<p style="color:#7d8590;font-style:italic">Không có mô tả cho dịch vụ này.</p>`;
+  }
+  document.getElementById('sdmDesc').innerHTML = descHtml;
 
   const modal = document.getElementById('svcDetailModal');
   modal.style.display = 'flex';
@@ -342,33 +397,37 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSvcDeta
     </div>
     <!-- Scrollable list -->
     <div style="overflow-y:auto;padding:0 28px;flex:1;scrollbar-width:thin;scrollbar-color:#28cb69 #0d1117">
-      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px">
+      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:baseline">
         <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:90px">Speed:</span>
         <span id="sdmSpeed" style="font-size:14px;color:#e6edf3;font-weight:700">-</span>
       </div>
-      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px">
+      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:baseline">
         <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:90px">Refill:</span>
         <span id="sdmRefill" style="font-size:14px;color:#e6edf3;font-weight:700">-</span>
       </div>
-      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px">
+      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:baseline">
         <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:90px">Quality:</span>
         <span id="sdmQuality" style="font-size:14px;color:#e6edf3;font-weight:700">Rất Tốt</span>
       </div>
-      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px">
+      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:baseline">
         <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:90px">Giá/1000:</span>
         <span id="sdmRate" style="font-size:14px;color:#28cb69;font-weight:800">-</span>
       </div>
-      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px">
+      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:baseline">
         <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:90px">Min/Max:</span>
         <span style="font-size:14px;color:#e6edf3;font-weight:700"><span id="sdmMin">-</span> / <span id="sdmMax">-</span></span>
       </div>
-      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px">
+      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:baseline">
         <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:90px">Link:</span>
-        <span style="font-size:14px;color:#e6edf3"></span>
+        <span id="sdmLink" style="font-size:14px;color:#e6edf3">-</span>
       </div>
-      <div style="padding:16px 0">
-        <p id="sdmDesc" style="font-size:13px;color:#bfd5fd;line-height:1.8">-</p>
-      </div>
+      <div id="sdmDesc" style="padding:4px 0"></div>
+    </div>
+    <!-- Login button -->
+    <div style="padding:16px 28px 24px;border-top:1px solid #111620;flex-shrink:0">
+      <a href="login.html" style="width:100%;padding:15px;background:#28cb69;color:#fff;border:none;border-radius:50px;font-size:15px;font-weight:700;cursor:pointer;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.25s;box-shadow:0 4px 20px rgba(40,203,105,0.35);text-decoration:none">
+        <i class="fas fa-sign-in-alt"></i> Đăng nhập để mua
+      </a>
     </div>
   </div>
 </div>
