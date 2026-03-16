@@ -1174,17 +1174,22 @@ function modalBuyNow() {
 
 function buyNowSvc(serviceId) {
   closeSvcModal();
-  showPage('order', document.getElementById('sb-order'));
 
-  // Chuyển về tab "Đặt hàng" (tránh bị kẹt ở tab Yêu thích)
-  const orderTabBtn = document.getElementById('orderTab-order');
-  if (orderTabBtn) switchOrderTab('order', orderTabBtn);
+  // Lưu service trước khi DOM có thể bị xóa
+  const svc = allServicesData.find(s => s.service == serviceId);
+  if (!svc) { console.warn('[buyNowSvc] Service not found:', serviceId); return; }
 
+  // Dùng setTimeout(0) để chạy sau khi event bubble xong
+  // (tránh switchOrderTab xóa DOM node đang click làm cancel event)
   setTimeout(() => {
-    const svc = allServicesData.find(s => s.service == serviceId);
-    if (!svc) { console.warn('[buyNowSvc] Service not found:', serviceId); return; }
+    // Chuyển sang trang order
+    showPage('order', document.getElementById('sb-order'));
 
-    // Bước 1: Chọn category - cập nhật custom dropdown UI + populate service list
+    // Chuyển về tab Đặt hàng (hiện form)
+    const orderTabBtn = document.getElementById('orderTab-order');
+    if (orderTabBtn) switchOrderTab('order', orderTabBtn);
+
+    // Bước 1: Chọn category - update custom dropdown UI + populate service list
     selectCustomCategory(svc.category, 'pageCatDrop', 'page');
 
     // Bước 2: Chờ service list populate xong rồi chọn đúng service
@@ -1193,17 +1198,15 @@ function buyNowSvc(serviceId) {
       if (!svcSel) return;
 
       // Tìm option khớp (so sánh cả number và string)
-      let found = false;
       for (let i = 0; i < svcSel.options.length; i++) {
         if (svcSel.options[i].value == serviceId) {
           svcSel.selectedIndex = i;
-          found = true;
           break;
         }
       }
 
-      // Nếu không tìm thấy - populate lại trực tiếp
-      if (!found) {
+      // Nếu chưa có - populate lại rồi tìm lại
+      if (!svcSel.value || svcSel.value != serviceId) {
         populateServiceSel('pageServiceSelect', svc.category);
         for (let i = 0; i < svcSel.options.length; i++) {
           if (svcSel.options[i].value == serviceId) {
@@ -1215,7 +1218,7 @@ function buyNowSvc(serviceId) {
 
       pageOnServiceChange();
     }, 400);
-  }, 300);
+  }, 0);
 }
 
 // ==========================================
