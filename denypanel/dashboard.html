@@ -124,8 +124,9 @@ button.plat-btn i {
       <button onclick="closeMobileDrawer()" style="margin-left:auto;background:none;border:none;color:#7d8590;font-size:18px;cursor:pointer"><i class="fas fa-times"></i></button>
     </div>
     <div style="display:flex;flex-direction:column;padding:8px 0">
-      <button class="md-item" onclick="mobileNav('home')"><i class="fas fa-home"></i><span>Đặt hàng</span></button>
+      <button class="md-item" onclick="mobileNav('home')"><i class="fas fa-home"></i><span>Trang chủ</span></button>
       <button class="md-item" onclick="mobileNav('services')"><i class="fas fa-money-check-alt"></i><span>Dịch vụ</span></button>
+      <button class="md-item" onclick="mobileNav('order')"><i class="fas fa-receipt"></i><span>Đặt hàng mới</span></button>
       <button class="md-item" onclick="mobileNav('orders')"><i class="fas fa-archive"></i><span>Đơn hàng</span></button>
       <button class="md-item" onclick="mobileNav('sub')"><i class="fas fa-retweet"></i><span>Đặt Hàng Lớn</span></button>
       <button class="md-item" onclick="mobileNav('funds')"><i class="fas fa-dollar-sign"></i><span>Nạp tiền</span></button>
@@ -151,8 +152,8 @@ button.plat-btn i {
       <!-- Home -->
       <button class="sidebar-item active" id="sb-home" onclick="showPage('home',this)">
         <i class="fas fa-home"></i>
-        <span>Đặt hàng</span>
-        <div class="sidebar-tooltip">Đặt hàng</div>
+        <span>Trang chủ</span>
+        <div class="sidebar-tooltip">Trang chủ</div>
       </button>
 
       <!-- Services -->
@@ -160,6 +161,13 @@ button.plat-btn i {
         <i class="fas fa-money-check-alt"></i>
         <span>Dịch vụ</span>
         <div class="sidebar-tooltip">Dịch vụ</div>
+      </button>
+
+      <!-- New Order -->
+      <button class="sidebar-item" id="sb-order" onclick="showPage('order',this)">
+        <i class="fas fa-receipt"></i>
+        <span>Đặt hàng mới</span>
+        <div class="sidebar-tooltip">Đặt hàng mới</div>
       </button>
 
       <!-- Orders -->
