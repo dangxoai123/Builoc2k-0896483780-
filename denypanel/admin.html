@@ -665,7 +665,7 @@ async function loadDashboard() {
     const res   = await fetch('/api/admin/stats', { headers: { 'Authorization': 'Bearer ' + _jwt } });
     const stats = await res.json();
     document.getElementById('statTotalUsers').textContent   = stats.totalUsers || 0;
-    document.getElementById('statTotalBalance').textContent = fmtBal((stats.totalRevenue || 0) / 26294.5);
+    document.getElementById('statTotalBalance').textContent = fmtBal(stats.totalBalance || 0);
     document.getElementById('statTotalOrders').textContent  = stats.totalOrders || 0;
     document.getElementById('statServices').textContent     = '506';
 

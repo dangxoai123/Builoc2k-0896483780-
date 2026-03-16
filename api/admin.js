@@ -87,15 +87,17 @@ router.post('/users/:uid/info', async (req, res) => {
 // GET /api/admin/stats
 router.get('/stats', async (req, res) => {
   try {
-    const [users, orders, revenue] = await Promise.all([
+    const [users, orders, revenue, totalBal] = await Promise.all([
       pool.query('SELECT COUNT(*) as total FROM users'),
       pool.query('SELECT COUNT(*) as total FROM orders'),
       pool.query("SELECT COALESCE(SUM(amount_usd),0) as total FROM transactions WHERE type='deposit'"),
+      pool.query('SELECT COALESCE(SUM(balance),0) as total FROM users'),
     ]);
     res.json({
       totalUsers:   parseInt(users.rows[0].total),
       totalOrders:  parseInt(orders.rows[0].total),
       totalRevenue: parseFloat(revenue.rows[0].total),
+      totalBalance: parseFloat(totalBal.rows[0].total),
     });
   } catch (e) {
     res.status(500).json({ error: e.message });
