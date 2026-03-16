@@ -6,7 +6,7 @@
 <title>Dịch vụ - MMOpanel</title>
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<script src="lang.js"></script>
+
 <style>
 .services-page-wrapper { padding: 120px 60px 80px; min-height: 100vh; }
 .services-filter-top {
@@ -129,21 +129,21 @@
 <nav class="navbar">
   <div class="nav-logo"><div class="logo-icon">📡</div>MMOpanel<div class="nav-globe">🌐</div></div>
   <div class="nav-center">
-    <a href="services.html" class="nav-link active" data-i18n="nav_services">Dịch vụ</a>
-    <a href="terms.html" class="nav-link" data-i18n="nav_terms">Điều khoản</a>
+    <a href="services.html" class="nav-link active">Dịch vụ</a>
+    <a href="terms.html" class="nav-link">Điều khoản</a>
   </div>
   <div class="nav-right">
-    <a href="login.html" class="btn-login" data-i18n="nav_login">Đăng Nhập</a>
-    <a href="signup.html" class="btn-register" data-i18n="nav_register">Đăng Kí <i class="fas fa-arrow-right"></i></a>
+    <a href="login.html" class="btn-login">Đăng Nhập</a>
+    <a href="signup.html" class="btn-register">Đăng Kí <i class="fas fa-arrow-right"></i></a>
   </div>
   <div class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></div>
 </nav>
 
 <div class="mobile-menu" id="mobileMenu">
-  <a href="services.html" class="nav-link active" data-i18n="nav_services">Dịch vụ</a>
-  <a href="terms.html" class="nav-link" data-i18n="nav_terms">Điều khoản</a>
-  <a href="login.html" class="btn-login" data-i18n="nav_login">Đăng Nhập</a>
-  <a href="signup.html" class="btn-green" data-i18n="nav_register">Đăng Kí →</a>
+  <a href="services.html" class="nav-link active">Dịch vụ</a>
+  <a href="terms.html" class="nav-link">Điều khoản</a>
+  <a href="login.html" class="btn-login">Đăng Nhập</a>
+  <a href="signup.html" class="btn-green">Đăng Kí →</a>
 </div>
 
 <div class="services-page-wrapper">
@@ -161,7 +161,7 @@
       <button class="platform-icon-btn" style="background:#ff4500" onclick="filterSvc('Reddit',this)" title="Reddit"><i class="fab fa-reddit-alien" style="color:white;font-size:18px"></i></button>
       <button class="platform-icon-btn" style="background:#fffc00" onclick="filterSvc('Snapchat',this)" title="Snapchat"><i class="fab fa-snapchat" style="color:#000;font-size:18px"></i></button>
     </div>
-    <input type="text" class="search-services" placeholder="🔍 Tìm kiếm dịch vụ..." id="svcSearch" oninput="renderServices()" data-i18n="svc_search_ph">
+    <input type="text" class="search-services" placeholder="🔍 Tìm kiếm dịch vụ..." id="svcSearch" oninput="renderServices()">
 
     <!-- Currency toggle USD / VND -->
     <div class="currency-toggle-wrap">
@@ -169,7 +169,7 @@
       <button class="cur-btn" id="curVND" onclick="setCur('VND')"><i class="fas fa-dong-sign"></i> VND</button>
     </div>
 
-    <div class="support-tag" data-i18n="svc_support">Giờ hỗ trợ: 8:00 - 22:00</div>
+    <div class="support-tag">Giờ hỗ trợ: 8:00 - 22:00</div>
   </div>
 
   <div class="table-col-header">
