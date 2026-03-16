@@ -1081,15 +1081,58 @@ function renderOrderFavorites() {
     div.style.cssText = 'background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.2s';
     div.onmouseenter = () => div.style.borderColor = 'var(--green)';
     div.onmouseleave = () => div.style.borderColor = 'var(--border)';
-    div.onclick = () => buyNowSvc(s.service);
+
+    // Hàm xử lý click Mua ngay - giống Home page:
+    // Switch về tab Đặt hàng, pre-select service ngay tại chỗ (không navigate trang khác)
+    const handleBuyNow = (svc) => {
+      const serviceId = svc.service;
+      // Lưu service data trước khi DOM bị xóa
+      const svcData = allServicesData.find(x => x.service == serviceId);
+      if (!svcData) return;
+
+      // setTimeout(0) để tránh xóa DOM node đang click làm cancel event
+      setTimeout(() => {
+        // Switch về tab Đặt hàng (sẽ xóa orderFavList và hiện form)
+        const orderTabBtn = document.getElementById('orderTab-order');
+        if (orderTabBtn) switchOrderTab('order', orderTabBtn);
+
+        // Chọn category trong custom dropdown
+        selectCustomCategory(svcData.category, 'pageCatDrop', 'page');
+
+        // Chờ service list populate, rồi chọn service
+        setTimeout(() => {
+          const svcSel = document.getElementById('pageServiceSelect');
+          if (!svcSel) return;
+
+          for (let i = 0; i < svcSel.options.length; i++) {
+            if (svcSel.options[i].value == serviceId) {
+              svcSel.selectedIndex = i;
+              break;
+            }
+          }
+          // Fallback nếu chưa có
+          if (!svcSel.value || svcSel.value != serviceId) {
+            populateServiceSel('pageServiceSelect', svcData.category);
+            for (let i = 0; i < svcSel.options.length; i++) {
+              if (svcSel.options[i].value == serviceId) { svcSel.selectedIndex = i; break; }
+            }
+          }
+          pageOnServiceChange();
+        }, 400);
+      }, 0);
+    };
+
+    div.onclick = () => handleBuyNow(s);
     div.innerHTML = `
       <span class="svc-id-tag" style="font-size:12px;flex-shrink:0">${s.service}</span>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(s.name)}</div>
         <div style="font-size:12px;color:var(--green);font-weight:800;margin-top:2px">${formatRate(s.rate)}<span style="color:var(--gray);font-size:10px;font-weight:400">/1k</span></div>
       </div>
-      <button class="btn-dat-hang" style="padding:6px 14px;font-size:12px;border-radius:8px;box-shadow:none;flex-shrink:0" onclick="event.stopPropagation();buyNowSvc(${s.service})">Mua ngay</button>
+      <button class="btn-dat-hang" style="padding:6px 14px;font-size:12px;border-radius:8px;box-shadow:none;flex-shrink:0" onclick="event.stopPropagation()">Mua ngay</button>
     `;
+    // Gắn sự kiện cho nút Mua ngay sau khi innerHTML được set
+    div.querySelector('button').onclick = (e) => { e.stopPropagation(); handleBuyNow(s); };
     wrap.appendChild(div);
   });
   parent.appendChild(wrap);
