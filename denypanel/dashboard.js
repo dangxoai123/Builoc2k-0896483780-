@@ -1173,27 +1173,45 @@ function modalBuyNow() {
 }
 
 function buyNowSvc(serviceId) {
-  // Chuyển sang trang đặt hàng và pre-select dịch vụ
   closeSvcModal();
-  showPage('order', null);
+  showPage('order', document.getElementById('sb-order'));
 
-  // Chờ trang load xong rồi chọn dịch vụ
   setTimeout(() => {
     const svc = allServicesData.find(s => s.service == serviceId);
-    if (!svc) return;
+    if (!svc) { console.warn('[buyNowSvc] Service not found:', serviceId); return; }
 
-    // Cập nhật custom dropdown UI + hidden select + populate service list
+    // Bước 1: Chọn category - cập nhật custom dropdown UI + populate service list
     selectCustomCategory(svc.category, 'pageCatDrop', 'page');
 
-    // Chờ options load rồi chọn service
+    // Bước 2: Chờ service list populate xong rồi chọn đúng service
     setTimeout(() => {
       const svcSel = document.getElementById('pageServiceSelect');
-      if (svcSel) {
-        svcSel.value = serviceId;
-        pageOnServiceChange();
+      if (!svcSel) return;
+
+      // Tìm option khớp (so sánh cả number và string)
+      let found = false;
+      for (let i = 0; i < svcSel.options.length; i++) {
+        if (svcSel.options[i].value == serviceId) {
+          svcSel.selectedIndex = i;
+          found = true;
+          break;
+        }
       }
-    }, 150);
-  }, 250);
+
+      // Nếu không tìm thấy - populate lại trực tiếp
+      if (!found) {
+        populateServiceSel('pageServiceSelect', svc.category);
+        for (let i = 0; i < svcSel.options.length; i++) {
+          if (svcSel.options[i].value == serviceId) {
+            svcSel.selectedIndex = i;
+            break;
+          }
+        }
+      }
+
+      pageOnServiceChange();
+    }, 400);
+  }, 300);
 }
 
 // ==========================================
