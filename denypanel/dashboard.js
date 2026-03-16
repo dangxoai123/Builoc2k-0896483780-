@@ -1182,12 +1182,9 @@ function buyNowSvc(serviceId) {
     const svc = allServicesData.find(s => s.service == serviceId);
     if (!svc) return;
 
-    // Chọn mục
-    const catSel = document.getElementById('pageCategorySelect');
-    if (catSel) {
-      catSel.value = svc.category;
-      pageOnCategoryChange();
-    }
+    // Cập nhật custom dropdown UI + hidden select + populate service list
+    selectCustomCategory(svc.category, 'pageCatDrop', 'page');
+
     // Chờ options load rồi chọn service
     setTimeout(() => {
       const svcSel = document.getElementById('pageServiceSelect');
@@ -1195,8 +1192,8 @@ function buyNowSvc(serviceId) {
         svcSel.value = serviceId;
         pageOnServiceChange();
       }
-    }, 100);
-  }, 200);
+    }, 150);
+  }, 250);
 }
 
 // ==========================================
