@@ -1176,6 +1176,10 @@ function buyNowSvc(serviceId) {
   closeSvcModal();
   showPage('order', document.getElementById('sb-order'));
 
+  // Chuyển về tab "Đặt hàng" (tránh bị kẹt ở tab Yêu thích)
+  const orderTabBtn = document.getElementById('orderTab-order');
+  if (orderTabBtn) switchOrderTab('order', orderTabBtn);
+
   setTimeout(() => {
     const svc = allServicesData.find(s => s.service == serviceId);
     if (!svc) { console.warn('[buyNowSvc] Service not found:', serviceId); return; }
