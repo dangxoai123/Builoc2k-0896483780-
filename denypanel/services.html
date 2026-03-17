@@ -1,12 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dịch vụ - MMOpanel</title>
+<title>Dịch vụ - MMoPanel</title>
 <link rel="icon" type="image/png" href="logo.png">
 <link rel="apple-touch-icon" href="logo.png">
-<meta property="og:title" content="MMOpanel - Dịch vụ tăng tương tác mạng xã hội">
+<meta property="og:title" content="MMoPanel - Dịch vụ tăng tương tác mạng xã hội">
 <meta property="og:description" content="Nền tảng tăng follow, like, view cho Facebook, TikTok, YouTube, Instagram tự động nhanh chóng.">
 <meta property="og:image" content="logo.png">
 <meta property="og:type" content="website">
@@ -133,7 +133,7 @@
 </head>
 <body>
 <nav class="navbar">
-  <div class="nav-logo"><div class="logo-icon">📡</div>MMOpanel<div class="nav-globe">🌐</div></div>
+  <div class="nav-logo"><div class="logo-icon">📡</div>MMoPanel<div class="nav-globe">🌐</div></div>
   <div class="nav-center">
     <a href="services.html" class="nav-link active">Dịch vụ</a>
     <a href="terms.html" class="nav-link">Điều khoản</a>
@@ -194,13 +194,13 @@
 
 <footer>
   <div class="footer-inner">
-    <div class="footer-logo"><div class="logo-icon">📡</div>MMOpanel</div>
+    <div class="footer-logo"><div class="logo-icon">📡</div>MMoPanel</div>
     <div class="footer-links">
       <a href="#" class="footer-link">Blog</a>
       <a href="terms.html" class="footer-link">Điều khoản</a>
       <a href="api.html" class="footer-link">API</a>
     </div>
-    <div class="footer-copyright">© 2024 MMOpanel. All rights reserved.</div>
+    <div class="footer-copyright">© 2024 MMoPanel. All rights reserved.</div>
   </div>
 </footer>
 
@@ -210,8 +210,8 @@
 <script>
 /**
  * services.html - Public services listing
- * Prices are fetched LIVE from MMOpanel API via api.js
- * VND_RATE = 26,294.5 (official MMOpanel exchange rate)
+ * Prices are fetched LIVE from MMoPanel API via api.js
+ * VND_RATE = 26,294.5 (official MMoPanel exchange rate)
  */
 const VND_RATE = 26294.5;
 let currentFilter = 'all';
@@ -250,7 +250,7 @@ function setCur(c) {
 
 async function init() {
   [svcData] = await Promise.all([
-    MMOpanelAPI.getServices(),
+    MMoPanelAPI.getServices(),
     loadSvcDescriptions()
   ]);
   document.getElementById('curUSD').classList.toggle('active', currentCur === 'USD');
