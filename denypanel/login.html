@@ -82,16 +82,25 @@
 </div>
 
 <script>
-// Nếu đã đăng nhập → vào dashboard (chỉ khi không phải logout)
-if (localStorage.getItem('jwt_token') && !new URLSearchParams(window.location.search).get('logout')) {
-  window.location.href = 'dashboard.html';
+// ==========================================
+// KIỂM TRA TOKEN — ưu tiên localStorage (ghi nhớ), sau đó sessionStorage
+// ==========================================
+const _logout = new URLSearchParams(window.location.search).get('logout');
+if (!_logout) {
+  const token = localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');
+  if (token) {
+    window.location.href = 'dashboard.html';
+  }
 } else {
+  // Đăng xuất: xóa cả 2 nơi
   localStorage.removeItem('jwt_token');
   localStorage.removeItem('user_data');
+  sessionStorage.removeItem('jwt_token');
+  sessionStorage.removeItem('user_data');
 }
 
 // ==========================================
-// GHI NHỚ ĐĂNG NHẬP — Tự điền khi tải trang
+// GHI NHỚ ĐĂNG NHẬP — Tự điền email/password khi tải trang
 // ==========================================
 window.addEventListener('DOMContentLoaded', function() {
   const saved = JSON.parse(localStorage.getItem('remember_login') || 'null');
@@ -134,15 +143,24 @@ async function handleLogin(e) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Đăng nhập thất bại');
 
-    // Lưu hoặc xóa thông tin ghi nhớ
     if (rememberMe) {
+      // ✅ Ghi nhớ: lưu localStorage → lần sau tự đăng nhập + điền sẵn TK/MK
+      localStorage.setItem('jwt_token',      data.token);
+      localStorage.setItem('user_data',      JSON.stringify(data.user));
       localStorage.setItem('remember_login', JSON.stringify({ email, password }));
+      // Xóa session (tránh trùng)
+      sessionStorage.removeItem('jwt_token');
+      sessionStorage.removeItem('user_data');
     } else {
+      // ❌ Không ghi nhớ: lưu sessionStorage → mất khi đóng tab, lần sau phải nhập lại
+      sessionStorage.setItem('jwt_token',  data.token);
+      sessionStorage.setItem('user_data',  JSON.stringify(data.user));
+      // Xóa localStorage để không bị auto-login
+      localStorage.removeItem('jwt_token');
+      localStorage.removeItem('user_data');
       localStorage.removeItem('remember_login');
     }
 
-    localStorage.setItem('jwt_token', data.token);
-    localStorage.setItem('user_data', JSON.stringify(data.user));
     window.location.href = 'dashboard.html';
   } catch (err) {
     errorBox.textContent   = err.message;
@@ -152,6 +170,4 @@ async function handleLogin(e) {
   }
 }
 </script>
-</body>
-</html>
 

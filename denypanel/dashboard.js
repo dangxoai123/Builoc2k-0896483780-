@@ -100,20 +100,25 @@ function refreshPrices() {
 // INIT - JWT Auth (thay Firebase Auth)
 // ==========================================
 
+// Helper: lấy JWT token từ localStorage (ghi nhớ) hoặc sessionStorage (không ghi nhớ)
+function getToken() {
+  return localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');
+}
+
 // Biến global lưu thông tin user
 let _firebaseUser = null;
 let _userProfile = null;
 
 document.addEventListener('DOMContentLoaded', () => {
-  const token    = localStorage.getItem('jwt_token');
-  const userData = localStorage.getItem('user_data');
+  const token    = getToken();
+  const userData = localStorage.getItem('user_data') || sessionStorage.getItem('user_data');
 
   if (!token) {
     window.location.href = 'login.html';
     return;
   }
 
-  // Dùng cache từ localStorage trước (hiển thị nhanh)
+  // Dùng cache từ storage trước (hiển thị nhanh)
   if (userData) {
     try {
       _userProfile = JSON.parse(userData);
@@ -128,6 +133,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (r.status === 401) {
       localStorage.removeItem('jwt_token');
       localStorage.removeItem('user_data');
+      sessionStorage.removeItem('jwt_token');
+      sessionStorage.removeItem('user_data');
       window.location.href = 'login.html';
       return;
     }
@@ -136,7 +143,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!profile) return;
     _userProfile = profile;
     _firebaseUser = { uid: profile.uid, email: profile.email };
-    localStorage.setItem('user_data', JSON.stringify(profile));
+    // Cập nhật đúng nơi đang lưu
+    if (localStorage.getItem('jwt_token')) {
+      localStorage.setItem('user_data', JSON.stringify(profile));
+    } else {
+      sessionStorage.setItem('user_data', JSON.stringify(profile));
+    }
     initDashboard();
   }).catch(() => {
     // Nếu offline → dùng cache
@@ -202,7 +214,7 @@ async function initDashboard() {
 // BALANCE - Quản lý số dư web con (độc lập với MMOpanel)
 // ==========================================
 async function refreshBalance() {
-  const token = localStorage.getItem('jwt_token');
+  const token = getToken();
   if (!token) return;
   try {
     const r = await fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + token } });
@@ -510,7 +522,7 @@ async function _placeOrder(prefix) {
   if (msgBox) msgBox.style.display = 'none';
 
   try {
-    const token       = localStorage.getItem('jwt_token');
+    const token       = getToken();
     const serviceName = opt.dataset.name || opt.textContent.split(' - ')[0];
 
     // Đặt hàng qua backend (thay thế MMOpanelAPI.addOrder demo mode)
@@ -585,7 +597,7 @@ function simulateProgress(orderId) {
 async function loadOrdersPage() {
   let orders = [];
   try {
-    const token = localStorage.getItem('jwt_token');
+    const token = getToken();
     const r = await fetch('/api/orders', { headers: { 'Authorization': 'Bearer ' + token } });
     if (r.ok) {
       const data = await r.json();
@@ -679,7 +691,7 @@ async function checkOrderById(orderId) {
   if (!orderId) return;
   showToastV2('🔄 Đang đồng bộ trạng thái từ web chủ...', 'info');
   try {
-    const token = localStorage.getItem('jwt_token');
+    const token = getToken();
     const resp  = await fetch(`/api/orders/${orderId}/status`, {
       headers: { 'Authorization': 'Bearer ' + token }
     });
@@ -779,7 +791,7 @@ async function startDeposit() {
 
   // Lưu lệnh nạp vào PostgreSQL qua API
   try {
-    const token = localStorage.getItem('jwt_token');
+    const token = getToken();
     await fetch('/api/payment/create-pending', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
@@ -1970,4 +1982,15 @@ function switchFundTab(method) {
     activeTab.style.background = 'rgba(40,203,105,0.12)';
     activeTab.style.color = 'var(--green)';
   }
+}
+
+// ==========================================
+// LOGOUT
+// ==========================================
+function logoutUser() {
+  localStorage.removeItem('jwt_token');
+  localStorage.removeItem('user_data');
+  sessionStorage.removeItem('jwt_token');
+  sessionStorage.removeItem('user_data');
+  window.location.href = 'login.html?logout=1';
 }
