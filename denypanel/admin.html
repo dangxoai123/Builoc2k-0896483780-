@@ -584,9 +584,17 @@ async function checkAdminPass() {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Sai email hoặc mật khẩu!');
-    localStorage.setItem('jwt_token', data.token);
-    localStorage.setItem('user_data', JSON.stringify(data.user));
-    window.location.reload(); // JWT auth check sẽ tự load admin
+
+    // Kiểm tra quyền admin ngay tại đây
+    const ADMIN_EMAILS = ['builoc1906@gmail.com', 'buinguyenloc112000@gmail.com'];
+    const isAdmin = data.user?.role === 'admin' || ADMIN_EMAILS.includes(data.user?.email);
+    if (!isAdmin) {
+      throw new Error('Tài khoản này không có quyền Admin!');
+    }
+
+    // Lưu vào key RIÊNG cho admin — không ảnh hưởng session user thường
+    localStorage.setItem('admin_jwt_token', data.token);
+    window.location.reload();
   } catch(e) {
     errMsg.textContent = '❌ ' + e.message;
     errMsg.style.display = 'block';
@@ -613,35 +621,29 @@ function fmtBal(usd) {
 }
 
 // ==========================================
-// AUTH CHECK
+// AUTH CHECK - Dùng admin_jwt_token RIÊNG (không dùng jwt_token user)
 // ==========================================
-// ==========================================
-// AUTH CHECK - JWT
-// ==========================================
-const _jwt = localStorage.getItem('jwt_token');
+const _jwt = localStorage.getItem('admin_jwt_token');
 if (!_jwt) {
+  // Luôn hiện cổng đăng nhập admin nếu chưa có admin token
   document.getElementById('adminGate').style.display = 'flex';
 } else {
   fetch('/api/auth/me', { headers: { 'Authorization': 'Bearer ' + _jwt } })
     .then(r => r.json())
     .then(async profile => {
       if (!profile || profile.error) {
+        localStorage.removeItem('admin_jwt_token');
         document.getElementById('adminGate').style.display = 'flex';
         return;
       }
       const ADMIN_EMAILS = ['builoc1906@gmail.com', 'buinguyenloc112000@gmail.com'];
       const isAdmin = profile.role === 'admin' || ADMIN_EMAILS.includes(profile.email);
       if (!isAdmin) {
-        document.getElementById('adminGate').style.display = 'none';
-        document.getElementById('accessDenied').style.display = 'block';
-        document.getElementById('accessDenied').innerHTML = `
-          <div style="text-align:center;padding:80px 20px">
-            <div style="font-size:60px;margin-bottom:16px">🔒</div>
-            <h2 style="font-size:24px;font-weight:800;color:var(--red);margin-bottom:10px">Không có quyền truy cập</h2>
-            <p style="color:var(--gray);margin-bottom:20px">Tài khoản <strong>${profile.email}</strong> không có quyền Admin.</p>
-            <a href="dashboard.html" class="btn btn-blue" style="display:inline-flex">Về Dashboard</a>
-          </div>`;
-        setTimeout(() => { window.location.href = 'dashboard.html'; }, 3000);
+        // Không phải admin → xóa token, hiện lại cổng đăng nhập
+        localStorage.removeItem('admin_jwt_token');
+        document.getElementById('adminGate').style.display = 'flex';
+        document.getElementById('adminGateErr').textContent = '❌ Tài khoản này không có quyền Admin!';
+        document.getElementById('adminGateErr').style.display = 'block';
         return;
       }
       // Admin OK
@@ -676,6 +678,11 @@ function showAdminPage(page, el) {
 
 function closeModal(id) {
   document.getElementById(id).classList.remove('show');
+}
+
+function logoutUser() {
+  localStorage.removeItem('admin_jwt_token');
+  window.location.reload();
 }
 
 // ==========================================
