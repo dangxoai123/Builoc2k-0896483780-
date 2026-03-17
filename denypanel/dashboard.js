@@ -135,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.removeItem('user_data');
       sessionStorage.removeItem('jwt_token');
       sessionStorage.removeItem('user_data');
-      window.location.href = 'login.html';
+      window.location.href = 'login.html?logout=1';
       return;
     }
     return r.json();

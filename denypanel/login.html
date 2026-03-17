@@ -83,13 +83,23 @@
 
 <script>
 // ==========================================
-// Trang Login: LUÔN xóa token hiện tại
-// "Ghi nhớ" chỉ điền sẵn form, không tự đăng nhập
+// LOGIN PAGE - Token check
+// Nếu đã đăng nhập → vào dashboard
+// Nếu ?logout=1 → xóa token và hiện form
 // ==========================================
-localStorage.removeItem('jwt_token');
-localStorage.removeItem('user_data');
-sessionStorage.removeItem('jwt_token');
-sessionStorage.removeItem('user_data');
+const _lsToken = localStorage.getItem('jwt_token');
+const _hasLogout = new URLSearchParams(window.location.search).get('logout');
+
+if (_hasLogout) {
+  // Đăng xuất thực sự: xóa token và hiện form
+  localStorage.removeItem('jwt_token');
+  localStorage.removeItem('user_data');
+  sessionStorage.removeItem('jwt_token');
+  sessionStorage.removeItem('user_data');
+} else if (_lsToken) {
+  // Đã ghi nhớ đăng nhập → vào dashboard luôn
+  window.location.href = 'dashboard.html';
+}
 
 // ==========================================
 // GHI NHỚ ĐĂNG NHẬP — Tự điền email/password khi tải trang
