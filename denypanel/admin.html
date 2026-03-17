@@ -524,6 +524,30 @@
   </div>
 </div>
 
+<!-- MODAL: XÓA USER -->
+<div class="modal-bg" id="modalDeleteUser">
+  <div class="modal">
+    <h2>🗑️ Xóa tài khoản</h2>
+    <p class="sub" id="deleteUserSub">User: ...</p>
+    <div style="background:rgba(255,30,30,0.08);border:1px solid rgba(255,30,30,0.3);border-radius:12px;padding:16px;margin-bottom:16px">
+      <div style="font-size:14px;font-weight:700;color:#ff4444;margin-bottom:8px">⚠️ Cảnh báo!</div>
+      <div style="font-size:12px;color:#ff8888;line-height:1.7">
+        Hành động này sẽ <strong>xóa vĩnh viễn</strong> tài khoản này cùng toàn bộ dữ liệu liên quan.<br>
+        Không thể hoàn tác sau khi xóa!
+      </div>
+    </div>
+    <div style="background:var(--bg3);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13px">
+      👤 <span id="deleteUserInfo" style="color:var(--gray2)"></span>
+    </div>
+    <div class="alert ok" id="deleteUserAlert"></div>
+    <div class="alert err" id="deleteUserAlertErr"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal('modalDeleteUser')">Hủy</button>
+      <button class="btn btn-red" id="confirmDeleteBtn" onclick="confirmDeleteUser()">🗑️ Xác nhận xóa</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ==========================================
 // HELPERS
@@ -755,6 +779,7 @@ function renderUsersTable(users) {
           <button class="btn btn-ghost btn-sm" onclick="openUserModal('${safeUid}','${safeEmail}','${safeUsername}','${safeRole}')" title="Chỉnh sửa">⚙️</button>
           <button class="btn btn-blue btn-sm" onclick="viewUserOrders('${safeUid}','${safeUsername}')" title="Đơn hàng">📦</button>
           <button class="btn btn-sm" style="background:rgba(255,100,100,0.15);color:#ff6464;border:1px solid rgba(255,100,100,0.3)" onclick="openResetPassModal('${safeUid}','${safeEmail}','${safeUsername}')" title="Đặt lại mật khẩu">🔑</button>
+          <button class="btn btn-sm" style="background:rgba(255,30,30,0.2);color:#ff2222;border:1px solid rgba(255,30,30,0.4)" onclick="openDeleteUserModal('${safeUid}','${safeEmail}','${safeUsername}')" title="Xóa tài khoản">🗑️</button>
         </div>
       </td>
     </tr>`;
@@ -1241,6 +1266,60 @@ function showToast(msg) {
   t.style.display = 'block';
   clearTimeout(_toastTimer);
   _toastTimer = setTimeout(() => t.style.display = 'none', 3000);
+}
+
+// ==========================================
+// DELETE USER
+// ==========================================
+let _deleteUid = null;
+
+function openDeleteUserModal(uid, email, username) {
+  _deleteUid = uid;
+  document.getElementById('deleteUserSub').textContent = `Xóa tài khoản: ${username || email}`;
+  document.getElementById('deleteUserInfo').textContent = `${username} — ${email}`;
+  document.getElementById('deleteUserAlert').style.display = 'none';
+  document.getElementById('deleteUserAlertErr').style.display = 'none';
+  document.getElementById('confirmDeleteBtn').disabled = false;
+  document.getElementById('confirmDeleteBtn').innerHTML = '🗑️ Xác nhận xóa';
+  document.getElementById('modalDeleteUser').classList.add('show');
+}
+
+async function confirmDeleteUser() {
+  if (!_deleteUid) return;
+  const btn = document.getElementById('confirmDeleteBtn');
+  const alertOk  = document.getElementById('deleteUserAlert');
+  const alertErr = document.getElementById('deleteUserAlertErr');
+  alertOk.style.display = 'none';
+  alertErr.style.display = 'none';
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Đang xóa...';
+
+  try {
+    const res = await fetch(`/api/admin/users/${_deleteUid}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + _jwt }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Xóa thất bại');
+
+    alertOk.textContent = '✅ ' + (data.message || 'Đã xóa tài khoản thành công!');
+    alertOk.style.display = 'block';
+    btn.innerHTML = '✅ Đã xóa';
+
+    // Cập nhật danh sách local và reload
+    _allUsers = _allUsers.filter(u => u.uid !== _deleteUid);
+    document.getElementById('userCount').textContent = _allUsers.length;
+    renderUsersTable(_allUsers);
+    showToast('✅ Đã xóa tài khoản!');
+
+    setTimeout(() => closeModal('modalDeleteUser'), 1500);
+  } catch(e) {
+    alertErr.textContent = '❌ ' + e.message;
+    alertErr.style.display = 'block';
+    btn.disabled = false;
+    btn.innerHTML = '🗑️ Xác nhận xóa';
+  }
 }
 
 // Click outside modal to close

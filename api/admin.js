@@ -149,4 +149,30 @@ router.post('/users/:uid/reset-password', async (req, res) => {
   }
 });
 
+// DELETE /api/admin/users/:uid — Xóa tài khoản user
+router.delete('/users/:uid', async (req, res) => {
+  const { uid } = req.params;
+  try {
+    // Tìm user trước
+    const userRes = await pool.query('SELECT * FROM users WHERE uid=$1', [uid]);
+    const user = userRes.rows[0];
+    if (!user) return res.status(404).json({ error: 'User không tồn tại' });
+
+    // Không cho xóa tài khoản admin
+    if (user.role === 'admin') {
+      return res.status(403).json({ error: 'Không thể xóa tài khoản Admin!' });
+    }
+
+    // Xóa dữ liệu liên quan (orders, transactions) rồi xóa user
+    await pool.query('DELETE FROM transactions WHERE user_id=$1', [user.id]);
+    await pool.query('DELETE FROM orders WHERE user_id=$1', [user.id]);
+    await pool.query('DELETE FROM users WHERE id=$1', [user.id]);
+
+    res.json({ success: true, message: `Đã xóa tài khoản ${user.email} thành công!` });
+  } catch (e) {
+    console.error('[admin/delete-user]', e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router;

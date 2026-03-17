@@ -82,13 +82,25 @@
 </div>
 
 <script>
-// Nếu đã đăng nhập → vào dashboard
+// Nếu đã đăng nhập → vào dashboard (chỉ khi không phải logout)
 if (localStorage.getItem('jwt_token') && !new URLSearchParams(window.location.search).get('logout')) {
   window.location.href = 'dashboard.html';
 } else {
   localStorage.removeItem('jwt_token');
   localStorage.removeItem('user_data');
 }
+
+// ==========================================
+// GHI NHỚ ĐĂNG NHẬP — Tự điền khi tải trang
+// ==========================================
+window.addEventListener('DOMContentLoaded', function() {
+  const saved = JSON.parse(localStorage.getItem('remember_login') || 'null');
+  if (saved && saved.email) {
+    document.getElementById('loginEmail').value    = saved.email;
+    document.getElementById('loginPassword').value = saved.password;
+    document.getElementById('rememberMe').checked  = true;
+  }
+});
 
 function togglePass(id, btn) {
   const input = document.getElementById(id);
@@ -103,10 +115,11 @@ function togglePass(id, btn) {
 
 async function handleLogin(e) {
   e.preventDefault();
-  const email    = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value;
-  const btn      = document.getElementById('loginBtn');
-  const errorBox = document.getElementById('loginError');
+  const email      = document.getElementById('loginEmail').value.trim();
+  const password   = document.getElementById('loginPassword').value;
+  const rememberMe = document.getElementById('rememberMe').checked;
+  const btn        = document.getElementById('loginBtn');
+  const errorBox   = document.getElementById('loginError');
 
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang đăng nhập...';
   btn.disabled  = true;
@@ -121,6 +134,13 @@ async function handleLogin(e) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Đăng nhập thất bại');
 
+    // Lưu hoặc xóa thông tin ghi nhớ
+    if (rememberMe) {
+      localStorage.setItem('remember_login', JSON.stringify({ email, password }));
+    } else {
+      localStorage.removeItem('remember_login');
+    }
+
     localStorage.setItem('jwt_token', data.token);
     localStorage.setItem('user_data', JSON.stringify(data.user));
     window.location.href = 'dashboard.html';
@@ -134,3 +154,4 @@ async function handleLogin(e) {
 </script>
 </body>
 </html>
+
