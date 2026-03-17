@@ -6,6 +6,7 @@ Database: mmopanel
 User: mmopanel
 Password: mmopanel2026
 https://zonecloud.vn/thue-vps-zone/#dich-vu
+103.165.144.162:nehUCThW8p7VjLuzV5XL
 buinguyenloc112000@gmail.com
 Locbui2k@
 admin
