@@ -83,21 +83,13 @@
 
 <script>
 // ==========================================
-// KIỂM TRA TOKEN — ưu tiên localStorage (ghi nhớ), sau đó sessionStorage
+// Trang Login: LUÔN xóa token hiện tại
+// "Ghi nhớ" chỉ điền sẵn form, không tự đăng nhập
 // ==========================================
-const _logout = new URLSearchParams(window.location.search).get('logout');
-if (!_logout) {
-  const token = localStorage.getItem('jwt_token') || sessionStorage.getItem('jwt_token');
-  if (token) {
-    window.location.href = 'dashboard.html';
-  }
-} else {
-  // Đăng xuất: xóa cả 2 nơi
-  localStorage.removeItem('jwt_token');
-  localStorage.removeItem('user_data');
-  sessionStorage.removeItem('jwt_token');
-  sessionStorage.removeItem('user_data');
-}
+localStorage.removeItem('jwt_token');
+localStorage.removeItem('user_data');
+sessionStorage.removeItem('jwt_token');
+sessionStorage.removeItem('user_data');
 
 // ==========================================
 // GHI NHỚ ĐĂNG NHẬP — Tự điền email/password khi tải trang
