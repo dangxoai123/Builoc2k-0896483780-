@@ -153,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }).catch(() => {
     // Nếu offline → dùng cache
     if (_userProfile) initDashboard();
-    else window.location.href = 'login.html';
+    else window.location.href = 'login.html?logout=1';
   });
 });
 
