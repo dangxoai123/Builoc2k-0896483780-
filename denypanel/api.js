@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ==========================================
  * MMOpanel API INTEGRATION - FULL VERSION
  * Web con (reseller panel) kết nối tới MMOpanel
@@ -743,3 +743,6 @@ function saveUserData(data) {
 function isLoggedIn() {
   return localStorage.getItem('dp_logged_in') === 'true';
 }
+
+// Backward-compat: hỗ trợ cả tên cũ MMOpanelAPI
+const MMOpanelAPI = MMoPanelAPI;
