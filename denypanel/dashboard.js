@@ -940,7 +940,7 @@ function renderSvcPage() {
     html += `<div class="svc-category-row"><i class="fas fa-tag"></i> ${esc(cat)}</div>`;
     services.forEach(s => {
       const avgTime = s.avg_time || 'Đang tính toán';
-      const refillText = s.refill ? '30 Ngày' : 'Không bảo hành';
+      const refillText = s.refill ? '30 Ngày' : '--';
       const dataStr = encodeURIComponent(JSON.stringify({
         id: s.service, name: s.name, rate: s.rate,
         min: s.min, max: s.max, refill: refillText,
