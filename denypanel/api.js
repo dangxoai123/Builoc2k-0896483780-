@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ==========================================
  * MMOpanel API INTEGRATION - FULL VERSION
  * Web con (reseller panel) kết nối tới MMOpanel
@@ -9,7 +9,7 @@
  * ==========================================
  */
 
-const MMOpanelAPI = {
+const MMoPanelAPI = {
   // API Key của tài khoản trên MMOpanel
   API_KEY: '2a6149e2e8ff0be95ded16a8e408e2d6',
 
@@ -157,9 +157,10 @@ const MMOpanelAPI = {
 
   /** Lấy danh sách tất cả dịch vụ - dùng /api/services (key reseller - giá đúng) */
   async getServices() {
+    // Thử API Vercel trước (timeout ngắn hơn để không chờ lâu)
     try {
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 12000);
+      const timer = setTimeout(() => controller.abort(), 5000);
       const resp = await fetch('/api/services', { signal: controller.signal });
       clearTimeout(timer);
       if (resp.ok) {
@@ -170,10 +171,24 @@ const MMOpanelAPI = {
         }
       }
     } catch (err) {
-      console.warn('[MMOpanel API] /api/services failed, using demo:', err.message);
+      console.warn('[MMOpanel API] /api/services failed:', err.message);
     }
 
-    // Fallback: thử qua proxy chung
+    // Fallback 1: Load từ services_cache.json (dữ liệu thực đầy đủ)
+    try {
+      const cache = await fetch('services_cache.json');
+      if (cache.ok) {
+        const data = await cache.json();
+        if (Array.isArray(data) && data.length > 0) {
+          console.log(`[MMOpanel API] ✅ Loaded ${data.length} services from services_cache.json`);
+          return data;
+        }
+      }
+    } catch (err) {
+      console.warn('[MMOpanel API] services_cache.json failed:', err.message);
+    }
+
+    // Fallback 2: thử qua proxy chung
     try {
       const result = await this.call({ action: 'services' });
       if (result.success && result.data && !result.data.error) {
