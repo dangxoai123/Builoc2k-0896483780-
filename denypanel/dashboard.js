@@ -1,4 +1,4 @@
-/**
+﻿/**
  * ==========================================
  * DASHBOARD V2 - LOGIC
  * Tích hợp với MMOpanel API thực
@@ -449,7 +449,7 @@ function pageOnServiceChange() {
   const svc = allServicesData.find(s => s.service == svcId);
   if (svc) {
     const speed = svc.avg_time ? svc.avg_time : '5k/Ng\u00e0y';
-    const warranty = svc.refill ? '30 Ng\u00e0y' : 'Kh\u00f4ng b\u1ea3o h\u00e0nh';
+    const warranty = svc.refill ? '30 Ng\u00e0y' : '--';
     const icon = getPlatformIcon(svc.category);
 
     safeSet('sipSpeed', speed);
@@ -1171,7 +1171,7 @@ function openSvcDetailModal(dataStr) {
     }
 
     const speed    = parseField(rawDesc, "Speed") || "Đang tính toán";
-    const refill   = parseField(rawDesc, "Refill") || (s.refill ? "30 Ngày" : "Không bảo hành");
+    const refill   = parseField(rawDesc, "Refill") || (s.refill ? "30 Ngày" : "--");
     const quality  = parseField(rawDesc, "Quality") || "Rất Tốt";
     const link     = parseField(rawDesc, "Link") || "https://...";
     const startTime = parseField(rawDesc, "B[áa]t đầu sau|Start Time");
