@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
@@ -353,7 +353,6 @@ function showSvcDetail(s) {
   document.getElementById('sdmId').textContent = s.service;
   document.getElementById('sdmName').textContent = s.name;
   document.getElementById('sdmSpeed').textContent = speed;
-  document.getElementById('sdmRefill').textContent = refill;
   document.getElementById('sdmQuality').textContent = quality;
   document.getElementById('sdmRate').textContent = rateStr + ' /1k';
   document.getElementById('sdmMin').textContent = Number(s.min).toLocaleString();
@@ -407,10 +406,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSvcDeta
         <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:90px">Speed:</span>
         <span id="sdmSpeed" style="font-size:14px;color:#e6edf3;font-weight:700">-</span>
       </div>
-      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:baseline">
-        <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:90px">Refill:</span>
-        <span id="sdmRefill" style="font-size:14px;color:#e6edf3;font-weight:700">-</span>
-      </div>
+
       <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:baseline">
         <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:90px">Quality:</span>
         <span id="sdmQuality" style="font-size:14px;color:#e6edf3;font-weight:700">Rất Tốt</span>
