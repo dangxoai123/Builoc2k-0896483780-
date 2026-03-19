@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ==========================================
  * DASHBOARD V2 - LOGIC
  * Tích hợp với MMOpanel API thực
@@ -1195,7 +1195,6 @@ function openSvcDetailModal(dataStr) {
     safeSet("modalSvcMin", Number(s.min).toLocaleString());
     safeSet("modalSvcMax", Number(s.max).toLocaleString());
     safeSet("modalSvcSpeed", speed);
-    safeSet("modalSvcRefill", refill);
     safeSet("modalSvcQuality", quality);
     safeSet("modalSvcLink", link);
 
