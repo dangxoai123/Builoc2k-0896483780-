@@ -163,7 +163,8 @@ router.delete('/users/:uid', async (req, res) => {
       return res.status(403).json({ error: 'Không thể xóa tài khoản Admin!' });
     }
 
-    // Xóa dữ liệu liên quan (orders, transactions) rồi xóa user
+    // Xóa dữ liệu liên quan rồi xóa user
+    await pool.query('DELETE FROM pending_deposits WHERE user_id=$1', [user.id]);
     await pool.query('DELETE FROM transactions WHERE user_id=$1', [user.id]);
     await pool.query('DELETE FROM orders WHERE user_id=$1', [user.id]);
     await pool.query('DELETE FROM users WHERE id=$1', [user.id]);
