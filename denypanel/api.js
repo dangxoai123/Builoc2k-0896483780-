@@ -10,15 +10,13 @@
  */
 
 const MMoPanelAPI = {
-  // API Key của tài khoản trên MMOpanel
-  API_KEY: '2a6149e2e8ff0be95ded16a8e408e2d6',
+  // API Key không lưu ở frontend — proxy server tự inject key an toàn
+  API_KEY: '', // key thật nằm trong server-side proxy.js, không expose ra client
 
   // API endpoint thực của MMOpanel (KHÔNG gọi trực tiếp - sẽ bị CORS)
   API_URL: 'https://MMOpanel.com/api/v2',
 
   // Vercel Serverless Function endpoint
-  // Khi deploy lên Vercel → /api/proxy tự route đến api/proxy.js
-  // Khi chạy local file:// → tự động dùng demo mode
   PROXY_URL: '/api/proxy',
 
   // Cache trạng thái proxy
