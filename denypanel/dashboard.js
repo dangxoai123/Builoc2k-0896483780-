@@ -1180,10 +1180,10 @@ function openSvcDetailModal(dataStr) {
     let descText = rawDesc;
     if (rawDesc) {
       // Bỏ 4 dòng đầu (Speed, Refill, Quality, Link)
-      const descLines = rawDesc.split("\\n").map(l => l.trim()).filter(Boolean);
+      const descLines = rawDesc.split("\n").map(l => l.trim()).filter(Boolean);
       const skipPrefixes = ["Speed:", "Refill:", "Quality:", "Link:"];
       const bodyLines = descLines.filter(l => !skipPrefixes.some(p => l.toLowerCase().startsWith(p.toLowerCase())));
-      descText = bodyLines.join("\\n").trim();
+      descText = bodyLines.join("\n").trim();
     } else {
       // Fallback: dùng tên dịch vụ
       descText = s.name;
