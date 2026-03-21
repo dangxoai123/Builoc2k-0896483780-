@@ -21,7 +21,6 @@ const pool = new Pool({
 });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'mmopanel_jwt_secret_2026';
-const ADMIN_EMAILS = ['builoc1906@gmail.com', 'buinguyenloc112000@gmail.com'];
 
 function generateToken(user) {
   return jwt.sign(
@@ -45,7 +44,7 @@ function authMiddleware(req, res, next) {
 
 // Admin middleware
 function adminMiddleware(req, res, next) {
-  if (req.user?.role !== 'admin' && !ADMIN_EMAILS.includes(req.user?.email)) {
+  if (req.user?.role !== 'admin') {
     return res.status(403).json({ error: 'Không có quyền admin' });
   }
   next();
@@ -75,7 +74,7 @@ router.post('/register', async (req, res) => {
     const hash   = await bcrypt.hash(password, 12);
     const apiKey = crypto.randomBytes(32).toString('hex');
     const uid    = crypto.randomUUID();
-    const role   = ADMIN_EMAILS.includes(email) ? 'admin' : 'user';
+    const role   = 'user';
 
     const result = await pool.query(
       `INSERT INTO users (uid, username, email, password, api_key, role)
