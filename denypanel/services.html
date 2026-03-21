@@ -352,12 +352,6 @@ function showSvcDetail(s) {
 
   document.getElementById('sdmId').textContent = s.service;
   document.getElementById('sdmName').textContent = s.name;
-  document.getElementById('sdmSpeed').textContent = speed;
-  document.getElementById('sdmQuality').textContent = quality;
-  document.getElementById('sdmRate').textContent = rateStr + ' /1k';
-  document.getElementById('sdmMin').textContent = Number(s.min).toLocaleString();
-  document.getElementById('sdmMax').textContent = Number(s.max).toLocaleString();
-  document.getElementById('sdmLink').textContent = link;
 
   // Build description HTML (giống dashboard)
   let descHtml = '';
@@ -400,30 +394,8 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSvcDeta
       <div id="sdmId" style="background:#28cb69;color:#fff;font-size:15px;font-weight:800;padding:6px 24px;border-radius:30px;display:inline-block;margin-bottom:16px">-</div>
       <h3 id="sdmName" style="font-size:15px;font-weight:700;line-height:1.6;color:#e6edf3;padding:0 16px">-</h3>
     </div>
-    <!-- Scrollable list -->
     <div style="overflow-y:auto;padding:0 28px;flex:1;scrollbar-width:thin;scrollbar-color:#28cb69 #0d1117">
-      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:baseline">
-        <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:90px">Speed:</span>
-        <span id="sdmSpeed" style="font-size:14px;color:#e6edf3;font-weight:700">-</span>
-      </div>
-
-      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:baseline">
-        <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:90px">Quality:</span>
-        <span id="sdmQuality" style="font-size:14px;color:#e6edf3;font-weight:700">Rất Tốt</span>
-      </div>
-      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:baseline">
-        <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:90px">Giá/1000:</span>
-        <span id="sdmRate" style="font-size:14px;color:#28cb69;font-weight:800">-</span>
-      </div>
-      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:baseline">
-        <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:90px">Min/Max:</span>
-        <span style="font-size:14px;color:#e6edf3;font-weight:700"><span id="sdmMin">-</span> / <span id="sdmMax">-</span></span>
-      </div>
-      <div style="padding:14px 0;border-bottom:1px solid rgba(255,255,255,0.05);display:flex;gap:8px;align-items:baseline">
-        <span style="font-size:14px;color:#bfd5fd;font-weight:600;min-width:90px">Link:</span>
-        <span id="sdmLink" style="font-size:14px;color:#e6edf3">-</span>
-      </div>
-      <div id="sdmDesc" style="padding:4px 0"></div>
+      <div id="sdmDesc" style="padding:14px 0"></div>
     </div>
     <!-- Login button -->
     <div style="padding:16px 28px 24px;border-top:1px solid #111620;flex-shrink:0">
