@@ -1200,14 +1200,14 @@ function openSvcDetailModal(dataStr) {
 
     let descHtml = "";
     if (startTime) {
-      descHtml += "<div style=\"padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.07);display:flex;gap:8px;align-items:baseline\"><span style=\"font-size:13px;color:#bfd5fd;font-weight:600;min-width:110px\">Start Time:</span><span style=\"font-size:13px;color:#e6edf3;font-weight:700\">" + startTime + "</span></div>";
+      descHtml += `<div style="padding:6px 0 10px;border-bottom:1px solid rgba(255,255,255,0.07)"><span style="font-size:12px;color:#bfd5fd;font-weight:600">Start Time: </span><span style="font-size:13px;color:#e6edf3;font-weight:700">${startTime}</span></div>`;
     }
     if (descText) {
-      descHtml += "<div style=\"padding:14px 0\"><p style=\"font-size:13px;color:#c9d1d9;line-height:1.85;white-space:pre-line\">" + esc(descText) + "</p></div>";
+      descHtml += esc(descText);
     }
 
     const descEl = document.getElementById("modalSvcDesc");
-    if (descEl) descEl.innerHTML = descHtml || "<p style=\"color:var(--gray);font-style:italic\">Không có mô tả cho dịch vụ này.</p>";
+    if (descEl) descEl.innerHTML = descHtml || `<span style="color:var(--gray);font-style:italic">Không có mô tả cho dịch vụ này.</span>`;
 
     const modal = document.getElementById("svcDetailModal");
     if (modal) { modal.style.display = "flex"; document.body.style.overflow = "hidden"; }
