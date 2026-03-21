@@ -1147,11 +1147,11 @@ button.plat-btn i {
 <script>
 function closeMaintPopup() {
   document.getElementById('maintenanceOverlay').style.display = 'none';
-  sessionStorage.setItem('maint_seen', '1');
+  sessionStorage.setItem('maint_seen_dash', '1');
 }
 window.addEventListener('load', function() {
   setTimeout(function() {
-    if (!sessionStorage.getItem('maint_seen')) {
+    if (!sessionStorage.getItem('maint_seen_dash')) {
       document.getElementById('maintenanceOverlay').style.display = 'flex';
     }
   }, 800);
