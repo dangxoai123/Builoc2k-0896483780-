@@ -29,12 +29,8 @@ mkdir -p "$BACKUP_DIR"
 
 echo "[$(date)] Bắt đầu backup..."
 
-# Dump ra file trước (tránh lỗi pipe che khuất exit code)
-PGPASSWORD="$DB_PASS" pg_dump \
-    -h "$DB_HOST" \
-    -p "$DB_PORT" \
-    -U "$DB_USER" \
-    "$DB_NAME" > "$FILEPATH_SQL" 2>/tmp/pgdump_error.log
+# Dump bằng OS user postgres (không cần password - peer auth)
+su - postgres -c "pg_dump $DB_NAME" > "$FILEPATH_SQL" 2>/tmp/pgdump_error.log
 
 if [ $? -ne 0 ]; then
     ERR=$(cat /tmp/pgdump_error.log)
