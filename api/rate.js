@@ -69,7 +69,7 @@ module.exports = router;
  */
 function callDenyPanelAPI(params) {
   return new Promise((resolve, reject) => {
-    const postData = querystring.stringify(params);
+    const postData = qs.stringify(params);
     const options = {
       hostname: 'denypanel.com',
       port: 443,
