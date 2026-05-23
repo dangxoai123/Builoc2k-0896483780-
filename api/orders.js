@@ -131,7 +131,7 @@ function mapStatus(raw) {
 // Body: { service_id, service_name, link, quantity, charge }
 // ──────────────────────────────────────────────
 router.post('/place', async (req, res) => {
-  const { service_id, service_name, link, quantity, charge } = req.body;
+  const { service_id, service_name, link, quantity, charge, comments } = req.body;
   if (!service_id || !link || !quantity) {
     return res.status(400).json({ error: 'Thiếu thông tin đặt hàng' });
   }
@@ -154,10 +154,16 @@ router.post('/place', async (req, res) => {
     let orderId = null;
     let demo    = false;
     try {
-      const dpResult = await callDenyPanel({
+      const dpParams = {
         action: 'add', key: DENY_KEY,
-        service: service_id, link, quantity
-      });
+        service: service_id, link
+      };
+      if (comments) {
+        dpParams.comments = comments;
+      } else {
+        dpParams.quantity = quantity;
+      }
+      const dpResult = await callDenyPanel(dpParams);
       if (dpResult.order) {
         orderId = String(dpResult.order);
       } else if (dpResult.error) {

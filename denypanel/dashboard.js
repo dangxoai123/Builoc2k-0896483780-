@@ -391,8 +391,82 @@ function homeOnCategoryChange() {
   populateServiceSel('homeServiceSelect', cat);
 }
 
-function homeOnServiceChange() {
+function requiresCustomComments(svc) {
+  if (!svc) return false;
+  const type = (svc.type || '').toLowerCase();
+  const name = (svc.name || '').toLowerCase();
+  const category = (svc.category || '').toLowerCase();
+  
+  return type.includes('custom comments') || 
+         type.includes('custom_comments') ||
+         name.includes('custom comment') || 
+         name.includes('tùy chỉnh nội dung') || 
+         name.includes('bình luận tùy chỉnh') ||
+         name.includes('custom comments') ||
+         category.includes('custom comments') ||
+         category.includes('comment &');
+}
+
+function homeOnCommentsInput() {
+  const textarea = document.getElementById('homeOrderComments');
+  if (!textarea) return;
+  const comments = textarea.value.split('\n').map(line => line.trim()).filter(line => line !== '');
+  const count = comments.length;
+  safeSet('homeCommentsCount', count);
+  
+  const qtyInput = document.getElementById('homeOrderQty');
+  if (qtyInput) {
+    qtyInput.value = count;
+  }
   homeCalcCost();
+}
+
+function pageOnCommentsInput() {
+  const textarea = document.getElementById('pageOrderComments');
+  if (!textarea) return;
+  const comments = textarea.value.split('\n').map(line => line.trim()).filter(line => line !== '');
+  const count = comments.length;
+  safeSet('pageCommentsCount', count);
+  
+  const qtyInput = document.getElementById('pageOrderQty');
+  if (qtyInput) {
+    qtyInput.value = count;
+  }
+  pageCalcCost();
+}
+
+function homeOnServiceChange() {
+  const sel = document.getElementById('homeServiceSelect');
+  const opt = sel?.options[sel.selectedIndex];
+  const svcId = opt?.value;
+  const svc = allServicesData.find(s => s.service == svcId);
+  
+  const commentsGroup = document.getElementById('homeCommentsGroup');
+  const qtyInput = document.getElementById('homeOrderQty');
+  
+  if (svc && requiresCustomComments(svc)) {
+    if (commentsGroup) commentsGroup.style.display = 'block';
+    if (qtyInput) {
+      qtyInput.readOnly = true;
+      qtyInput.placeholder = 'Tự động tính';
+      qtyInput.style.background = 'var(--bg3)';
+      qtyInput.style.cursor = 'not-allowed';
+    }
+    homeOnCommentsInput();
+  } else {
+    if (commentsGroup) {
+      commentsGroup.style.display = 'none';
+      const area = document.getElementById('homeOrderComments');
+      if (area) area.value = '';
+    }
+    if (qtyInput) {
+      qtyInput.readOnly = false;
+      qtyInput.placeholder = '0';
+      qtyInput.style.background = '';
+      qtyInput.style.cursor = '';
+    }
+    homeCalcCost();
+  }
 }
 
 function homeCalcCost() {
@@ -412,6 +486,10 @@ function pageOnCategoryChange() {
 function pageOnServiceChange() {
   const sel = document.getElementById('pageServiceSelect');
   const opt = sel?.options[sel.selectedIndex];
+  
+  const commentsGroup = document.getElementById('pageCommentsGroup');
+  const qtyInput = document.getElementById('pageOrderQty');
+
   if (!opt?.value) {
     safeSet('sipId', '-');
     safeSet('sipName', '-');
@@ -423,6 +501,14 @@ function pageOnServiceChange() {
     safeSet('sipSpeed', '--');
     safeSet('sipWarranty', '--');
     safeSet('sipLink', '--');
+    
+    if (commentsGroup) commentsGroup.style.display = 'none';
+    if (qtyInput) {
+      qtyInput.readOnly = false;
+      qtyInput.placeholder = '0';
+      qtyInput.style.background = '';
+      qtyInput.style.cursor = '';
+    }
     pageCalcCost();
     return;
   }
@@ -434,19 +520,40 @@ function pageOnServiceChange() {
   safeSet('sipName', opt.dataset.name || opt.textContent);
   safeSet('sipMinMax', `${opt.dataset.min} \u2022 ${opt.dataset.max}`);
 
-    // Set input min/max
-  const qtyInput = document.getElementById('pageOrderQty');
-  if (qtyInput) {
-    qtyInput.min = opt.dataset.min;
-    qtyInput.max = opt.dataset.max;
-    if (!qtyInput.value || parseInt(qtyInput.value) < parseInt(opt.dataset.min)) {
-      qtyInput.value = opt.dataset.min;
-      pageCalcCost();
-    }
-  }
-
   // Find full service info from API data
   const svc = allServicesData.find(s => s.service == svcId);
+  
+  if (svc && requiresCustomComments(svc)) {
+    if (commentsGroup) commentsGroup.style.display = 'block';
+    if (qtyInput) {
+      qtyInput.readOnly = true;
+      qtyInput.placeholder = 'Tự động tính';
+      qtyInput.style.background = 'var(--bg3)';
+      qtyInput.style.cursor = 'not-allowed';
+    }
+    pageOnCommentsInput();
+  } else {
+    if (commentsGroup) {
+      commentsGroup.style.display = 'none';
+      const area = document.getElementById('pageOrderComments');
+      if (area) area.value = '';
+    }
+    if (qtyInput) {
+      qtyInput.readOnly = false;
+      qtyInput.placeholder = '0';
+      qtyInput.style.background = '';
+      qtyInput.style.cursor = '';
+      
+      // Set input min/max
+      qtyInput.min = opt.dataset.min;
+      qtyInput.max = opt.dataset.max;
+      if (!qtyInput.value || parseInt(qtyInput.value) < parseInt(opt.dataset.min)) {
+        qtyInput.value = opt.dataset.min;
+      }
+    }
+    pageCalcCost();
+  }
+
   if (svc) {
     const speed = svc.avg_time ? svc.avg_time : '5k/Ng\u00e0y';
     const warranty = svc.refill ? '30 Ng\u00e0y' : '--';
@@ -467,8 +574,6 @@ Speed: ${speed}\nRefill: ${warranty}\nQuality: Rất Tốt\nLink: URL / Link\n\n
       </div>`;
     safeSet('sipDesc', descHtml, 'innerHTML');
   }
-
-  pageCalcCost();
 }
 
 function pageCalcCost() {
@@ -495,6 +600,18 @@ async function _placeOrder(prefix) {
 
   if (!opt?.value) { showMsg(msgBox, '⚠️ Vui lòng chọn dịch vụ!', 'err'); return; }
   if (!link) { showMsg(msgBox, '⚠️ Vui lòng nhập link!', 'err'); return; }
+
+  const svc = allServicesData.find(s => s.service == opt.value);
+  let commentsText = '';
+  if (svc && requiresCustomComments(svc)) {
+    const commentsArea = document.getElementById(`${prefix}OrderComments`);
+    const commentsList = commentsArea?.value.split('\n').map(line => line.trim()).filter(line => line !== '') || [];
+    if (commentsList.length === 0) {
+      showMsg(msgBox, '⚠️ Vui lòng nhập nội dung bình luận!', 'err');
+      return;
+    }
+    commentsText = commentsList.join('\n');
+  }
 
   const min = parseInt(opt.dataset.min || 1);
   const max = parseInt(opt.dataset.max || 999999);
@@ -525,16 +642,21 @@ async function _placeOrder(prefix) {
     const token       = getToken();
     const serviceName = opt.dataset.name || opt.textContent.split(' - ')[0];
 
+    const postData = {
+      service_id:   opt.value,
+      service_name: serviceName,
+      link, quantity: qty,
+      charge: parseFloat(cost.toFixed(6))
+    };
+    if (commentsText) {
+      postData.comments = commentsText;
+    }
+
     // Đặt hàng qua backend (thay thế MMOpanelAPI.addOrder demo mode)
     const placeResp = await fetch('/api/orders/place', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        service_id:   opt.value,
-        service_name: serviceName,
-        link, quantity: qty,
-        charge: parseFloat(cost.toFixed(6))
-      })
+      body: JSON.stringify(postData)
     });
     const result = await placeResp.json();
 
@@ -557,6 +679,23 @@ async function _placeOrder(prefix) {
     sel.value = '';
     if (document.getElementById(`${prefix}OrderLink`)) document.getElementById(`${prefix}OrderLink`).value = '';
     if (document.getElementById(`${prefix}OrderQty`))  document.getElementById(`${prefix}OrderQty`).value  = '';
+    if (document.getElementById(`${prefix}OrderComments`)) {
+      document.getElementById(`${prefix}OrderComments`).value = '';
+      const cCount = document.getElementById(`${prefix}CommentsCount`);
+      if (cCount) cCount.textContent = '0';
+    }
+    
+    // Hide comments group
+    const commentsGroup = document.getElementById(`${prefix}CommentsGroup`);
+    if (commentsGroup) commentsGroup.style.display = 'none';
+    const qtyInput = document.getElementById(`${prefix}OrderQty`);
+    if (qtyInput) {
+      qtyInput.readOnly = false;
+      qtyInput.style.background = '';
+      qtyInput.style.cursor = '';
+      qtyInput.placeholder = '0';
+    }
+
     safeSet(`${prefix}CostDisplay`, '0 ₫');
 
     await refreshBalance();

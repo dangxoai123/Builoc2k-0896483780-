@@ -402,6 +402,13 @@ button.plat-btn i {
               <label class="form-label-v2">Link</label>
               <input type="url" class="form-input-v2" id="homeOrderLink" placeholder="https://...">
             </div>
+            <div class="form-group-v2" id="homeCommentsGroup" style="display:none">
+              <label class="form-label-v2">Nội dung bình luận (mỗi dòng 1 bình luận)</label>
+              <textarea class="form-input-v2" id="homeOrderComments" rows="5" placeholder="Bình luận 1&#10;Bình luận 2&#10;Bình luận 3" oninput="homeOnCommentsInput()" style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;color:var(--white);font-family:sans-serif;resize:vertical"></textarea>
+              <div style="font-size:11px;color:#888;margin-top:5px">
+                Số lượng bình luận đã nhập: <strong id="homeCommentsCount" style="color:var(--green)">0</strong>
+              </div>
+            </div>
             <div class="form-group-v2">
               <label class="form-label-v2">Số lượng</label>
               <input type="number" class="form-input-v2" id="homeOrderQty" placeholder="0" oninput="homeCalcCost()">
@@ -459,6 +466,13 @@ button.plat-btn i {
               <div class="form-group-v2">
                 <label class="form-label-v2">Link</label>
                 <input type="url" class="form-input-v2" id="pageOrderLink" placeholder="https://...">
+              </div>
+              <div class="form-group-v2" id="pageCommentsGroup" style="display:none">
+                <label class="form-label-v2">Nội dung bình luận (mỗi dòng 1 bình luận)</label>
+                <textarea class="form-input-v2" id="pageOrderComments" rows="5" placeholder="Bình luận 1&#10;Bình luận 2&#10;Bình luận 3" oninput="pageOnCommentsInput()" style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;color:var(--white);font-family:sans-serif;resize:vertical"></textarea>
+                <div style="font-size:11px;color:#888;margin-top:5px">
+                  Số lượng bình luận đã nhập: <strong id="pageCommentsCount" style="color:var(--green)">0</strong>
+                </div>
               </div>
               <div class="form-group-v2">
                 <label class="form-label-v2">Số lượng</label>
