@@ -49,12 +49,64 @@ router.get('/:orderId/status', async (req, res) => {
     const newStatus = mapStatus(dpRes.status || '');
     const remains   = parseInt(dpRes.remains) || 0;
 
-    // Cập nhật DB
-    await pool.query(
-      `UPDATE orders SET status=$1, remains=$2
-       WHERE order_id=$3 AND user_id=(SELECT id FROM users WHERE uid=$4)`,
-      [newStatus, remains, String(orderId), req.user.uid]
-    ).catch(() => {});
+    // Cập nhật DB dùng PostgreSQL transaction để đảm bảo hoàn tiền chính xác và duy nhất một lần
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Khóa và đọc thông tin đơn hàng cùng thông tin số dư của user
+      const lockRes = await client.query(
+        `SELECT o.id, o.status, o.charge, o.user_id, u.balance
+         FROM orders o
+         JOIN users u ON o.user_id = u.id
+         WHERE o.order_id = $1 AND o.user_id = (SELECT id FROM users WHERE uid = $2)
+         FOR UPDATE`,
+        [String(orderId), req.user.uid]
+      );
+
+      if (lockRes.rows.length > 0) {
+        const dbOrder = lockRes.rows[0];
+        const dbCurrentStatus = dbOrder.status;
+        const dbCharge = parseFloat(dbOrder.charge || 0);
+        const dbUserId = dbOrder.user_id;
+        const dbCurrentBalance = parseFloat(dbOrder.balance || 0);
+
+        // Chỉ hoàn tiền khi trạng thái mới là 'canceled' và trạng thái cũ chưa phải 'canceled'
+        if (newStatus === 'canceled' && dbCurrentStatus !== 'canceled') {
+          const refundAmount = dbCharge;
+          const updatedBalance = parseFloat((dbCurrentBalance + refundAmount).toFixed(6));
+
+          // 1. Cập nhật số dư user
+          await client.query(
+            'UPDATE users SET balance = $1 WHERE id = $2',
+            [updatedBalance, dbUserId]
+          );
+
+          // 2. Ghi nhận giao dịch hoàn tiền
+          await client.query(
+            `INSERT INTO transactions (user_id, type, amount_usd, description)
+             VALUES ($1, 'refund', $2, $3)`,
+            [dbUserId, refundAmount, `Refund for Canceled Order #${orderId}`]
+          );
+
+          console.log(`[Refund Success] Refunded $${refundAmount} to user ${dbUserId} for canceled order #${orderId}`);
+        }
+      }
+
+      // Cập nhật trạng thái đơn hàng
+      await client.query(
+        `UPDATE orders SET status=$1, remains=$2
+         WHERE order_id=$3 AND user_id=(SELECT id FROM users WHERE uid=$4)`,
+        [newStatus, remains, String(orderId), req.user.uid]
+      );
+
+      await client.query('COMMIT');
+    } catch (txErr) {
+      await client.query('ROLLBACK');
+      throw txErr;
+    } finally {
+      client.release();
+    }
 
     res.json({ success: true, status: newStatus, remains, raw: dpRes.status });
   } catch (e) {
