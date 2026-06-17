@@ -957,10 +957,20 @@ async function sendResetEmail() {
 // PRICING / MARKUP
 // ==========================================
 async function loadMarkupData() {
-  // Markup data - có thể mở rộng sau với PostgreSQL settings table
-  _markupData = {};
+  // Đọc lại per-service markup từ localStorage
+  try {
+    const savedMarkup = localStorage.getItem('admin_markup_data');
+    _markupData = savedMarkup ? JSON.parse(savedMarkup) : {};
+  } catch(e) {
+    _markupData = {};
+  }
+
+  // Đọc lại global markup từ localStorage
   const globalMarkupEl = document.getElementById('globalMarkup');
-  if (globalMarkupEl) globalMarkupEl.value = 0;
+  if (globalMarkupEl) {
+    const savedGlobal = localStorage.getItem('admin_global_markup');
+    globalMarkupEl.value = savedGlobal !== null ? parseFloat(savedGlobal) : 0;
+  }
 }
 
 async function loadPricingTable() {
