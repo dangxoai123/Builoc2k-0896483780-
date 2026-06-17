@@ -962,19 +962,23 @@ async function sendResetEmail() {
 // PRICING / MARKUP
 // ==========================================
 async function loadMarkupData() {
-  // Đọc lại per-service markup từ localStorage
   try {
-    const savedMarkup = localStorage.getItem('admin_markup_data');
-    _markupData = savedMarkup ? JSON.parse(savedMarkup) : {};
+    const res  = await fetch('/api/admin/markup', { headers: { 'Authorization': 'Bearer ' + _jwt } });
+    const data = await res.json();
+    _markupData = data.markupData || {};
+    const globalMarkupEl = document.getElementById('globalMarkup');
+    if (globalMarkupEl) globalMarkupEl.value = data.globalMarkup || 0;
   } catch(e) {
-    _markupData = {};
-  }
-
-  // Đọc lại global markup từ localStorage
-  const globalMarkupEl = document.getElementById('globalMarkup');
-  if (globalMarkupEl) {
-    const savedGlobal = localStorage.getItem('admin_global_markup');
-    globalMarkupEl.value = savedGlobal !== null ? parseFloat(savedGlobal) : 0;
+    // Fallback localStorage nếu API lỗi
+    try {
+      const savedMarkup = localStorage.getItem('admin_markup_data');
+      _markupData = savedMarkup ? JSON.parse(savedMarkup) : {};
+    } catch { _markupData = {}; }
+    const globalMarkupEl = document.getElementById('globalMarkup');
+    if (globalMarkupEl) {
+      const savedGlobal = localStorage.getItem('admin_global_markup');
+      globalMarkupEl.value = savedGlobal !== null ? parseFloat(savedGlobal) : 0;
+    }
   }
 }
 
@@ -1057,19 +1061,34 @@ async function saveGlobalMarkup() {
     _markupData[s.service] = markup;
   });
 
-  // Lưu cả hai vào localStorage
-  localStorage.setItem('admin_global_markup', markup);
-  localStorage.setItem('admin_markup_data', JSON.stringify(_markupData));
+  try {
+    await fetch('/api/admin/markup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _jwt },
+      body: JSON.stringify({ globalMarkup: markup, markupData: _markupData })
+    });
+    showToast(`✅ Đã lưu ${markup}% cho ${_servicesData.length} dịch vụ!`);
+  } catch(e) {
+    showToast('⚠️ Lưu thất bại: ' + e.message);
+  }
 
   renderPricingTable(_servicesData);
-  showToast(`✅ Đã áp ${markup}% cho ${_servicesData.length} dịch vụ!`);
 }
 
 async function saveSingleMarkup(svcId, baseRate) {
   const markup = parseFloat(document.getElementById('mk_' + svcId).value) || 0;
   _markupData[svcId] = markup;
-  localStorage.setItem('admin_markup_data', JSON.stringify(_markupData));
-  showToast('Đã lưu markup #' + svcId);
+
+  try {
+    await fetch('/api/admin/markup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _jwt },
+      body: JSON.stringify({ markupData: _markupData })
+    });
+    showToast('✅ Đã lưu markup #' + svcId);
+  } catch(e) {
+    showToast('⚠️ Lưu thất bại: ' + e.message);
+  }
 }
 
 async function saveAllMarkups() {
@@ -1077,8 +1096,18 @@ async function saveAllMarkups() {
     const el = document.getElementById('mk_' + s.service);
     if (el) _markupData[s.service] = parseFloat(el.value) || 0;
   });
-  localStorage.setItem('admin_markup_data', JSON.stringify(_markupData));
-  showToast('Đã lưu tất cả markup!');
+
+  try {
+    const markup = parseFloat(document.getElementById('globalMarkup').value) || 0;
+    await fetch('/api/admin/markup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _jwt },
+      body: JSON.stringify({ globalMarkup: markup, markupData: _markupData })
+    });
+    showToast('✅ Đã lưu tất cả markup!');
+  } catch(e) {
+    showToast('⚠️ Lưu thất bại: ' + e.message);
+  }
 }
 
 // ==========================================

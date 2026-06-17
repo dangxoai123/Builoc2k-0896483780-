@@ -176,4 +176,61 @@ router.delete('/users/:uid', async (req, res) => {
   }
 });
 
+// GET /api/admin/markup — Lấy markup settings từ DB
+router.get('/markup', async (req, res) => {
+  try {
+    // Tạo bảng settings nếu chưa có
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS settings (
+        key VARCHAR(255) PRIMARY KEY,
+        value TEXT,
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    const result = await pool.query(
+      "SELECT key, value FROM settings WHERE key IN ('markup_global', 'markup_data')"
+    );
+    const s = {};
+    result.rows.forEach(r => { s[r.key] = r.value; });
+    res.json({
+      globalMarkup: parseFloat(s.markup_global || '0'),
+      markupData:   s.markup_data ? JSON.parse(s.markup_data) : {}
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/admin/markup — Lưu markup settings vào DB
+router.post('/markup', async (req, res) => {
+  const { globalMarkup, markupData } = req.body;
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS settings (
+        key VARCHAR(255) PRIMARY KEY,
+        value TEXT,
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    if (globalMarkup !== undefined) {
+      await pool.query(
+        `INSERT INTO settings (key, value, updated_at) VALUES ('markup_global', $1, NOW())
+         ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = NOW()`,
+        [String(globalMarkup)]
+      );
+    }
+    if (markupData !== undefined) {
+      await pool.query(
+        `INSERT INTO settings (key, value, updated_at) VALUES ('markup_data', $1, NOW())
+         ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = NOW()`,
+        [JSON.stringify(markupData)]
+      );
+    }
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router;
+
